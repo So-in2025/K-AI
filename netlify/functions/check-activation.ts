@@ -18,7 +18,9 @@ export default async (req: Request, context: Context) => {
     const store = getStore('activation-codes');
     
     // Buscar si el código existe y está activado
-    const status = await store.get(code);
+    // FIX: The `get` method from Netlify Blobs can return different types (like ArrayBuffer or Blob),
+    // causing a type mismatch. Specify `type: 'text'` to ensure `status` is a string for the comparison below.
+    const status = await store.get(code, { type: 'text' });
 
     const isActivated = status === 'activated';
 
