@@ -1,0 +1,7 @@
+{
+  "name": "Camino Consciente: Apoyo en Tu Recuperación",
+  "description": "Una aplicación de apoyo integral diseñada para ofrecer mensajes de autoayuda, seguimiento de progreso y herramientas de emergencia para personas en proceso de recuperación de la adicción al crack. Utiliza IA para generar citas motivacionales y consejos personalizados.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
