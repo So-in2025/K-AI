@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { JOURNAL_PROMPTS } from '../constants';
 
 const EditIcon = () => (
@@ -15,24 +16,54 @@ interface JournalCardProps {
     onSave: () => void;
 }
 
-export const JournalCard: React.FC<JournalCardProps> = ({ entry, onEntryChange, onSave }) => {
+// Debounce hook
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+export const JournalCard: React.FC<JournalCardProps> = ({ entry: initialEntry, onEntryChange, onSave }) => {
+  const [localEntry, setLocalEntry] = useState(initialEntry);
   const [isSaved, setIsSaved] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey | null>(null);
 
+  const debouncedEntry = useDebounce(localEntry, 1500); // 1.5 seconds delay
+
+  // Effect to call the parent's onEntryChange for auto-saving
+  useEffect(() => {
+    if (debouncedEntry !== initialEntry) {
+      onEntryChange(debouncedEntry);
+    }
+  }, [debouncedEntry, initialEntry, onEntryChange]);
+
+  // Sync local state if parent prop changes
+  useEffect(() => {
+    setLocalEntry(initialEntry);
+  }, [initialEntry]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onEntryChange(e.target.value);
+    setLocalEntry(e.target.value);
     setIsSaved(false);
   };
 
   const handleSave = () => {
+    onEntryChange(localEntry); // Ensure the latest version is saved immediately
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000); // Hide message after 2 seconds
     onSave();
   };
 
   const handleAddPrompt = (prompt: string) => {
-    const newEntry = entry.trim() ? `${entry.trim()}\n\n${prompt} ` : `${prompt} `;
-    onEntryChange(newEntry);
+    const newEntry = localEntry.trim() ? `${localEntry.trim()}\n\n${prompt} ` : `${prompt} `;
+    setLocalEntry(newEntry);
     const textarea = document.getElementById('journal-textarea') as HTMLTextAreaElement;
     if (textarea) {
         textarea.focus();
@@ -46,7 +77,7 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry, onEntryChange, 
             <EditIcon/>
             <h2 className="text-xl font-bold text-slate-100">Mi Diario Personal</h2>
         </div>
-        <p className="text-slate-400 mb-4 text-sm">Usa este espacio para escribir tus pensamientos. Si no sabes por dónde empezar, usa una de las guías.</p>
+        <p className="text-slate-400 mb-4 text-sm">Usa este espacio para escribir tus pensamientos. Si no sabes por dónde empezar, usa una de las guías. Tu progreso se guarda automáticamente.</p>
         
         <div className="mb-4">
             <div className="flex flex-wrap gap-2">
@@ -78,7 +109,7 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry, onEntryChange, 
 
       <textarea
         id="journal-textarea"
-        value={entry}
+        value={localEntry}
         onChange={handleChange}
         placeholder="¿Cómo te sientes hoy?"
         className="w-full h-40 p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-shadow text-slate-200"
@@ -88,7 +119,7 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry, onEntryChange, 
         <button
           onClick={handleSave}
           className="bg-teal-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-400"
-          disabled={!entry.trim()}
+          disabled={!localEntry.trim()}
         >
           Guardar y Reflexionar con Kai
         </button>

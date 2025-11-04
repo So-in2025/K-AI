@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus } from '../types';
@@ -113,8 +114,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         `;
         try {
             const response = await getGeminiResponse(suggestionPrompt);
-            // Sanitize response to grab only the JSON array
-            const jsonMatch = response.match(/\[.*\]/);
+            const jsonMatch = response.match(/\[.*\]/s);
             if (jsonMatch) {
                 const parsedSuggestions = JSON.parse(jsonMatch[0]);
                 if (Array.isArray(parsedSuggestions)) {
@@ -156,7 +156,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         const currentInput = textToSend || userInput;
         if (!currentInput.trim() || isLoading) return;
 
-        setSuggestions([]); // Clear suggestions on send
+        setSuggestions([]);
 
         if (!textToSend) { 
              const userTurn: IConversationTurn = { role: 'user', text: currentInput };
@@ -200,6 +200,14 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         `;
         
         const rawResponse = await getGeminiResponse(prompt, systemInstruction);
+        
+        if (rawResponse.startsWith("Error:")) {
+            const errorTurn: IConversationTurn = { role: 'model', text: rawResponse };
+            onNewTurn(errorTurn);
+            setIsLoading(false);
+            setAvatarState('idle');
+            return;
+        }
         
         let responseText = rawResponse;
         let gestureMatch = rawResponse.match(/\[gesture:(nod|shake|none)\]/);

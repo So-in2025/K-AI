@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
 import { ApiKeyModal } from './components/ApiKeyModal';
@@ -8,7 +8,6 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-// Fix: Import IGuardianAnalysis to resolve 'Cannot find name' error.
 import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
@@ -33,6 +32,55 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
+// Reducer for Guardian Mode state management
+type GuardianState = {
+  status: 'idle' | 'starting' | 'active' | 'stopping' | 'analyzing' | 'error';
+  transcript: string;
+  analysis: GuardianAnalysisResult | null;
+  error: string | null;
+};
+
+type GuardianAction =
+  | { type: 'START' }
+  | { type: 'ACTIVATE' }
+  | { type: 'APPEND_TRANSCRIPT'; payload: string }
+  | { type: 'STOP' }
+  | { type: 'START_ANALYSIS' }
+  | { type: 'SET_ANALYSIS'; payload: GuardianAnalysisResult | null }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'RESET' };
+
+const initialGuardianState: GuardianState = {
+  status: 'idle',
+  transcript: '',
+  analysis: null,
+  error: null,
+};
+
+function guardianReducer(state: GuardianState, action: GuardianAction): GuardianState {
+  switch (action.type) {
+    case 'START':
+      return { ...state, status: 'starting', analysis: null, transcript: '', error: null };
+    case 'ACTIVATE':
+      return { ...state, status: 'active' };
+    case 'APPEND_TRANSCRIPT':
+      return { ...state, transcript: state.transcript + action.payload };
+    case 'STOP':
+      return { ...state, status: 'stopping' };
+    case 'START_ANALYSIS':
+      return { ...state, status: 'analyzing' };
+    case 'SET_ANALYSIS':
+      return { ...state, status: 'idle', analysis: action.payload, transcript: '' };
+    case 'SET_ERROR':
+      return { ...state, status: 'error', error: action.payload };
+    case 'RESET':
+      return initialGuardianState;
+    default:
+      return state;
+  }
+}
+
+
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -51,12 +99,9 @@ const App: React.FC = () => {
   const [isGoalsLoading, setIsGoalsLoading] = useState(false);
   const [wellnessLog, setWellnessLog] = useState<IWellnessActivity[]>([]);
 
-  // Guardian Mode State
-  const [isGuardianActive, setIsGuardianActive] = useState(false);
-  const [guardianTranscript, setGuardianTranscript] = useState('');
-  const [guardianAnalysis, setGuardianAnalysis] = useState<GuardianAnalysisResult | null>(null);
-  const [isGuardianLoading, setIsGuardianLoading] = useState(false);
-  const [sessionPromise, setSessionPromise] = useState<Promise<any> | null>(null);
+  // Guardian Mode State with Reducer
+  const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
+  const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
@@ -216,8 +261,6 @@ const App: React.FC = () => {
 
   const handleJournalChange = (newEntry: string) => {
     setJournalEntry(newEntry);
-    localStorage.setItem(JOURNAL_STORAGE_KEY, newEntry);
-    updateLastInteraction();
   };
 
   const handleJournalSave = () => {
@@ -273,6 +316,7 @@ const App: React.FC = () => {
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
     if (!apiKey) return;
+    dispatchGuardian({ type: 'START' });
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -286,10 +330,8 @@ const App: React.FC = () => {
         callbacks: {
           onopen: () => {
             console.log('Guardian mode connection opened.');
-            setIsGuardianActive(true);
-            setGuardianAnalysis(null);
-            setGuardianTranscript('');
-
+            dispatchGuardian({ type: 'ACTIVATE' });
+            
             const source = audioContextRef.current!.createMediaStreamSource(stream);
             audioSourceRef.current = source;
             const scriptProcessor = audioContextRef.current!.createScriptProcessor(4096, 1, 1);
@@ -316,11 +358,12 @@ const App: React.FC = () => {
           onmessage: (message: LiveServerMessage) => {
             if (message.serverContent?.inputTranscription) {
               const text = message.serverContent.inputTranscription.text;
-              setGuardianTranscript(prev => prev + text);
+              dispatchGuardian({ type: 'APPEND_TRANSCRIPT', payload: text });
             }
           },
           onerror: (e: ErrorEvent) => {
             console.error('Guardian mode error:', e);
+            dispatchGuardian({ type: 'SET_ERROR', payload: 'Error de conexión del Modo Guardián.' });
             handleStopGuardian();
           },
           onclose: () => {
@@ -328,17 +371,16 @@ const App: React.FC = () => {
           }
         }
       });
-      setSessionPromise(newSessionPromise);
+      sessionPromiseRef.current = newSessionPromise;
 
     } catch (err) {
       console.error('Error getting microphone access:', err);
-      alert("No se pudo acceder al micrófono. Por favor, revisa los permisos.");
+      dispatchGuardian({ type: 'SET_ERROR', payload: 'No se pudo acceder al micrófono.' });
     }
   };
 
   const handleStopGuardian = async () => {
-    setIsGuardianActive(false);
-    setIsGuardianLoading(true);
+    dispatchGuardian({ type: 'STOP' });
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -350,28 +392,25 @@ const App: React.FC = () => {
         audioContextRef.current.close();
     }
 
-
-    if (sessionPromise) {
+    if (sessionPromiseRef.current) {
       try {
-        const session = await sessionPromise;
+        const session = await sessionPromiseRef.current;
         session.close();
       } catch (e) {
         console.error("Error closing session", e);
       }
-      setSessionPromise(null);
+      sessionPromiseRef.current = null;
     }
     
-    if (!guardianTranscript.trim()) {
-      setGuardianTranscript('');
-      setIsGuardianLoading(false);
+    dispatchGuardian({ type: 'START_ANALYSIS' });
+
+    if (!guardianState.transcript.trim()) {
+      dispatchGuardian({ type: 'RESET' });
       return;
     }
     
-    // Monetization Check
     if (!isSubscribed) {
-        setGuardianAnalysis({ isLocked: true });
-        setGuardianTranscript('');
-        setIsGuardianLoading(false);
+        dispatchGuardian({ type: 'SET_ANALYSIS', payload: { isLocked: true } });
         return;
     }
 
@@ -379,7 +418,7 @@ const App: React.FC = () => {
         Eres Kai, un terapeuta experto en adicciones y TCC. Analiza la siguiente transcripción de una situación social de alto riesgo para un usuario. Tu objetivo es identificar patrones de comportamiento y pensamiento que llevaron a un posible consumo.
 
         TRANSCRIPCIÓN:
-        "${guardianTranscript}"
+        "${guardianState.transcript}"
 
         Analiza la transcripción y extrae la siguiente información:
         1.  **trigger**: ¿Cuál fue el detonante principal? (Ej: "La conversación sobre problemas económicos generó estrés.")
@@ -400,21 +439,21 @@ const App: React.FC = () => {
 
     try {
         const response = await getGeminiResponse(prompt);
-        const parsedAnalysis: IGuardianAnalysis = JSON.parse(response);
-        setGuardianAnalysis(parsedAnalysis);
+        // Clean potential markdown code block
+        const cleanedResponse = response.replace(/```json\n|```/g, '').trim();
+        const parsedAnalysis: IGuardianAnalysis = JSON.parse(cleanedResponse);
+        dispatchGuardian({ type: 'SET_ANALYSIS', payload: parsedAnalysis });
     } catch(error) {
         console.error("Error parsing guardian analysis:", error);
-        setGuardianAnalysis({
+        const errorAnalysis: IGuardianAnalysis = {
             trigger: "Error",
             socialPressure: "Error",
             justification: "Error",
             turningPoint: "Error",
             escapeStrategy: "No se pudo procesar el análisis de la transcripción. Por favor, inténtalo de nuevo."
-        });
+        };
+        dispatchGuardian({ type: 'SET_ANALYSIS', payload: errorAnalysis });
     }
-
-    setGuardianTranscript('');
-    setIsGuardianLoading(false);
   };
 
 
@@ -440,9 +479,7 @@ const App: React.FC = () => {
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
                   userFocus={userFocus}
-                  isGuardianActive={isGuardianActive}
-                  guardianAnalysis={guardianAnalysis}
-                  isGuardianLoading={isGuardianLoading}
+                  guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
                 />;
@@ -485,9 +522,7 @@ const App: React.FC = () => {
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
                   userFocus={userFocus}
-                  isGuardianActive={isGuardianActive}
-                  guardianAnalysis={guardianAnalysis}
-                  isGuardianLoading={isGuardianLoading}
+                  guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
                 />;
@@ -499,7 +534,7 @@ const App: React.FC = () => {
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
       <Header onSettingsClick={handleOpenApiKeyModal} userFocus={userFocus} />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-28">
+      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-32">
         {userFocus.includes('addiction') && <SOSCard />}
         <div className="mt-6 h-full">
           {renderView()}

@@ -3,10 +3,15 @@ import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
 import { BreathingExercisesCard } from '../components/BreathingExercisesCard';
-// Fix: Import GuardianAnalysisResult to match the updated prop type.
-import { IWellnessActivity, UserFocus, GuardianAnalysisResult } from '../types';
+import { IWellnessActivity, UserFocus } from '../types';
 import { GuardianModeCard } from '../components/GuardianModeCard';
 
+// Define a type for the guardian state passed as a prop
+type GuardianState = {
+  status: 'idle' | 'starting' | 'active' | 'stopping' | 'analyzing' | 'error';
+  analysis: any; // Simplified for prop drilling, consider a more specific type
+  error: string | null;
+}
 interface HomeViewProps {
     startDate: Date | null;
     daysSober: number;
@@ -14,10 +19,7 @@ interface HomeViewProps {
     onReset: () => void;
     onLogWellnessActivity: (activity: IWellnessActivity) => void;
     userFocus: UserFocus[];
-    isGuardianActive: boolean;
-    // Fix: Update prop type to match the state type in App.tsx.
-    guardianAnalysis: GuardianAnalysisResult | null;
-    isGuardianLoading: boolean;
+    guardianState: GuardianState;
     onStartGuardian: () => void;
     onStopGuardian: () => void;
 }
@@ -34,9 +36,9 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
             />
             {props.userFocus.includes('addiction') && (
                  <GuardianModeCard 
-                    isActive={props.isGuardianActive}
-                    analysis={props.guardianAnalysis}
-                    isLoading={props.isGuardianLoading}
+                    status={props.guardianState.status}
+                    analysis={props.guardianState.analysis}
+                    error={props.guardianState.error}
                     onStart={props.onStartGuardian}
                     onStop={props.onStopGuardian}
                  />
