@@ -6,7 +6,6 @@ export default async (req: Request, context: Context) => {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  // CORRECTO: Usar el header 'x-hotmart-hottok' como indica Hotmart
   const hottok = req.headers.get("x-hotmart-hottok");
   const webhookSecret = process.env.HOTMART_WEBHOOK_SECRET;
 
@@ -15,7 +14,6 @@ export default async (req: Request, context: Context) => {
     return new Response("Unauthorized: Security headers missing.", { status: 401 });
   }
 
-  // CORRECTO: Realizar una comparación directa de la clave, no un cálculo HMAC
   if (hottok !== webhookSecret) {
     console.warn("Invalid Hotmart token (hottok). Mismatch between received token and environment variable.");
     return new Response("Unauthorized: Invalid token.", { status: 401 });
@@ -24,17 +22,19 @@ export default async (req: Request, context: Context) => {
   try {
     const payload = await req.json();
 
-    // Nos aseguramos de que sea un evento de compra aprobada
     if (payload.event !== 'PURCHASE_APPROVED') {
       console.log(`Hotmart event '${payload.event}' received. Ignoring.`);
       return new Response("Webhook processed, non-approved event.", { status: 200 });
     }
 
-    // Extraemos el código de activación que pasamos en el link de pago (checkout_src)
-    const activationCode = payload.data?.purchase?.checkout_src;
+    // LÓGICA MEJORADA Y ROBUSTA:
+    // Hotmart puede enviar el código de activación en diferentes campos dependiendo del contexto.
+    // Buscamos en los más comunes ('checkout_src' y 'sck') para asegurar compatibilidad.
+    const activationCode = payload.data?.purchase?.checkout_src || payload.data?.purchase?.sck;
 
     if (!activationCode) {
-      console.log("Hotmart webhook received, but no activation code (checkout_src) found in payload.");
+      // Log detallado para depuración en caso de que Hotmart cambie el campo en el futuro.
+      console.log("Hotmart webhook received, but activation code not found in 'checkout_src' or 'sck'. Full payload:", JSON.stringify(payload));
       return new Response("Activation code not found in payload.", { status: 200 });
     }
     
