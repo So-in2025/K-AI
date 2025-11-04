@@ -2,14 +2,14 @@
 import React from 'react';
 
 const IntrospectionIcon = () => (
-    <svg xmlns="http://www.w.org/2000/svg" className="h-6 w-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10l-2.5 2.5" />
     </svg>
 );
 
 
 const AwarenessIcon = () => (
-    <svg xmlns="http://www.w.org/2000/svg" className="h-6 w-6 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
 );
@@ -39,13 +39,12 @@ export const UpgradeCard: React.FC = () => {
         const activationCode = crypto.randomUUID();
         localStorage.setItem('activationCode', activationCode);
         
-        // **IMPORTANTE**: Reemplaza 'TU_USUARIO_CAFECITO' con tu nombre de usuario real de Cafecito.
-        const cafecitoUser = 'TU_USUARIO_CAFECITO'; 
+        const kofiUser = 'soin520530'; 
         
-        const cafecitoMessage = `Quiero activar KIA Plus. Mi código de activación es: ${activationCode}`;
-        const cafecitoUrl = `https://cafecito.app/${cafecitoUser}?message=${encodeURIComponent(cafecitoMessage)}`;
+        const kofiMessage = `Quiero activar KIA Plus. Mi código de activación es: ${activationCode}`;
+        const kofiUrl = `https://ko-fi.com/${kofiUser}?&message=${encodeURIComponent(kofiMessage)}`;
         
-        window.open(cafecitoUrl, '_blank');
+        window.open(kofiUrl, '_blank');
     };
 
     return (
@@ -99,7 +98,7 @@ export const UpgradeCard: React.FC = () => {
                 onClick={handleUpgrade}
                 className="w-full mt-6 bg-teal-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-lg flex items-center justify-center">
                 <BrainIcon />
-                <span className="ml-2">Apoyar la Misión de KIA con Cafecito</span>
+                <span className="ml-2">Apoyar la Misión de KIA con un Ko-fi</span>
             </button>
         </div>
     );

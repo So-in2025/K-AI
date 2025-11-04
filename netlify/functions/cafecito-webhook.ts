@@ -1,53 +1,63 @@
 
+// This function now handles webhooks from Ko-fi.com
 import type { Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 
-// Regex para encontrar un UUID en el mensaje de la donación
 const UUID_REGEX = /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/;
 
 export default async (req: Request, context: Context) => {
-  // 1. Verificar que la petición sea de tipo POST
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  // 2. (Opcional pero recomendado) Verificar un secreto para asegurar que la petición viene de Cafecito
-  const secret = process.env.CAFECITO_WEBHOOK_SECRET;
-  const providedSecret = req.headers.get("X-Cafecito-Secret");
-  if (secret && providedSecret !== secret) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  
   try {
-    // 3. Leer el cuerpo de la notificación de Cafecito
-    const payload = await req.json();
-    const message = payload?.note || '';
+    // 1. Ko-fi sends data as application/x-www-form-urlencoded
+    const formData = new URLSearchParams(await req.text());
+    const dataString = formData.get("data");
 
-    // 4. Extraer el código de activación (UUID) del mensaje
+    if (!dataString) {
+      console.warn("Webhook received from Ko-fi, but no 'data' field found.");
+      return new Response("Bad Request: Missing data", { status: 400 });
+    }
+
+    const payload = JSON.parse(dataString);
+
+    // 2. Verify the request comes from Ko-fi using the verification token
+    const verificationToken = process.env.KOFI_VERIFICATION_TOKEN;
+    if (!verificationToken || payload.verification_token !== verificationToken) {
+      console.warn("Unauthorized Ko-fi webhook attempt. Token mismatch.");
+      return new Response("Unauthorized", { status: 401 });
+    }
+    
+    // 3. Ensure it's a 'Donation' type of notification
+    if (payload.type !== 'Donation') {
+        console.log(`Ko-fi webhook received of type '${payload.type}'. Ignoring.`);
+        return new Response("Webhook processed, non-donation type.", { status: 200 });
+    }
+
+    const message = payload.message || '';
+
+    // 4. Extract the activation code (UUID) from the message
     const match = message.match(UUID_REGEX);
     if (!match || !match[0]) {
-      console.log("Webhook recibido, pero no se encontró un código de activación en el mensaje.");
-      return new Response("Activation code not found in message", { status: 200 });
+      console.log("Ko-fi webhook received, but no activation code found in the message.");
+      return new Response("Activation code not found", { status: 200 });
     }
     const activationCode = match[0];
     
-    // 5. Conectar a la "base de datos" (Netlify Blobs)
-    // El nombre 'activation-codes' es el nombre de nuestro "cajón de almacenamiento"
+    // 5. Connect to the blob store
     const store = getStore("activation-codes");
 
-    // 6. Guardar el código como activado
+    // 6. Save the code as activated
     await store.set(activationCode, "activated");
     
-    console.log(`Código de activación ${activationCode} ha sido verificado y almacenado.`);
+    console.log(`Ko-fi activation code ${activationCode} has been verified and stored.`);
     
-    // 7. Responder a Cafecito con éxito
-    return new Response(JSON.stringify({ success: true, code: activationCode }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    // 7. Respond to Ko-fi with success
+    return new Response("OK", { status: 200 });
 
   } catch (error) {
-    console.error("Error en el webhook de Cafecito:", error);
+    console.error("Error in Ko-fi webhook:", error);
     return new Response("Internal Server Error", { status: 500 });
   }
 };
