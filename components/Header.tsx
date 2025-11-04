@@ -1,4 +1,5 @@
 import React from 'react';
+import { UserFocus, USER_FOCUS_OPTIONS } from '../types';
 
 const LeafIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
@@ -13,21 +14,43 @@ const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-
 interface HeaderProps {
     onSettingsClick: () => void;
+    userFocus: UserFocus[];
 }
 
-export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
+const getTitle = (focuses: UserFocus[]): string => {
+    if (focuses.length === 0) return 'Tu Santuario Personal';
+    if (focuses.length === 1) return USER_FOCUS_OPTIONS[focuses[0]];
+    
+    const focusLabels = focuses.map(f => {
+        switch(f) {
+            case 'addiction': return 'Adicción';
+            case 'depression': return 'Depresión';
+            case 'grief': return 'Duelo';
+            default: return '';
+        }
+    }).filter(Boolean);
+    
+    return `Afrontando ${focusLabels.join(' y ')}`;
+}
+
+
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick, userFocus }) => {
+  const title = getTitle(userFocus);
+
   return (
     <header className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
             <LeafIcon className="h-8 w-8 text-teal-400"/>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-100">
-              Camino Consciente
-            </h1>
+             <div>
+                 <h1 className="text-xl md:text-2xl font-bold text-slate-100">
+                  Camino Consciente
+                </h1>
+                <p className="text-xs text-teal-300 -mt-1">{title}</p>
+            </div>
           </div>
           <button onClick={onSettingsClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Configuración">
               <SettingsIcon />

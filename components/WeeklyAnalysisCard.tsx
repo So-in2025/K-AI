@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IWellnessActivity } from '../types';
+import { ICraving, IWellnessActivity, UserFocus } from '../types';
 
 // Using a simple markdown parser to convert **bold** and lists
 const parseMarkdown = (text: string) => {
@@ -27,9 +27,10 @@ interface WeeklyAnalysisCardProps {
     journalEntry: string;
     wellnessLog: IWellnessActivity[];
     daysSober: number;
+    userFocus: UserFocus[];
 }
 
-export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober }) => {
+export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus }) => {
     const [analysis, setAnalysis] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -38,8 +39,9 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const recentCravings = cravings.filter(c => new Date(c.date) >= oneWeekAgo);
-        return daysSober >= 7 && recentCravings.length >= 1;
-    }, [cravings, daysSober]);
+        const hasAddictionData = userFocus.includes('addiction') && recentCravings.length > 0;
+        return daysSober >= 7 && (hasAddictionData || journalEntry.length > 10);
+    }, [cravings, daysSober, journalEntry, userFocus]);
 
     const handleGenerateAnalysis = async () => {
         setIsLoading(true);
@@ -58,12 +60,20 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
         const wellnessSummary = wellnessThisWeek.length > 0
             ? `${wellnessThisWeek.length} actividades, incluyendo ${wellnessThisWeek.map(w => w.exerciseName).join(', ')}`
             : "Ninguna actividad registrada.";
+        
+        const focusText = userFocus.map(f => {
+            if (f === 'addiction') return 'recuperación de la adicción';
+            if (f === 'depression') return 'gestión de la depresión/ansiedad';
+            if (f === 'grief') return 'proceso de duelo';
+        }).join(' y ');
+
+        const dayLabel = userFocus.includes('addiction') ? 'sobrio' : 'de progreso';
 
         const prompt = `
-            Eres Kai, un coach de recuperación compasivo y analítico. Tu tarea es analizar los datos de la última semana de un usuario en recuperación y ofrecerle un resumen conciso y empoderador en español.
+            Eres Kai, un coach de bienestar compasivo y analítico. Tu tarea es analizar los datos de la última semana de un usuario que está en un camino de ${focusText} y ofrecerle un resumen conciso y empoderador en español.
 
             DATOS DE LA ÚLTIMA SEMANA:
-            - Días totales sobrio del usuario: ${daysSober}
+            - Días totales ${dayLabel} del usuario: ${daysSober}
             - Antojos registrados esta semana: ${cravingsThisWeek.length}
             - Detalles de antojos: ${cravingsSummary || "Ninguno"}
             - Ejercicios de bienestar completados: ${wellnessSummary}
@@ -72,7 +82,7 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
             TU RESPUESTA DEBE SEGUIR ESTA ESTRUCTURA (usa markdown con **negritas** y listas con -):
 
             1. **Celebración y Fortaleza**: Empieza reconociendo un logro o una fortaleza de la semana. Por ejemplo, "Felicidades por alcanzar ${daysSober} días..." o "He notado tu constancia con los ejercicios de bienestar...".
-            2. **El Patrón Principal**: Identifica el patrón más significativo de la semana. Sé específico. Por ejemplo, "El patrón principal que observo esta semana es que el **estrés** parece ser un detonante clave, especialmente en las tardes."
+            2. **El Patrón Principal**: Identifica el patrón más significativo de la semana. Sé específico. Por ejemplo, "El patrón principal que observo esta semana es que el **estrés** parece ser un detonante clave, especialmente en las tardes." o "Tu diario refleja una sensación de **soledad**, que podría estar influyendo en tu estado de ánimo."
             3. **Conexión Profunda**: Conecta dos áreas diferentes de datos si es posible. Por ejemplo, "Es interesante ver que en tu diario mencionas sentirte 'agotado' en los mismos días que registraste antojos intensos. Esto sugiere que el cansancio reduce tus defensas." Si no hay conexión clara, omite este punto.
             4. **Sugerencia para la Próxima Semana**: Ofrece UNA sugerencia clara y accionable. Por ejemplo, "Para la próxima semana, te sugiero enfocarte en una pequeña pausa de 5 minutos con una 'Respiración Cuadrada' para anticiparte a ese momento de estrés."
 

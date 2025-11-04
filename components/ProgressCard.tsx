@@ -1,4 +1,5 @@
 import React from 'react';
+import { UserFocus } from '../types';
 
 const CalendarIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -11,9 +12,13 @@ interface ProgressCardProps {
     daysSober: number;
     onStartDate: () => void;
     onReset: () => void;
+    userFocus: UserFocus[];
 }
 
-export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober, onStartDate, onReset }) => {
+export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober, onStartDate, onReset, userFocus }) => {
+  const hasAddictionFocus = userFocus.includes('addiction');
+  const buttonText = hasAddictionFocus ? 'Comenzar mi recuperación' : 'Comenzar mi camino';
+  const dayLabel = hasAddictionFocus ? (daysSober === 1 ? 'Día de sobriedad' : 'Días de sobriedad') : (daysSober === 1 ? 'Día de progreso' : 'Días de progreso');
 
   if (!startDate) {
     return (
@@ -24,7 +29,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
           onClick={onStartDate}
           className="bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-teal-700 transition-colors"
         >
-          Comenzar mi recuperación
+          {buttonText}
         </button>
       </div>
     );
@@ -38,7 +43,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
           <h2 className="text-xl font-bold">Mi Progreso</h2>
         </div>
         <p className="text-5xl font-bold text-center">{daysSober}</p>
-        <p className="text-center text-lg opacity-90">{daysSober === 1 ? 'Día de sobriedad' : 'Días de sobriedad'}</p>
+        <p className="text-center text-lg opacity-90">{dayLabel}</p>
         <p className="text-center text-xs opacity-70 mt-2">
             Iniciado el: {startDate.toLocaleDateString('es-ES')}
         </p>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
-import { ICraving, IConversationTurn, IWellnessActivity, IGoal } from '../types';
+import { ICraving, IConversationTurn, IWellnessActivity, IGoal, UserFocus } from '../types';
 
 interface KaiViewProps {
     daysSober: number;
@@ -10,6 +10,7 @@ interface KaiViewProps {
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
     goals: IGoal[];
+    userFocus: UserFocus[];
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {

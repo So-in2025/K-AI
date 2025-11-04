@@ -66,3 +66,11 @@ export interface IMeditation {
     description: string;
     script: { text: string; pause: number }[]; // pause in ms
 }
+
+export type UserFocus = 'addiction' | 'depression' | 'grief';
+
+export const USER_FOCUS_OPTIONS: Record<UserFocus, string> = {
+  addiction: 'Superar una Adicción',
+  depression: 'Gestionar Depresión/Ansiedad',
+  grief: 'Sanar una Pérdida',
+};

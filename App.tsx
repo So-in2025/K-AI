@@ -7,21 +7,26 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
+import { OnboardingModal } from './components/OnboardingModal';
 
 const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
 const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
 const JOURNAL_STORAGE_KEY = 'journalEntry';
 const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
 const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
+const USER_FOCUS_STORAGE_KEY = 'userFocus';
 
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('home');
+  
+  const [userFocus, setUserFocus] = useState<UserFocus[]>([]);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
   const [cravings, setCravings] = useState<ICraving[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -43,6 +48,24 @@ const App: React.FC = () => {
     } else {
       setIsApiKeyModalOpen(true);
     }
+
+     try {
+        const storedFocus = localStorage.getItem(USER_FOCUS_STORAGE_KEY);
+        if (storedFocus) {
+            const parsedFocus = JSON.parse(storedFocus);
+            if (Array.isArray(parsedFocus) && parsedFocus.length > 0) {
+                 setUserFocus(parsedFocus);
+            } else {
+                 setIsOnboardingOpen(true);
+            }
+        } else {
+            setIsOnboardingOpen(true);
+        }
+    } catch(e) {
+        console.error("Failed to read user focus", e);
+        setIsOnboardingOpen(true);
+    }
+
     ttsService.init();
     updateLastInteraction();
   }, [updateLastInteraction]);
@@ -61,11 +84,13 @@ const App: React.FC = () => {
       return false;
     };
 
-    const milestones = [7, 14, 30, 60, 90, 180, 365];
-    if (milestones.includes(daysSober)) {
-        if (checkProactiveIntervention(`milestone_${daysSober}`, true,
-        `¡Felicidades por alcanzar ${daysSober} días! Este es un logro increíble y un testimonio de tu fuerza. Estoy muy orgulloso de ti. Sigamos construyendo sobre esta energía.`)) {
-            return;
+    if (userFocus.includes('addiction')) {
+        const milestones = [7, 14, 30, 60, 90, 180, 365];
+        if (milestones.includes(daysSober)) {
+            if (checkProactiveIntervention(`milestone_${daysSober}`, true,
+            `¡Felicidades por alcanzar ${daysSober} días! Este es un logro increíble y un testimonio de tu fuerza. Estoy muy orgulloso de ti. Sigamos construyendo sobre esta energía.`)) {
+                return;
+            }
         }
     }
     
@@ -78,7 +103,7 @@ const App: React.FC = () => {
       }
     }
 
-  }, [cravings, daysSober]);
+  }, [cravings, daysSober, userFocus]);
 
 
   const calculateDaysSober = useCallback((start: Date) => {
@@ -113,6 +138,11 @@ const App: React.FC = () => {
 
   }, [calculateDaysSober]);
 
+  const handleSaveFocus = (focuses: UserFocus[]) => {
+      setUserFocus(focuses);
+      localStorage.setItem(USER_FOCUS_STORAGE_KEY, JSON.stringify(focuses));
+      setIsOnboardingOpen(false);
+  };
 
   const handleSaveApiKey = (key: string, remember: boolean) => {
     const storage = remember ? localStorage : sessionStorage;
@@ -147,7 +177,7 @@ const App: React.FC = () => {
     localStorage.setItem(PROGRESS_STORAGE_KEY, now.toISOString());
     setStartDate(now);
     setDaysSober(0);
-    handleNewConversationTurn({ role: 'user', text: '[ACCIÓN DEL USUARIO] Acabo de empezar mi contador de recuperación hoy.' });
+    handleNewConversationTurn({ role: 'user', text: '[ACCIÓN DEL USUARIO] Acabo de empezar mi contador de progreso hoy.' });
   };
 
   const handleResetProgress = () => {
@@ -176,8 +206,9 @@ const App: React.FC = () => {
     ttsService.speak(`Creando tu meta ${type === 'daily' ? 'diaria' : type === 'weekly' ? 'semanal' : 'mensual'}...`);
     
     const prompt = `
-        Actúa como un coach de recuperación. Basado en los siguientes datos de un usuario, crea una meta ${type} específica, medible, alcanzable, relevante y con un plazo determinado (SMART).
-        - Días sobrio: ${daysSober}
+        Actúa como un coach de bienestar. Basado en los siguientes datos de un usuario, crea una meta ${type} específica, medible, alcanzable, relevante y con un plazo determinado (SMART).
+        - Enfoque del usuario: ${userFocus.join(', ')}
+        - Días de progreso: ${daysSober}
         - Antojos recientes: ${cravings.slice(0, 3).map(c => `Intensidad ${c.intensity} detonado por ${c.triggers.join(', ')}`).join('; ') || 'Ninguno'}
         - Diario reciente: "${journalEntry.substring(0, 100)}..."
 
@@ -222,6 +253,10 @@ const App: React.FC = () => {
         </div>
     );
   }
+  
+  if (isOnboardingOpen) {
+      return <OnboardingModal onSave={handleSaveFocus} />;
+  }
 
   const renderView = () => {
     switch(activeView) {
@@ -232,6 +267,7 @@ const App: React.FC = () => {
                   onStartDate={handleStartDate}
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
+                  userFocus={userFocus}
                 />;
       case 'kai':
         return <KaiView 
@@ -242,6 +278,7 @@ const App: React.FC = () => {
                   conversation={conversation}
                   onNewTurn={handleNewConversationTurn}
                   goals={goals}
+                  userFocus={userFocus}
                 />;
       case 'tools':
         return <ToolsView
@@ -260,6 +297,7 @@ const App: React.FC = () => {
                   journalEntry={journalEntry}
                   wellnessLog={wellnessLog}
                   daysSober={daysSober}
+                  userFocus={userFocus}
                 />;
       default:
         return <HomeView 
@@ -268,6 +306,7 @@ const App: React.FC = () => {
                   onStartDate={handleStartDate}
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
+                  userFocus={userFocus}
                 />;
     }
   }
@@ -275,10 +314,10 @@ const App: React.FC = () => {
   return (
     <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
-      <Header onSettingsClick={handleOpenApiKeyModal} />
+      <Header onSettingsClick={handleOpenApiKeyModal} userFocus={userFocus} />
       
       <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-28">
-        <SOSCard />
+        {userFocus.includes('addiction') && <SOSCard />}
         <div className="mt-6 h-full">
           {renderView()}
         </div>

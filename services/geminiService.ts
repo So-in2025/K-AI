@@ -4,7 +4,7 @@ export const getApiKey = (): string | null => {
     return localStorage.getItem('geminiApiKey') || sessionStorage.getItem('geminiApiKey');
 };
 
-export const getGeminiResponse = async (prompt: string): Promise<string> => {
+export const getGeminiResponse = async (prompt: string, systemInstruction?: string): Promise<string> => {
     const apiKey = getApiKey();
     if (!apiKey) {
         return "Error: La API Key de Gemini no ha sido configurada. Por favor, configúrala en los ajustes.";
@@ -16,6 +16,9 @@ export const getGeminiResponse = async (prompt: string): Promise<string> => {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
+            config: {
+                ...(systemInstruction && { systemInstruction }),
+            }
         });
         return response.text;
     } catch (error) {

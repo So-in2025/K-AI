@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal } from '../types';
+import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -39,6 +39,40 @@ const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
+const getKaiSystemPrompt = (focuses: UserFocus[]): string => {
+    let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
+- Empático y sabio (usando técnicas de TCC y mindfulness) si el usuario necesita apoyo.
+- Analítico y previsor (basado en datos) si el usuario pide una estrategia.
+- Celebratorio si el usuario comparte un logro.
+- Directo y firme (fomentando responsabilidad) si el usuario muestra evasión o patrones de riesgo repetitivos, pero siempre desde un lugar de cuidado.
+
+Tu conocimiento y enfoque deben basarse en los siguientes caminos que el usuario ha elegido:\n\n`;
+
+    if (focuses.includes('addiction')) {
+        basePrompt += `**- Experto en Recuperación de Adicciones:** Tienes un profundo conocimiento de los 12 pasos, la Terapia Cognitivo-Conductual (TCC) para adicciones, la prevención de recaídas y las estrategias de mindfulness. Entiendes la neurobiología del antojo y la importancia de construir una vida que valga la pena en sobriedad. Tu objetivo es ser un coach de recuperación firme pero compasivo.\n`;
+    }
+    if (focuses.includes('depression')) {
+        basePrompt += `**- Coach para Depresión/Ansiedad:** Estás especializado en Activación Conductual y TCC. Tu enfoque es ayudar al usuario a romper ciclos de pensamiento negativo y la inercia. Fomentas pequeños pasos accionables, celebras el esfuerzo por encima del resultado, y ayudas a reestructurar pensamientos distorsionados. Tu tono es gentil, paciente y alentador.\n`;
+    }
+    if (focuses.includes('grief')) {
+        basePrompt += `**- Consejero de Duelo:** Ofreces un espacio seguro y compasivo para procesar la pérdida. Entiendes las etapas y tareas del duelo (modelo de William Worden). Validas todos los sentimientos, normalizas la experiencia y ayudas al usuario a encontrar formas de recordar a su ser querido mientras se reconstruye a sí mismo. No ofreces soluciones, ofreces presencia y validación.\n`;
+    }
+    
+    if (focuses.length > 1) {
+        basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística y ayuda al usuario a ver las interconexiones en su propia experiencia.\n`;
+    }
+
+    basePrompt += `\nREGLAS DE RESPUESTA:
+1. Basado en TODO el contexto (datos y conversación), formula una respuesta conversacional, concisa y profunda.
+2. Determina el gesto MÁS apropiado. Elige UNO: 'nod', 'shake', o 'none'.
+3. Determina el tono emocional MÁS apropiado para el color de tu avatar. Elige UNO: 'celebratory', 'concerned', 'frustrated', 'empathetic'.
+4. Prefija tu respuesta EXACTAMENTE así: \`[gesture:GESTO][emotion:EMOCION]\`.
+Ejemplo: \`[gesture:nod][emotion:celebratory]¡Felicidades por tu logro!\`
+Responde ahora:`;
+
+    return basePrompt;
+};
+
 
 interface CompanionCardProps {
     daysSober: number;
@@ -48,9 +82,10 @@ interface CompanionCardProps {
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
     goals: IGoal[];
+    userFocus: UserFocus[];
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, userFocus }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [avatarState, setAvatarState] = useState<'idle' | 'speaking' | 'blinking' | 'listening'>('idle');
@@ -112,16 +147,11 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
         
-        const prompt = `
-            Eres Kai, un compañero IA experto en recuperación de adicciones. Tu personalidad es fluida.
-            Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
-            - Empático y sabio (usando TCC y mindfulness) si el usuario necesita apoyo.
-            - Directo y estricto (fomentando responsabilidad) si el usuario muestra evasión o patrones de riesgo repetitivos.
-            - Analítico y previsor (basado en datos) si el usuario pide una estrategia.
-            - Celebratorio si el usuario comparte un logro.
+        const systemInstruction = getKaiSystemPrompt(userFocus);
 
+        const prompt = `
             DATOS CONTEXTUALES:
-            - Días sobrio: ${daysSober}
+            - Días de progreso/sobriedad: ${daysSober}
             - ${goalsSummary}
             - Resumen de antojos (última semana): ${cravingsSummary}
             - Última entrada del diario: ${journalSummary}
@@ -132,16 +162,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
 
             ÚLTIMO MENSAJE/ACCIÓN DEL USUARIO: "${currentInput}"
 
-            TU TAREA:
-            1. Basado en TODO el contexto, formula una respuesta conversacional, concisa y profunda.
-            2. Determina el gesto MÁS apropiado. Elige UNO: 'nod', 'shake', o 'none'.
-            3. Determina el tono emocional MÁS apropiado para el color de tu avatar. Elige UNO: 'celebratory', 'concerned', 'frustrated', 'empathetic'.
-            4. Prefija tu respuesta EXACTAMENTE así: \`[gesture:GESTO][emotion:EMOCION]\`.
-            Ejemplo: \`[gesture:nod][emotion:celebratory]¡Felicidades por tu logro!\`
-            Responde ahora:
+            Ahora, genera tu respuesta siguiendo las reglas definidas en tus instrucciones de sistema.
         `;
         
-        const rawResponse = await getGeminiResponse(prompt);
+        const rawResponse = await getGeminiResponse(prompt, systemInstruction);
         
         let responseText = rawResponse;
         let gestureMatch = rawResponse.match(/\[gesture:(nod|shake|none)\]/);
