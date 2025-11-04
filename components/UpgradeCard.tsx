@@ -28,7 +28,8 @@ const CloseIcon = () => (
 const PaymentModal: React.FC<{ activationCode: string; onClose: () => void; }> = ({ activationCode, onClose }) => {
     const kofiUser = 'soin520530';
     const kofiMessage = `Quiero activar KIA Plus. Mi código de activación es: ${activationCode}`;
-    const embedUrl = `https://ko-fi.com/${kofiUser}/embed?message=${encodeURIComponent(kofiMessage)}`;
+    // CORRECTED: Using the official Ko-fi widget embed URL to prevent 404 errors.
+    const embedUrl = `https://ko-fi.com/${kofiUser}/?hidefeed=true&widget=true&embed=true&preview=true&message=${encodeURIComponent(kofiMessage)}`;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -64,6 +65,7 @@ export const UpgradeCard: React.FC = () => {
 
     useEffect(() => {
         const checkMobile = () => {
+            // Using a threshold of 768px to determine mobile view
             setIsMobile(window.innerWidth < 768);
         };
         checkMobile();
