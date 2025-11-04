@@ -311,7 +311,16 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             
             <div className="flex flex-col w-full flex-grow min-h-0">
                 <div className="flex-grow bg-slate-900 rounded-lg p-4 overflow-y-auto mb-4 border border-slate-700/50">
-                    {conversation.length === 0 ? (<div className="h-full flex items-center justify-center text-slate-400 text-center"><p>Hola, soy Kai. Estoy aquí para escucharte. <br/> Comparte cómo te sientes o registra una actividad.</p></div>) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
+                    {conversation.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-slate-400 text-center p-4">
+                            <p>
+                                Hola, soy Kai. Bienvenido a KIA, tu espacio seguro basado en tres pilares: <br/>
+                                <span className="font-semibold text-teal-300">Kindness</span> (Amabilidad), <span className="font-semibold text-teal-300">Introspection</span> (Introspección) y <span className="font-semibold text-teal-300">Awareness</span> (Conciencia).
+                                <br/><br/>
+                                Estoy aquí para escucharte sin juicios. ¿Cómo te sientes hoy?
+                            </p>
+                        </div>
+                    ) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
                     <div ref={chatEndRef} />
                 </div>
                 <div className="relative flex items-center">

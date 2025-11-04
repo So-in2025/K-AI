@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { IGuardianAnalysis } from '../types';
+import { GuardianAnalysisResult, IGuardianAnalysis } from '../types';
+import { UpgradeCard } from './UpgradeCard';
 
 const ShieldIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 22l9-1.056A12.02 12.02 0 0017.618 7.984z" />
     </svg>
 );
 
 const CloseIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
@@ -40,7 +41,7 @@ const ConsentModal: React.FC<{ onAccept: () => void; onDecline: () => void; }> =
 interface GuardianModeCardProps {
     isActive: boolean;
     isLoading: boolean;
-    analysis: IGuardianAnalysis | null;
+    analysis: GuardianAnalysisResult | null;
     onStart: () => void;
     onStop: () => void;
 }
@@ -49,7 +50,7 @@ const GUARDIAN_CONSENT_KEY = 'guardianConsentGiven';
 
 export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ isActive, isLoading, analysis, onStart, onStop }) => {
     const [showConsent, setShowConsent] = useState(false);
-    const [localAnalysis, setLocalAnalysis] = useState<IGuardianAnalysis | null>(null);
+    const [localAnalysis, setLocalAnalysis] = useState<GuardianAnalysisResult | null>(null);
 
     useEffect(() => {
         setLocalAnalysis(analysis);
@@ -89,7 +90,7 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ isActive, is
                 <div className="relative h-16 w-16">
                     <div className="absolute inset-0 bg-red-500 rounded-full animate-ping"></div>
                     <div className="relative h-16 w-16 bg-red-600 rounded-full flex items-center justify-center">
-                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                     </div>
                 </div>
             </div>
@@ -112,12 +113,28 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ isActive, is
     const renderAnalysisView = () => {
         if (!localAnalysis) return null;
         
+        if ('isLocked' in localAnalysis && localAnalysis.isLocked) {
+             return (
+                <div>
+                    <p className="text-slate-400 mb-4 text-sm text-center">Tu informe de análisis conductual está listo. Desbloquéalo para obtener una visión profunda de tus patrones y detonantes.</p>
+                    <UpgradeCard />
+                     <button 
+                        onClick={() => setLocalAnalysis(null)}
+                        className="w-full mt-4 text-slate-400 text-xs hover:underline"
+                     >
+                        Quizás más tarde
+                     </button>
+                </div>
+            );
+        }
+
+        const analysisData = localAnalysis as IGuardianAnalysis;
         const analysisItems = [
-            { title: "Detonante Principal", content: localAnalysis.trigger },
-            { title: "Presión Social Identificada", content: localAnalysis.socialPressure },
-            { title: "Justificaciones o Pensamientos Permisivos", content: localAnalysis.justification },
-            { title: "Punto de Inflexión", content: localAnalysis.turningPoint },
-            { title: "Estrategia Sugerida para el Futuro", content: localAnalysis.escapeStrategy },
+            { title: "Detonante Principal", content: analysisData.trigger },
+            { title: "Presión Social Identificada", content: analysisData.socialPressure },
+            { title: "Justificaciones o Pensamientos Permisivos", content: analysisData.justification },
+            { title: "Punto de Inflexión", content: analysisData.turningPoint },
+            { title: "Estrategia Sugerida para el Futuro", content: analysisData.escapeStrategy },
         ];
 
         return (

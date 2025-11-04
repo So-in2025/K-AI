@@ -8,7 +8,8 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, IGuardianAnalysis } from './types';
+// Fix: Import IGuardianAnalysis to resolve 'Cannot find name' error.
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   
   const [userFocus, setUserFocus] = useState<UserFocus[]>([]);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [isSubscribed, setIsSubscribed] = useState(false); // Monetization state
 
   const [cravings, setCravings] = useState<ICraving[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -52,7 +54,7 @@ const App: React.FC = () => {
   // Guardian Mode State
   const [isGuardianActive, setIsGuardianActive] = useState(false);
   const [guardianTranscript, setGuardianTranscript] = useState('');
-  const [guardianAnalysis, setGuardianAnalysis] = useState<IGuardianAnalysis | null>(null);
+  const [guardianAnalysis, setGuardianAnalysis] = useState<GuardianAnalysisResult | null>(null);
   const [isGuardianLoading, setIsGuardianLoading] = useState(false);
   const [sessionPromise, setSessionPromise] = useState<Promise<any> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -279,7 +281,6 @@ const App: React.FC = () => {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       
       const newSessionPromise = ai.live.connect({
-        // FIX: Added the required 'model' property for the Live API connection.
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: { inputAudioTranscription: {} },
         callbacks: {
@@ -364,6 +365,14 @@ const App: React.FC = () => {
       setGuardianTranscript('');
       setIsGuardianLoading(false);
       return;
+    }
+    
+    // Monetization Check
+    if (!isSubscribed) {
+        setGuardianAnalysis({ isLocked: true });
+        setGuardianTranscript('');
+        setIsGuardianLoading(false);
+        return;
     }
 
     const prompt = `
@@ -466,6 +475,7 @@ const App: React.FC = () => {
                   wellnessLog={wellnessLog}
                   daysSober={daysSober}
                   userFocus={userFocus}
+                  isSubscribed={isSubscribed}
                 />;
       default:
         return <HomeView 

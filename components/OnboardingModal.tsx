@@ -33,9 +33,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onSave }) => {
                 <div className="flex flex-col items-center text-center mb-4">
                     <KiaIcon className="h-12 w-12 text-teal-400" />
                     <h2 className="text-3xl font-bold text-slate-100 mt-2 tracking-wider">Bienvenido a KIA</h2>
-                    <p className="text-slate-400 mt-2">Para personalizar tu experiencia, por favor, cuéntanos en qué te gustaría enfocarte. Puedes elegir más de uno.</p>
+                     <div className="mt-2 text-center">
+                        <p className="text-slate-300">Un espacio de apoyo basado en tres pilares:</p>
+                        <p className="font-semibold text-teal-300">Kindness (Amabilidad), Introspection (Introspección), y Awareness (Conciencia).</p>
+                    </div>
                 </div>
                 
+                <p className="text-slate-400 text-center my-4">Para personalizar tu experiencia, cuéntanos en qué te gustaría enfocarte. Puedes elegir más de uno.</p>
+
                 <div className="space-y-3 my-6">
                     {(Object.keys(USER_FOCUS_OPTIONS) as UserFocus[]).map(focus => (
                         <label key={focus} className="flex items-center p-4 bg-slate-700 rounded-lg cursor-pointer border-2 border-transparent hover:border-teal-500 transition-colors">

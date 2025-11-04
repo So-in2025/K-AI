@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
 import { BreathingExercisesCard } from '../components/BreathingExercisesCard';
-import { IWellnessActivity, UserFocus, IGuardianAnalysis } from '../types';
+// Fix: Import GuardianAnalysisResult to match the updated prop type.
+import { IWellnessActivity, UserFocus, GuardianAnalysisResult } from '../types';
 import { GuardianModeCard } from '../components/GuardianModeCard';
 
 interface HomeViewProps {
@@ -13,7 +15,8 @@ interface HomeViewProps {
     onLogWellnessActivity: (activity: IWellnessActivity) => void;
     userFocus: UserFocus[];
     isGuardianActive: boolean;
-    guardianAnalysis: IGuardianAnalysis | null;
+    // Fix: Update prop type to match the state type in App.tsx.
+    guardianAnalysis: GuardianAnalysisResult | null;
     isGuardianLoading: boolean;
     onStartGuardian: () => void;
     onStopGuardian: () => void;

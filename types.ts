@@ -82,3 +82,5 @@ export interface IGuardianAnalysis {
   turningPoint: string;
   escapeStrategy: string;
 }
+
+export type GuardianAnalysisResult = IGuardianAnalysis | { isLocked: true };
