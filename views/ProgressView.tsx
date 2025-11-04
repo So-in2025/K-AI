@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
@@ -17,20 +18,28 @@ interface ProgressViewProps {
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
     const { isSubscribed, onboardingData } = props;
     return (
-       <div className="space-y-6">
-            {!isSubscribed && <UpgradeCard />}
-
-            {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} isLocked={!isSubscribed} />}
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {!isSubscribed && (
+                <div className="lg:col-span-3">
+                    <UpgradeCard />
+                </div>
+            )}
             
-            <WeeklyAnalysisCard 
-                cravings={props.cravings}
-                journalEntry={props.journalEntry}
-                wellnessLog={props.wellnessLog}
-                daysSober={props.daysSober}
-                userFocus={onboardingData.focuses}
-                isLocked={!isSubscribed}
-            />
-            <ResourcesCard />
+            <div className="lg:col-span-2 space-y-6">
+                 <WeeklyAnalysisCard 
+                    cravings={props.cravings}
+                    journalEntry={props.journalEntry}
+                    wellnessLog={props.wellnessLog}
+                    daysSober={props.daysSober}
+                    userFocus={onboardingData.focuses}
+                    isLocked={!isSubscribed}
+                />
+            </div>
+
+            <div className="space-y-6">
+                {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} isLocked={!isSubscribed} />}
+                <ResourcesCard />
+            </div>
        </div>
     );
 };

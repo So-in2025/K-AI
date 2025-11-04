@@ -26,14 +26,16 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = (props) => {
     return (
-        <div className="space-y-6">
-            <ProgressCard
-                startDate={props.startDate}
-                daysSober={props.daysSober}
-                onStartDate={props.onStartDate}
-                onReset={props.onReset}
-                userFocus={props.onboardingData.focuses}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="lg:col-span-2">
+                <ProgressCard
+                    startDate={props.startDate}
+                    daysSober={props.daysSober}
+                    onStartDate={props.onStartDate}
+                    onReset={props.onReset}
+                    userFocus={props.onboardingData.focuses}
+                />
+            </div>
             {props.onboardingData.focuses.includes('addiction') && (
                  <GuardianModeCard 
                     status={props.guardianState.status}
@@ -44,7 +46,9 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                  />
             )}
             <DailyQuoteCard />
-            <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
+            <div className="lg:col-span-2">
+                <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
+            </div>
         </div>
     );
 };

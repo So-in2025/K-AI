@@ -24,16 +24,20 @@ interface ToolsViewProps {
 
 export const ToolsView: React.FC<ToolsViewProps> = (props) => {
     return (
-       <div className="space-y-6">
-            <GoalsCard goals={props.goals} onGenerateGoal={props.onGenerateGoal} isLoading={props.isGoalsLoading} />
-            <RemindersCard 
-                reminders={props.reminders}
-                onAddReminder={props.onAddReminder}
-                onDeleteReminder={props.onDeleteReminder}
-            />
-            <CravingTrackerCard cravings={props.cravings} onLogCraving={props.onLogCraving} />
-            <JournalCard entry={props.journalEntry} onEntryChange={props.onJournalChange} onSave={props.onJournalSave} />
-            <AffirmationGeneratorCard />
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="space-y-6">
+                <JournalCard entry={props.journalEntry} onEntryChange={props.onJournalChange} onSave={props.onJournalSave} />
+                <AffirmationGeneratorCard />
+            </div>
+            <div className="space-y-6">
+                <CravingTrackerCard cravings={props.cravings} onLogCraving={props.onLogCraving} />
+                <GoalsCard goals={props.goals} onGenerateGoal={props.onGenerateGoal} isLoading={props.isGoalsLoading} />
+                <RemindersCard 
+                    reminders={props.reminders}
+                    onAddReminder={props.onAddReminder}
+                    onDeleteReminder={props.onDeleteReminder}
+                />
+            </div>
        </div>
     );
 };
