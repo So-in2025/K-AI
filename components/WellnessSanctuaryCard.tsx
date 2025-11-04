@@ -28,6 +28,24 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     
     const intervalRef = useRef<number | null>(null);
     const stepTimeoutRef = useRef<number | null>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Scroll inteligente: se activa cuando se expande una sección
+        if (view !== 'menu' && cardRef.current) {
+            // Se usa un timeout para esperar a que el DOM se actualice con la nueva altura del contenido
+            setTimeout(() => {
+                if (!cardRef.current) return;
+                const cardRect = cardRef.current.getBoundingClientRect();
+                // Si la parte inferior de la tarjeta está cerca del borde de la ventana, hacemos scroll
+                const isNearBottom = cardRect.bottom > window.innerHeight - 150; 
+
+                if (isNearBottom) {
+                    cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 100); // Un pequeño delay es suficiente para que React renderice
+        }
+    }, [view]);
 
     const resetState = (completed = false, activity?: IWellnessActivity) => {
         setIsActive(false);
@@ -246,7 +264,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div ref={cardRef} className="bg-slate-800 p-6 rounded-2xl shadow-lg">
              <style>{`
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
                 .aspect-h-9 { height: 0; }

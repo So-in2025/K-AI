@@ -40,7 +40,7 @@ const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const getKaiSystemPrompt = (onboardingData: OnboardingData): string => {
+const getKaiSystemPrompt = (onboardingData: OnboardingData, kaiMemory: string, isSubscribed: boolean): string => {
     let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
 - Empático y sabio (usando técnicas de TCC y mindfulness) si el usuario necesita apoyo.
 - Analítico y previsor (basado en datos) si el usuario pide una estrategia.
@@ -65,6 +65,10 @@ El usuario te ha proporcionado la siguiente información inicial sobre sí mismo
         basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística.\n`;
     }
 
+    if (isSubscribed && kaiMemory) {
+        basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
+    }
+
     basePrompt += `\nREGLAS DE RESPUESTA:
 1. Basado en TODO el contexto (datos y conversación), formula una respuesta conversacional, concisa y profunda.
 2. Determina el gesto MÁS apropiado. Elige UNO: 'nod', 'shake', o 'none'.
@@ -86,9 +90,11 @@ interface CompanionCardProps {
     onNewTurn: (turn: IConversationTurn) => void;
     goals: IGoal[];
     onboardingData: OnboardingData;
+    kaiMemory: string;
+    isSubscribed: boolean;
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -184,7 +190,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
         
-        const systemInstruction = getKaiSystemPrompt(onboardingData);
+        const systemInstruction = getKaiSystemPrompt(onboardingData, kaiMemory, isSubscribed);
 
         const prompt = `
             DATOS CONTEXTUALES:

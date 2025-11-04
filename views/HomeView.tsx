@@ -26,29 +26,32 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = (props) => {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="lg:col-span-2">
-                <ProgressCard
-                    startDate={props.startDate}
-                    daysSober={props.daysSober}
-                    onStartDate={props.onStartDate}
-                    onReset={props.onReset}
-                    userFocus={props.onboardingData.focuses}
-                />
+        <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="lg:col-span-2">
+                    <ProgressCard
+                        startDate={props.startDate}
+                        daysSober={props.daysSober}
+                        onStartDate={props.onStartDate}
+                        onReset={props.onReset}
+                        userFocus={props.onboardingData.focuses}
+                    />
+                </div>
+                {props.onboardingData.focuses.includes('addiction') && (
+                     <GuardianModeCard 
+                        status={props.guardianState.status}
+                        analysis={props.guardianState.analysis}
+                        error={props.guardianState.error}
+                        onStart={props.onStartGuardian}
+                        onStop={props.onStopGuardian}
+                     />
+                )}
+                <DailyQuoteCard />
+                <div className="lg:col-span-2">
+                    <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
+                </div>
             </div>
-            {props.onboardingData.focuses.includes('addiction') && (
-                 <GuardianModeCard 
-                    status={props.guardianState.status}
-                    analysis={props.guardianState.analysis}
-                    error={props.guardianState.error}
-                    onStart={props.onStartGuardian}
-                    onStop={props.onStopGuardian}
-                 />
-            )}
-            <DailyQuoteCard />
-            <div className="lg:col-span-2">
-                <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
-            </div>
-        </div>
+            <div className="h-24" />
+        </>
     );
 };

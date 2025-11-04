@@ -11,6 +11,9 @@ interface KaiViewProps {
     onNewTurn: (turn: IConversationTurn) => void;
     goals: IGoal[];
     onboardingData: OnboardingData;
+    // FIX: Add missing properties to accept them from App.tsx and pass them down to CompanionCard.
+    kaiMemory: string;
+    isSubscribed: boolean;
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {

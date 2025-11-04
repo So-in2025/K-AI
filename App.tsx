@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -24,6 +24,10 @@ const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
 const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
 const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
 const ACTIVATION_CODE_KEY = 'activationCode';
+const GARDEN_GROWTH_POINTS_KEY = 'gardenGrowthPoints';
+const THOUGHT_LAB_STORAGE_KEY = 'thoughtLabEntries';
+const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
+const KAI_MEMORY_KEY = 'kaiMemory';
 
 
 // Helper to encode audio data for Gemini Live API
@@ -103,6 +107,13 @@ const App: React.FC = () => {
   const [isGoalsLoading, setIsGoalsLoading] = useState(false);
   const [wellnessLog, setWellnessLog] = useState<IWellnessActivity[]>([]);
   const [reminders, setReminders] = useState<IReminder[]>([]);
+  
+  // NEW FEATURES STATE
+  const [gardenGrowthPoints, setGardenGrowthPoints] = useState<number>(0);
+  const [thoughtLabEntries, setThoughtLabEntries] = useState<IThoughtLabEntry[]>([]);
+  const [trustCircleConfig, setTrustCircleConfig] = useState<ITrustCircleConfig | null>(null);
+  const [kaiMemory, setKaiMemory] = useState<string>('');
+
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
@@ -114,6 +125,14 @@ const App: React.FC = () => {
 
   const updateLastInteraction = useCallback(() => {
     localStorage.setItem(LAST_INTERACTION_KEY, new Date().toISOString());
+  }, []);
+
+  const updateGardenGrowth = useCallback((points: number) => {
+    setGardenGrowthPoints(prev => {
+        const newPoints = prev + points;
+        localStorage.setItem(GARDEN_GROWTH_POINTS_KEY, String(newPoints));
+        return newPoints;
+    });
   }, []);
 
   useEffect(() => {
@@ -225,7 +244,12 @@ const App: React.FC = () => {
     const diffTime = Math.abs(now.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     setDaysSober(diffDays);
-  }, []);
+    // Add growth points for each day of progress
+    const pointsToAdd = diffDays - gardenGrowthPoints;
+    if (pointsToAdd > 0) {
+        updateGardenGrowth(pointsToAdd);
+    }
+  }, [updateGardenGrowth, gardenGrowthPoints]);
 
   useEffect(() => {
     try {
@@ -252,6 +276,23 @@ const App: React.FC = () => {
         const storedReminders = localStorage.getItem(REMINDERS_STORAGE_KEY);
         if (storedReminders) setReminders(JSON.parse(storedReminders));
     } catch (error) { console.error("Failed to parse reminders from localStorage", error); }
+
+    // Load new feature data
+    const storedPoints = localStorage.getItem(GARDEN_GROWTH_POINTS_KEY);
+    if (storedPoints) setGardenGrowthPoints(parseInt(storedPoints, 10));
+
+    try {
+        const storedEntries = localStorage.getItem(THOUGHT_LAB_STORAGE_KEY);
+        if (storedEntries) setThoughtLabEntries(JSON.parse(storedEntries));
+    } catch(e) { console.error("Failed to parse thought lab entries", e); }
+
+    try {
+        const storedConfig = localStorage.getItem(TRUST_CIRCLE_STORAGE_KEY);
+        if (storedConfig) setTrustCircleConfig(JSON.parse(storedConfig));
+    } catch(e) { console.error("Failed to parse trust circle config", e); }
+    
+    const storedMemory = localStorage.getItem(KAI_MEMORY_KEY);
+    if(storedMemory) setKaiMemory(storedMemory);
 
 
   }, [calculateDaysSober]);
@@ -297,13 +338,49 @@ const App: React.FC = () => {
 
   const handleOpenApiKeyModal = () => setIsApiKeyModalOpen(true);
   
+  const updateKaiMemory = useCallback(async (conversationHistory: IConversationTurn[], currentMemory: string) => {
+    if (!isSubscribed) return; // Only for Plus users
+
+    const recentConversation = conversationHistory.slice(-10).map(t => `${t.role}: ${t.text}`).join('\n');
+    const prompt = `
+        Eres un sistema de memoria. Tu tarea es analizar la memoria existente y la conversación reciente de un usuario, y luego generar una versión actualizada y concisa de la memoria. La memoria debe ser un resumen de los puntos clave, patrones, logros y desafíos del usuario, en no más de 150 palabras.
+        
+        MEMORIA EXISTENTE:
+        "${currentMemory || 'No hay memoria previa.'}"
+
+        CONVERSACIÓN RECIENTE (últimos 10 turnos):
+        "${recentConversation}"
+
+        Extrae los insights más importantes de la conversación reciente e intégralos en la memoria existente. Elimina detalles obsoletos o irrelevantes. La nueva memoria debe ser un párrafo coherente.
+
+        NUEVA MEMORIA ACTUALIZADA:
+    `;
+
+    try {
+        const newMemory = await getGeminiResponse(prompt);
+        setKaiMemory(newMemory);
+        localStorage.setItem(KAI_MEMORY_KEY, newMemory);
+        console.log("Kai's memory updated.");
+    } catch(e) {
+        console.error("Failed to update Kai's memory:", e);
+    }
+
+  }, [isSubscribed]);
+  
   const handleNewConversationTurn = useCallback((turn: IConversationTurn) => {
-    setConversation(prev => [...prev, turn]);
+    setConversation(prev => {
+        const newConversation = [...prev, turn];
+        // After 5 turns, update memory
+        if (newConversation.length % 5 === 0 && turn.role === 'model') {
+            updateKaiMemory(newConversation, kaiMemory);
+        }
+        return newConversation;
+    });
     if(turn.role === 'user') {
         updateLastInteraction();
         setActiveView('kai');
     }
-  }, [updateLastInteraction]);
+  }, [updateLastInteraction, updateKaiMemory, kaiMemory]);
   
   const handleLogCraving = (cravingData: ICraving) => {
     const updatedCravings = [cravingData, ...cravings];
@@ -321,6 +398,8 @@ const App: React.FC = () => {
     localStorage.setItem(PROGRESS_STORAGE_KEY, now.toISOString());
     setStartDate(now);
     setDaysSober(0);
+    setGardenGrowthPoints(0); // Reset garden on new start
+    localStorage.setItem(GARDEN_GROWTH_POINTS_KEY, '0');
     handleNewConversationTurn({ role: 'user', text: '[ACCIÓN DEL USUARIO] Acabo de empezar mi contador de progreso hoy.' });
   };
 
@@ -329,6 +408,8 @@ const App: React.FC = () => {
         localStorage.removeItem(PROGRESS_STORAGE_KEY);
         setStartDate(null);
         setDaysSober(0);
+        setGardenGrowthPoints(0);
+        localStorage.setItem(GARDEN_GROWTH_POINTS_KEY, '0');
         handleNewConversationTurn({ role: 'user', text: '[ACCIÓN DEL USUARIO] Acabo de reiniciar mi progreso.' });
     }
   };
@@ -341,6 +422,7 @@ const App: React.FC = () => {
     const summary = `[ENTRADA DE DIARIO GUARDADA] "${journalEntry.substring(0, 100)}..."`;
     handleNewConversationTurn({ role: 'user', text: summary });
     ttsService.speak("Diario guardado. Reflexionar es un paso poderoso en tu camino.");
+    updateGardenGrowth(3); // Add points for journaling
   };
   
   const handleGenerateGoal = async (type: GoalType) => {
@@ -385,6 +467,7 @@ const App: React.FC = () => {
     const summary = `[ACCIÓN DEL USUARIO] Acabo de completar un ejercicio de ${activity.durationMinutes} minuto(s) de ${activity.exerciseName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
     ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
+    updateGardenGrowth(2); // Add points for wellness activity
     updateLastInteraction();
   };
   
@@ -413,7 +496,18 @@ const App: React.FC = () => {
     setReminders(updatedReminders);
     localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updatedReminders));
   };
-
+  
+  const handleAddThoughtLabEntry = (entry: IThoughtLabEntry) => {
+    const updatedEntries = [entry, ...thoughtLabEntries];
+    setThoughtLabEntries(updatedEntries);
+    localStorage.setItem(THOUGHT_LAB_STORAGE_KEY, JSON.stringify(updatedEntries));
+    updateGardenGrowth(5); // Add significant points for this deep work
+  };
+  
+  const handleUpdateTrustCircleConfig = (config: ITrustCircleConfig) => {
+    setTrustCircleConfig(config);
+    localStorage.setItem(TRUST_CIRCLE_STORAGE_KEY, JSON.stringify(config));
+  };
 
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
@@ -595,6 +689,8 @@ const App: React.FC = () => {
                   onNewTurn={handleNewConversationTurn}
                   goals={goals}
                   onboardingData={onboardingData}
+                  kaiMemory={kaiMemory}
+                  isSubscribed={isSubscribed}
                 />;
       case 'tools':
         return <ToolsView
@@ -609,6 +705,9 @@ const App: React.FC = () => {
                   reminders={reminders}
                   onAddReminder={handleAddReminder}
                   onDeleteReminder={handleDeleteReminder}
+                  thoughtLabEntries={thoughtLabEntries}
+                  onAddThoughtLabEntry={handleAddThoughtLabEntry}
+                  isSubscribed={isSubscribed}
                 />;
       case 'progress':
         return <ProgressView 
@@ -618,6 +717,9 @@ const App: React.FC = () => {
                   daysSober={daysSober}
                   onboardingData={onboardingData}
                   isSubscribed={isSubscribed}
+                  gardenGrowthPoints={gardenGrowthPoints}
+                  trustCircleConfig={trustCircleConfig}
+                  onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
                 />;
       default:
         return <HomeView 

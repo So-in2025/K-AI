@@ -114,3 +114,20 @@ export interface OnboardingData {
     // Open question
     mainChallenge: string;
 }
+
+// NEW TYPES FOR NEW FEATURES
+export interface IThoughtLabEntry {
+    id: string;
+    date: string; // ISO string
+    situation: string;
+    automaticThought: string;
+    kaiAnalysis: string;
+    alternativeThought: string;
+}
+
+export interface ITrustCircleConfig {
+    contactName: string;
+    contactEmail: string;
+    sendWeeklyReport: boolean;
+    sendCravingAlerts: boolean;
+}
