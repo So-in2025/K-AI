@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -20,7 +20,8 @@ const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
 const JOURNAL_STORAGE_KEY = 'journalEntry';
 const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
 const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
-const USER_FOCUS_STORAGE_KEY = 'userFocus';
+const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
+
 
 // Helper to encode audio data for Gemini Live API
 function encode(bytes: Uint8Array) {
@@ -86,7 +87,7 @@ const App: React.FC = () => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('home');
   
-  const [userFocus, setUserFocus] = useState<UserFocus[]>([]);
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isSubscribed, setIsSubscribed] = useState(false); // Monetization state
 
@@ -120,11 +121,11 @@ const App: React.FC = () => {
     }
 
      try {
-        const storedFocus = localStorage.getItem(USER_FOCUS_STORAGE_KEY);
-        if (storedFocus) {
-            const parsedFocus = JSON.parse(storedFocus);
-            if (Array.isArray(parsedFocus) && parsedFocus.length > 0) {
-                 setUserFocus(parsedFocus);
+        const storedData = localStorage.getItem(ONBOARDING_DATA_STORAGE_KEY);
+        if (storedData) {
+            const parsedData = JSON.parse(storedData);
+            if (parsedData && Array.isArray(parsedData.focuses) && parsedData.focuses.length > 0) {
+                 setOnboardingData(parsedData);
             } else {
                  setIsOnboardingOpen(true);
             }
@@ -132,7 +133,7 @@ const App: React.FC = () => {
             setIsOnboardingOpen(true);
         }
     } catch(e) {
-        console.error("Failed to read user focus", e);
+        console.error("Failed to read onboarding data", e);
         setIsOnboardingOpen(true);
     }
 
@@ -141,6 +142,8 @@ const App: React.FC = () => {
   }, [updateLastInteraction]);
   
   useEffect(() => {
+    if (!onboardingData) return;
+
     const now = new Date();
     
     const checkProactiveIntervention = (type: string, condition: boolean, message: string) => {
@@ -154,7 +157,7 @@ const App: React.FC = () => {
       return false;
     };
 
-    if (userFocus.includes('addiction')) {
+    if (onboardingData.focuses.includes('addiction')) {
         const milestones = [7, 14, 30, 60, 90, 180, 365];
         if (milestones.includes(daysSober)) {
             if (checkProactiveIntervention(`milestone_${daysSober}`, true,
@@ -173,7 +176,7 @@ const App: React.FC = () => {
       }
     }
 
-  }, [cravings, daysSober, userFocus]);
+  }, [cravings, daysSober, onboardingData]);
 
 
   const calculateDaysSober = useCallback((start: Date) => {
@@ -208,9 +211,9 @@ const App: React.FC = () => {
 
   }, [calculateDaysSober]);
 
-  const handleSaveFocus = (focuses: UserFocus[]) => {
-      setUserFocus(focuses);
-      localStorage.setItem(USER_FOCUS_STORAGE_KEY, JSON.stringify(focuses));
+  const handleSaveOnboarding = (data: OnboardingData) => {
+      setOnboardingData(data);
+      localStorage.setItem(ONBOARDING_DATA_STORAGE_KEY, JSON.stringify(data));
       setIsOnboardingOpen(false);
   };
 
@@ -270,12 +273,13 @@ const App: React.FC = () => {
   };
   
   const handleGenerateGoal = async (type: GoalType) => {
+    if (!onboardingData) return;
     setIsGoalsLoading(true);
     ttsService.speak(`Creando tu meta ${type === 'daily' ? 'diaria' : type === 'weekly' ? 'semanal' : 'mensual'}...`);
     
     const prompt = `
         Actúa como un coach de bienestar. Basado en los siguientes datos de un usuario, crea una meta ${type} específica, medible, alcanzable, relevante y con un plazo determinado (SMART).
-        - Enfoque del usuario: ${userFocus.join(', ')}
+        - Enfoque del usuario: ${onboardingData.focuses.join(', ')}
         - Días de progreso: ${daysSober}
         - Antojos recientes: ${cravings.slice(0, 3).map(c => `Intensidad ${c.intensity} detonado por ${c.triggers.join(', ')}`).join('; ') || 'Ninguno'}
         - Diario reciente: "${journalEntry.substring(0, 100)}..."
@@ -402,13 +406,13 @@ const App: React.FC = () => {
       sessionPromiseRef.current = null;
     }
     
-    dispatchGuardian({ type: 'START_ANALYSIS' });
-
     if (!guardianState.transcript.trim()) {
       dispatchGuardian({ type: 'RESET' });
       return;
     }
     
+    dispatchGuardian({ type: 'START_ANALYSIS' });
+
     if (!isSubscribed) {
         dispatchGuardian({ type: 'SET_ANALYSIS', payload: { isLocked: true } });
         return;
@@ -465,8 +469,8 @@ const App: React.FC = () => {
     );
   }
   
-  if (isOnboardingOpen) {
-      return <OnboardingModal onSave={handleSaveFocus} />;
+  if (isOnboardingOpen || !onboardingData) {
+      return <OnboardingModal onSave={handleSaveOnboarding} />;
   }
 
   const renderView = () => {
@@ -478,7 +482,7 @@ const App: React.FC = () => {
                   onStartDate={handleStartDate}
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
-                  userFocus={userFocus}
+                  onboardingData={onboardingData}
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
@@ -492,7 +496,7 @@ const App: React.FC = () => {
                   conversation={conversation}
                   onNewTurn={handleNewConversationTurn}
                   goals={goals}
-                  userFocus={userFocus}
+                  onboardingData={onboardingData}
                 />;
       case 'tools':
         return <ToolsView
@@ -511,7 +515,7 @@ const App: React.FC = () => {
                   journalEntry={journalEntry}
                   wellnessLog={wellnessLog}
                   daysSober={daysSober}
-                  userFocus={userFocus}
+                  onboardingData={onboardingData}
                   isSubscribed={isSubscribed}
                 />;
       default:
@@ -521,7 +525,7 @@ const App: React.FC = () => {
                   onStartDate={handleStartDate}
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
-                  userFocus={userFocus}
+                  onboardingData={onboardingData}
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
@@ -532,10 +536,10 @@ const App: React.FC = () => {
   return (
     <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
-      <Header onSettingsClick={handleOpenApiKeyModal} userFocus={userFocus} />
+      <Header onSettingsClick={handleOpenApiKeyModal} onboardingData={onboardingData} />
       
       <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-36">
-        {userFocus.includes('addiction') && <SOSCard />}
+        {onboardingData.focuses.includes('addiction') && <SOSCard />}
         <div className="mt-6">
           {renderView()}
         </div>

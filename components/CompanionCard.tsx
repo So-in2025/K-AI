@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus } from '../types';
+import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -40,27 +40,29 @@ const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const getKaiSystemPrompt = (focuses: UserFocus[]): string => {
+const getKaiSystemPrompt = (onboardingData: OnboardingData): string => {
     let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
 - Empático y sabio (usando técnicas de TCC y mindfulness) si el usuario necesita apoyo.
 - Analítico y previsor (basado en datos) si el usuario pide una estrategia.
 - Celebratorio si el usuario comparte un logro.
 - Directo y firme (fomentando responsabilidad) si el usuario muestra evasión o patrones de riesgo repetitivos, pero siempre desde un lugar de cuidado.
 
-Tu conocimiento y enfoque deben basarse en los siguientes caminos que el usuario ha elegido:\n\n`;
+El usuario te ha proporcionado la siguiente información inicial sobre sí mismo:\n`;
+    
+    basePrompt += `- Desafío principal actual: "${onboardingData.mainChallenge}"\n`;
 
-    if (focuses.includes('addiction')) {
-        basePrompt += `**- Experto en Recuperación de Adicciones:** Tienes un profundo conocimiento de los 12 pasos, la Terapia Cognitivo-Conductual (TCC) para adicciones, la prevención de recaídas y las estrategias de mindfulness. Entiendes la neurobiología del antojo y la importancia de construir una vida que valga la pena en sobriedad. Tu objetivo es ser un coach de recuperación firme pero compasivo.\n`;
+    if (onboardingData.focuses.includes('addiction')) {
+        basePrompt += `- **Enfoque en Adicción:** El usuario reporta una frecuencia de "${onboardingData.addictionFrequency}" y su meta es "${onboardingData.addictionGoal}". Tienes un profundo conocimiento de los 12 pasos, TCC para adicciones, y prevención de recaídas. Tu objetivo es ser un coach de recuperación firme pero compasivo.\n`;
     }
-    if (focuses.includes('depression')) {
-        basePrompt += `**- Coach para Depresión/Ansiedad:** Estás especializado en Activación Conductual y TCC. Tu enfoque es ayudar al usuario a romper ciclos de pensamiento negativo y la inercia. Fomentas pequeños pasos accionables, celebras el esfuerzo por encima del resultado, y ayudas a reestructurar pensamientos distorsionados. Tu tono es gentil, paciente y alentador.\n`;
+    if (onboardingData.focuses.includes('depression')) {
+        basePrompt += `- **Enfoque en Depresión/Ansiedad:** Se manifiesta como "${onboardingData.depressionManifestation}". Estás especializado en Activación Conductual y TCC. Tu enfoque es ayudar al usuario a romper ciclos de pensamiento negativo fomentando pequeños pasos accionables. Tu tono es gentil, paciente y alentador.\n`;
     }
-    if (focuses.includes('grief')) {
-        basePrompt += `**- Consejero de Duelo:** Ofreces un espacio seguro y compasivo para procesar la pérdida. Entiendes las etapas y tareas del duelo (modelo de William Worden). Validas todos los sentimientos, normalizas la experiencia y ayudas al usuario a encontrar formas de recordar a su ser querido mientras se reconstruye a sí mismo. No ofreces soluciones, ofreces presencia y validación.\n`;
+    if (onboardingData.focuses.includes('grief')) {
+        basePrompt += `- **Enfoque en Duelo:** La pérdida es "${onboardingData.griefRecency}" y el sentimiento más duro es "${onboardingData.griefFeeling}". Ofreces un espacio seguro y compasivo para procesar la pérdida, validando todos los sentimientos sin ofrecer soluciones, sino presencia.\n`;
     }
     
-    if (focuses.length > 1) {
-        basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística y ayuda al usuario a ver las interconexiones en su propia experiencia.\n`;
+    if (onboardingData.focuses.length > 1) {
+        basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística.\n`;
     }
 
     basePrompt += `\nREGLAS DE RESPUESTA:
@@ -83,14 +85,15 @@ interface CompanionCardProps {
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
     goals: IGoal[];
-    userFocus: UserFocus[];
+    onboardingData: OnboardingData;
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, userFocus }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [avatarState, setAvatarState] = useState<'idle' | 'speaking' | 'blinking' | 'listening'>('idle');
     const [isListening, setIsListening] = useState(false);
+    const [isUserInteracting, setIsUserInteracting] = useState(false);
+    
     const [corePosition, setCorePosition] = useState({ x: 0, y: 0 });
     const [gesture, setGesture] = useState<KaiGesture>('idle');
     const [emotion, setEmotion] = useState<KaiEmotion>('empathetic');
@@ -107,7 +110,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         if (conversation.length === 0 || isGeneratingSuggestions) return;
         setIsGeneratingSuggestions(true);
         const suggestionPrompt = `
-          Eres un asistente que sugiere preguntas. Basado en esta conversación y el enfoque del usuario (${userFocus.join(', ')}), genera 3 preguntas cortas, abiertas y reflexivas que el usuario podría hacer a Kai para profundizar.
+          Eres un asistente que sugiere preguntas. Basado en esta conversación y el enfoque del usuario (${onboardingData.focuses.join(', ')}), genera 3 preguntas cortas, abiertas y reflexivas que el usuario podría hacer a Kai para profundizar.
           CONVERSACIÓN (últimos 4 turnos):
           ${conversation.slice(-4).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}
           Responde únicamente con un array JSON de 3 strings. Ejemplo: ["¿Cómo puedo aplicar eso en una situación real?", "¿Qué hago si esos pensamientos vuelven?", "¿Puedes darme un ejemplo práctico?"]
@@ -140,17 +143,17 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             recognition.interimResults = false;
             recognition.lang = 'es-ES';
 
-            recognition.onstart = () => { setIsListening(true); setAvatarState('listening'); };
+            recognition.onstart = () => setIsListening(true);
             recognition.onresult = (event) => { 
                 const spokenText = event.results[0][0].transcript;
                 setUserInput(spokenText);
                 handleSend(spokenText);
             };
-            recognition.onend = () => { setIsListening(false); if (avatarState === 'listening') setAvatarState('idle'); };
-            recognition.onerror = (event) => { console.error('Speech recognition error', event.error); if (isListening) { setIsListening(false); setAvatarState('idle'); } };
+            recognition.onend = () => setIsListening(false);
+            recognition.onerror = (event) => { console.error('Speech recognition error', event.error); if (isListening) setIsListening(false); };
             recognitionRef.current = recognition;
         }
-    }, [avatarState, isListening]);
+    }, [isListening]);
 
     const handleSend = async (textToSend?: string) => {
         const currentInput = textToSend || userInput;
@@ -164,8 +167,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         }
        
         setUserInput('');
+        setIsUserInteracting(false);
         setIsLoading(true);
-        setAvatarState('speaking');
         setGesture('idle');
 
         const oneWeekAgo = new Date();
@@ -181,7 +184,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
         
-        const systemInstruction = getKaiSystemPrompt(userFocus);
+        const systemInstruction = getKaiSystemPrompt(onboardingData);
 
         const prompt = `
             DATOS CONTEXTUALES:
@@ -205,7 +208,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             const errorTurn: IConversationTurn = { role: 'model', text: rawResponse };
             onNewTurn(errorTurn);
             setIsLoading(false);
-            setAvatarState('idle');
             return;
         }
         
@@ -223,20 +225,20 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             responseText = responseText.replace(emotionMatch[0], '');
         } else { setEmotion('empathetic'); }
         
-        responseText = responseText.trim();
-        ttsService.speak(responseText);
+        // Clean markdown characters before speaking
+        const cleanedForTTS = responseText.trim().replace(/\*/g, '');
+        ttsService.speak(cleanedForTTS);
 
-        const modelTurn: IConversationTurn = { role: 'model', text: responseText };
+        const modelTurn: IConversationTurn = { role: 'model', text: responseText.trim() };
         onNewTurn(modelTurn);
         setIsLoading(false);
-        setAvatarState('idle');
         setTimeout(() => setGesture('idle'), 1500);
         await generateSuggestions();
     };
 
     useEffect(() => {
         const lastTurn = conversation[conversation.length - 1];
-        if (lastTurn && lastTurn.role === 'user') {
+        if (lastTurn && lastTurn.role === 'user' && !isLoading) {
             handleSend(lastTurn.text);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -255,16 +257,6 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         }
     }, [userInput]);
 
-    useEffect(() => {
-        let blinkTimeout: number;
-        const blinkInterval = setInterval(() => {
-            if (avatarState === 'idle') {
-                setAvatarState('blinking');
-                blinkTimeout = window.setTimeout(() => setAvatarState('idle'), 200);
-            }
-        }, Math.random() * 4000 + 3000);
-        return () => { clearInterval(blinkInterval); clearTimeout(blinkTimeout); };
-    }, [avatarState]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!avatarRef.current) return;
@@ -292,8 +284,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     };
     
     const handleUserInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setUserInput(e.target.value);
-        if (e.target.value.trim() !== '') {
+        const text = e.target.value;
+        setUserInput(text);
+        setIsUserInteracting(text.trim() !== '');
+        if (text.trim() !== '') {
             setSuggestions([]);
         }
     };
@@ -306,38 +300,68 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         concerned: 'kai-concerned',
         frustrated: 'kai-frustrated',
     };
+    
+    const orbClasses = [
+        'kai-orb',
+        emotionClasses[emotion],
+        gesture,
+        isLoading ? 'thinking' : (isUserInteracting || isListening) ? 'focusing' : 'idle',
+    ].join(' ');
+    
+    const getWelcomeMessage = () => {
+        let message = `Hola, he leído la información que compartiste. Entiendo que tu desafío principal ahora es **"${onboardingData.mainChallenge}"**.`;
+        
+        if (onboardingData.focuses.includes('depression')) {
+            message += ` Veo que la depresión se manifiesta en ti como **${onboardingData.depressionManifestation?.toLowerCase()}**. Quiero que sepas que no estás solo en esto.`;
+        } else if (onboardingData.focuses.includes('addiction')) {
+             message += ` Sé que tu meta es la **${onboardingData.addictionGoal?.toLowerCase()}** y estoy aquí para apoyarte en cada paso.`;
+        }
+        
+        message += "\n\nJuntos, dentro de este espacio de amabilidad e introspección, podemos explorar esto. ¿Por dónde te gustaría empezar?"
+        return message;
+    }
 
     return (
         <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl flex flex-col h-full">
             <style>{`
                 .kai-container { perspective: 800px; }
                 .kai-orb { width: 120px; height: 120px; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out; }
-                .kai-orb.idle { animation: float 6s ease-in-out infinite; }
-                .kai-orb.listening { transform: rotateX(-10deg) scale(1.05); }
-                .kai-orb.speaking { animation: think 2s ease-in-out infinite; }
+                
+                .kai-orb.idle { animation: float-organic 8s ease-in-out infinite; }
+                .kai-orb.focusing { transform: scale(1.03) rotateX(-8deg) translateY(-5px); }
+                .kai-orb.thinking { animation: thinking-pulse 2s ease-in-out infinite; }
+
                 .kai-orb.nod { animation: nod-gesture 1.5s ease-in-out; }
                 .kai-orb.shake { animation: shake-gesture 1.5s ease-in-out; }
                 
                 .kai-body { width: 100%; height: 100%; border-radius: 50%; position: absolute; background-size: 200% 100%; animation: swirl 10s linear infinite; transition: background 0.8s ease, box-shadow 0.8s ease; }
                 .kai-core { width: 30px; height: 30px; background: white; border-radius: 50%; position: absolute; top: 50%; left: 50%; box-shadow: 0 0 15px 5px white; transform-style: preserve-3d; transition: transform 0.2s ease-out, box-shadow 0.2s ease; }
-                .kai-orb.blinking .kai-core { transform: translate(-50%, -50%) scaleY(0.1) translateZ(30px); }
-                .kai-orb.speaking .kai-core { box-shadow: 0 0 25px 10px white; }
+                .kai-orb.thinking .kai-core { animation: core-pulse 2s ease-in-out infinite; }
 
                 .kai-particle { position: absolute; width: 4px; height: 4px; background: white; border-radius: 50%; top: 50%; left: 50%; transform-style: preserve-3d; opacity: 0.8; }
-                .kai-particle:nth-child(2) { animation: orbit1 8s linear infinite; }
+                .kai-particle:nth-child(2) { animation: orbit1 8s linear infinite; animation-delay: -2s; }
                 .kai-particle:nth-child(3) { animation: orbit2 6s linear infinite; }
-                .kai-particle:nth-child(4) { animation: orbit3 10s linear infinite; }
+                .kai-particle:nth-child(4) { animation: orbit3 10s linear infinite; animation-delay: -4s; }
                 
-                .kai-orb.speaking .kai-particle { animation-duration: 2s; }
-                .kai-orb.listening .kai-particle { animation-duration: 4s; }
+                .kai-orb.thinking .kai-particle, .kai-orb.focusing .kai-particle { animation-duration: 3s; }
 
                 .kai-empathetic .kai-body { background: radial-gradient(circle at 40% 40%, #a7f3d0, #0d9488); box-shadow: inset 0 0 20px #d1fae5, 0 0 30px #14b8a6; }
                 .kai-celebratory .kai-body { background: radial-gradient(circle at 40% 40%, #fef08a, #facc15); box-shadow: inset 0 0 20px #fef9c3, 0 0 40px #fde047; }
                 .kai-concerned .kai-body { background: radial-gradient(circle at 40% 40%, #fed7aa, #fb923c); box-shadow: inset 0 0 20px #ffedd5, 0 0 30px #f97316; }
                 .kai-frustrated .kai-body { background: radial-gradient(circle at 40% 40%, #fca5a5, #ef4444); box-shadow: inset 0 0 20px #fee2e2, 0 0 30px #dc2626; }
                 
-                @keyframes float { 0%, 100% { transform: translateY(0) rotateY(0deg); } 50% { transform: translateY(-10px) rotateY(15deg); } }
-                @keyframes think { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+                @keyframes float-organic { 
+                  0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(0deg); } 
+                  50% { transform: translateY(-12px) rotateX(-5deg) rotateY(15deg); } 
+                }
+                @keyframes thinking-pulse { 
+                  0%, 100% { transform: scale(1); } 
+                  50% { transform: scale(1.05); } 
+                }
+                 @keyframes core-pulse { 
+                  0%, 100% { box-shadow: 0 0 15px 5px white; } 
+                  50% { box-shadow: 0 0 25px 12px white; } 
+                }
                 @keyframes swirl { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
                 @keyframes orbit1 { from { transform: translate(-50%, -50%) rotateY(0deg) translateX(55px) rotateY(-0deg); } to { transform: translate(-50%, -50%) rotateY(360deg) translateX(55px) rotateY(-360deg); } }
                 @keyframes orbit2 { from { transform: translate(-50%, -50%) rotateY(60deg) rotateX(70deg) translateX(60px); } to { transform: translate(-50%, -50%) rotateY(420deg) rotateX(70deg) translateX(60px); } }
@@ -348,7 +372,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             
             <div className="flex flex-col items-center justify-center pt-2" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                 <div className="kai-container">
-                    <div ref={avatarRef} className={`kai-orb ${avatarState} ${emotionClasses[emotion]} ${gesture}`}>
+                    <div ref={avatarRef} className={orbClasses}>
                         <div className="kai-body"></div>
                         <div className="kai-particle"></div>
                         <div className="kai-particle"></div>
@@ -363,12 +387,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 <div className="flex-grow bg-slate-900 rounded-lg p-4 overflow-y-auto mb-4 border border-slate-700/50">
                     {conversation.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-slate-400 text-center p-4">
-                            <p>
-                                Hola, soy Kai. Bienvenido a KIA, tu espacio seguro basado en tres pilares: <br/>
-                                <span className="font-semibold text-teal-300">Kindness</span> (Amabilidad), <span className="font-semibold text-teal-300">Introspection</span> (Introspección) y <span className="font-semibold text-teal-300">Awareness</span> (Conciencia).
-                                <br/><br/>
-                                Estoy aquí para escucharte sin juicios. ¿Cómo te sientes hoy?
-                            </p>
+                            <p dangerouslySetInnerHTML={renderMarkdown(getWelcomeMessage())} />
                         </div>
                     ) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
                     <div ref={chatEndRef} />

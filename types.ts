@@ -84,3 +84,18 @@ export interface IGuardianAnalysis {
 }
 
 export type GuardianAnalysisResult = IGuardianAnalysis | { isLocked: true };
+
+export interface OnboardingData {
+    focuses: UserFocus[];
+    // Addiction
+    addictionFrequency?: string;
+    addictionGoal?: string;
+    // Depression
+    depressionManifestation?: string;
+    depressionMotivation?: string;
+    // Grief
+    griefRecency?: string;
+    griefFeeling?: string;
+    // Open question
+    mainChallenge: string;
+}
