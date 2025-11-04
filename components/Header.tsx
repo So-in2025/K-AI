@@ -1,11 +1,6 @@
 import React from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS } from '../types';
-
-const LeafIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
+import { KiaIcon } from './KiaIcon';
 
 const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
@@ -20,7 +15,7 @@ interface HeaderProps {
 }
 
 const getTitle = (focuses: UserFocus[]): string => {
-    if (focuses.length === 0) return 'Tu Santuario Personal';
+    if (focuses.length === 0) return 'Kindness, Introspection, Awareness';
     if (focuses.length === 1) return USER_FOCUS_OPTIONS[focuses[0]];
     
     const focusLabels = focuses.map(f => {
@@ -44,10 +39,10 @@ export const Header: React.FC<HeaderProps> = ({ onSettingsClick, userFocus }) =>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
-            <LeafIcon className="h-8 w-8 text-teal-400"/>
+            <KiaIcon className="h-8 w-8 text-teal-400"/>
              <div>
-                 <h1 className="text-xl md:text-2xl font-bold text-slate-100">
-                  Camino Consciente
+                 <h1 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-wider">
+                  KIA
                 </h1>
                 <p className="text-xs text-teal-300 -mt-1">{title}</p>
             </div>

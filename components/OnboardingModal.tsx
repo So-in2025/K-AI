@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS } from '../types';
+import { KiaIcon } from './KiaIcon';
 
 interface OnboardingModalProps {
     onSave: (focuses: UserFocus[]) => void;
 }
-
-const LeafIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onSave }) => {
     const [selectedFocuses, setSelectedFocuses] = useState<UserFocus[]>([]);
@@ -36,8 +31,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onSave }) => {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
             <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md mx-auto animate-fade-in-up text-slate-200">
                 <div className="flex flex-col items-center text-center mb-4">
-                    <LeafIcon />
-                    <h2 className="text-2xl font-bold text-slate-100 mt-2">Bienvenido a Camino Consciente</h2>
+                    <KiaIcon className="h-12 w-12 text-teal-400" />
+                    <h2 className="text-3xl font-bold text-slate-100 mt-2 tracking-wider">Bienvenido a KIA</h2>
                     <p className="text-slate-400 mt-2">Para personalizar tu experiencia, por favor, cuéntanos en qué te gustaría enfocarte. Puedes elegir más de uno.</p>
                 </div>
                 
