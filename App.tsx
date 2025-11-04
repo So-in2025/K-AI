@@ -534,9 +534,9 @@ const App: React.FC = () => {
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
       <Header onSettingsClick={handleOpenApiKeyModal} userFocus={userFocus} />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-32">
+      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-36">
         {userFocus.includes('addiction') && <SOSCard />}
-        <div className="mt-6 h-full">
+        <div className="mt-6">
           {renderView()}
         </div>
       </main>
