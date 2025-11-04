@@ -1,3 +1,4 @@
+
 export enum MessageCategory {
   Morning = 'morning',
   Afternoon = 'afternoon',
@@ -65,6 +66,20 @@ export interface IMeditation {
     name: string;
     description: string;
     script: { text: string; pause: number }[]; // pause in ms
+}
+
+export interface IMovementVideo {
+  id: string;
+  youtubeId: string;
+  name: string;
+  description: string;
+  duration: number; // in minutes
+}
+
+export interface IReminder {
+    id: string;
+    text: string;
+    time: string; // HH:mm format
 }
 
 export type UserFocus = 'addiction' | 'depression' | 'grief';

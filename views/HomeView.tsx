@@ -2,7 +2,7 @@
 import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
-import { BreathingExercisesCard } from '../components/BreathingExercisesCard';
+import { WellnessSanctuaryCard } from '../components/WellnessSanctuaryCard';
 import { IWellnessActivity, UserFocus, OnboardingData } from '../types';
 import { GuardianModeCard } from '../components/GuardianModeCard';
 
@@ -44,7 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                  />
             )}
             <DailyQuoteCard />
-            <BreathingExercisesCard onLogActivity={props.onLogWellnessActivity} />
+            <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
         </div>
     );
 };

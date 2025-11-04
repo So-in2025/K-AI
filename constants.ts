@@ -1,5 +1,5 @@
 
-import { IMessage, IResource, MessageCategory, IExercise, IMeditation } from './types';
+import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo } from './types';
 
 export const MESSAGES: Record<MessageCategory, IMessage[]> = {
   [MessageCategory.Morning]: [
@@ -167,5 +167,29 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
             { text: 'Estás aquí. Estás ahora. Estás a salvo.', pause: 4000 },
             { text: 'Respira profundamente, y cuando estés listo, regresa tu atención a la habitación. La práctica ha terminado.', pause: 1000 },
         ]
+    }
+];
+
+export const MOVEMENT_VIDEOS: IMovementVideo[] = [
+    {
+        id: 'full-body-stretch',
+        youtubeId: 's-t0N1s2RGA', // Video: "10 min FULL BODY STRETCH for Flexibility, Pain Relief & Recovery" by MadFit
+        name: 'Estiramiento Corporal Completo',
+        description: 'Una rutina de 10 minutos para mejorar la flexibilidad, aliviar el dolor y acelerar la recuperación.',
+        duration: 10
+    },
+    {
+        id: 'morning-yoga',
+        youtubeId: 'v7AYKMP6rOE', // Video: "Yoga Morning Fresh" by Yoga With Adriene
+        name: 'Yoga Suave de Mañana',
+        description: 'Comienza tu día con energía y calma con esta práctica de yoga de 15 minutos apta para todos.',
+        duration: 15
+    },
+    {
+        id: 'chair-yoga',
+        youtubeId: 'tAUf7aajBWE', // Video: "5-Minute Chair Yoga" by Yoga With Adriene
+        name: 'Yoga en Silla',
+        description: 'Una pausa activa de 5 minutos que puedes hacer en tu escritorio para liberar tensión.',
+        duration: 5
     }
 ];

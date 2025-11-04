@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -19,6 +19,7 @@ const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
 const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
 const JOURNAL_STORAGE_KEY = 'journalEntry';
 const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
+const REMINDERS_STORAGE_KEY = 'remindersList';
 const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
 const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
 const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
@@ -101,6 +102,7 @@ const App: React.FC = () => {
   const [goals, setGoals] = useState<IGoal[]>([]);
   const [isGoalsLoading, setIsGoalsLoading] = useState(false);
   const [wellnessLog, setWellnessLog] = useState<IWellnessActivity[]>([]);
+  const [reminders, setReminders] = useState<IReminder[]>([]);
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
@@ -246,7 +248,39 @@ const App: React.FC = () => {
         if (storedLog) setWellnessLog(JSON.parse(storedLog));
     } catch (error) { console.error("Failed to parse wellness log from localStorage", error); }
 
+    try {
+        const storedReminders = localStorage.getItem(REMINDERS_STORAGE_KEY);
+        if (storedReminders) setReminders(JSON.parse(storedReminders));
+    } catch (error) { console.error("Failed to parse reminders from localStorage", error); }
+
+
   }, [calculateDaysSober]);
+
+  // Reminder notification effect
+  useEffect(() => {
+    const checkReminders = () => {
+        if (Notification.permission !== 'granted') return;
+
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        reminders.forEach(reminder => {
+            if (reminder.time === currentTime) {
+                const notifiedKey = `notified-${reminder.id}-${now.toDateString()}`;
+                if (!sessionStorage.getItem(notifiedKey)) {
+                    new Notification('KIA Recordatorio', {
+                        body: reminder.text,
+                        icon: '/vite.svg', // Consider using a proper app icon
+                    });
+                    sessionStorage.setItem(notifiedKey, 'true');
+                }
+            }
+        });
+    };
+
+    const intervalId = setInterval(checkReminders, 60000); // Check every minute
+    return () => clearInterval(intervalId); // Cleanup on component unmount
+  }, [reminders]);
 
   const handleSaveOnboarding = (data: OnboardingData) => {
       setOnboardingData(data);
@@ -353,6 +387,33 @@ const App: React.FC = () => {
     ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
     updateLastInteraction();
   };
+  
+  const handleAddReminder = async (text: string, time: string) => {
+    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            alert('Para recibir recordatorios, necesitas permitir las notificaciones en la configuración de tu navegador.');
+            return;
+        }
+    }
+    
+    if (Notification.permission === 'denied') {
+        alert('Las notificaciones están bloqueadas. Por favor, habilítalas en la configuración de tu navegador para usar esta función.');
+        return;
+    }
+
+    const newReminder: IReminder = { id: crypto.randomUUID(), text, time };
+    const updatedReminders = [...reminders, newReminder];
+    setReminders(updatedReminders);
+    localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updatedReminders));
+  };
+
+  const handleDeleteReminder = (id: string) => {
+    const updatedReminders = reminders.filter(r => r.id !== id);
+    setReminders(updatedReminders);
+    localStorage.setItem(REMINDERS_STORAGE_KEY, JSON.stringify(updatedReminders));
+  };
+
 
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
@@ -545,6 +606,9 @@ const App: React.FC = () => {
                   journalEntry={journalEntry}
                   onJournalChange={handleJournalChange}
                   onJournalSave={handleJournalSave}
+                  reminders={reminders}
+                  onAddReminder={handleAddReminder}
+                  onDeleteReminder={handleDeleteReminder}
                 />;
       case 'progress':
         return <ProgressView 
