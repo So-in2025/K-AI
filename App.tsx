@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
 import { ApiKeyModal } from './components/ApiKeyModal';
@@ -7,10 +8,12 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, IGuardianAnalysis } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
+import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
+
 
 const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
 const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
@@ -19,6 +22,15 @@ const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
 const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
 const USER_FOCUS_STORAGE_KEY = 'userFocus';
 
+// Helper to encode audio data for Gemini Live API
+function encode(bytes: Uint8Array) {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -36,6 +48,17 @@ const App: React.FC = () => {
   const [goals, setGoals] = useState<IGoal[]>([]);
   const [isGoalsLoading, setIsGoalsLoading] = useState(false);
   const [wellnessLog, setWellnessLog] = useState<IWellnessActivity[]>([]);
+
+  // Guardian Mode State
+  const [isGuardianActive, setIsGuardianActive] = useState(false);
+  const [guardianTranscript, setGuardianTranscript] = useState('');
+  const [guardianAnalysis, setGuardianAnalysis] = useState<IGuardianAnalysis | null>(null);
+  const [isGuardianLoading, setIsGuardianLoading] = useState(false);
+  const [sessionPromise, setSessionPromise] = useState<Promise<any> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   const updateLastInteraction = useCallback(() => {
     localStorage.setItem(LAST_INTERACTION_KEY, new Date().toISOString());
@@ -245,6 +268,146 @@ const App: React.FC = () => {
     updateLastInteraction();
   };
 
+  // Guardian Mode Handlers
+  const handleStartGuardian = async () => {
+    if (!apiKey) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const ai = new GoogleGenAI({ apiKey });
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      
+      const newSessionPromise = ai.live.connect({
+        // FIX: Added the required 'model' property for the Live API connection.
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        config: { inputAudioTranscription: {} },
+        callbacks: {
+          onopen: () => {
+            console.log('Guardian mode connection opened.');
+            setIsGuardianActive(true);
+            setGuardianAnalysis(null);
+            setGuardianTranscript('');
+
+            const source = audioContextRef.current!.createMediaStreamSource(stream);
+            audioSourceRef.current = source;
+            const scriptProcessor = audioContextRef.current!.createScriptProcessor(4096, 1, 1);
+            audioProcessorRef.current = scriptProcessor;
+
+            scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
+              const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+              const l = inputData.length;
+              const int16 = new Int16Array(l);
+              for (let i = 0; i < l; i++) {
+                int16[i] = inputData[i] * 32768;
+              }
+              const pcmBlob: Blob = {
+                data: encode(new Uint8Array(int16.buffer)),
+                mimeType: 'audio/pcm;rate=16000',
+              };
+              newSessionPromise.then((session) => {
+                session.sendRealtimeInput({ media: pcmBlob });
+              });
+            };
+            source.connect(scriptProcessor);
+            scriptProcessor.connect(audioContextRef.current!.destination);
+          },
+          onmessage: (message: LiveServerMessage) => {
+            if (message.serverContent?.inputTranscription) {
+              const text = message.serverContent.inputTranscription.text;
+              setGuardianTranscript(prev => prev + text);
+            }
+          },
+          onerror: (e: ErrorEvent) => {
+            console.error('Guardian mode error:', e);
+            handleStopGuardian();
+          },
+          onclose: () => {
+            console.log('Guardian mode connection closed.');
+          }
+        }
+      });
+      setSessionPromise(newSessionPromise);
+
+    } catch (err) {
+      console.error('Error getting microphone access:', err);
+      alert("No se pudo acceder al micrófono. Por favor, revisa los permisos.");
+    }
+  };
+
+  const handleStopGuardian = async () => {
+    setIsGuardianActive(false);
+    setIsGuardianLoading(true);
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (audioSourceRef.current) audioSourceRef.current.disconnect();
+    if (audioProcessorRef.current) audioProcessorRef.current.disconnect();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+    }
+
+
+    if (sessionPromise) {
+      try {
+        const session = await sessionPromise;
+        session.close();
+      } catch (e) {
+        console.error("Error closing session", e);
+      }
+      setSessionPromise(null);
+    }
+    
+    if (!guardianTranscript.trim()) {
+      setGuardianTranscript('');
+      setIsGuardianLoading(false);
+      return;
+    }
+
+    const prompt = `
+        Eres Kai, un terapeuta experto en adicciones y TCC. Analiza la siguiente transcripción de una situación social de alto riesgo para un usuario. Tu objetivo es identificar patrones de comportamiento y pensamiento que llevaron a un posible consumo.
+
+        TRANSCRIPCIÓN:
+        "${guardianTranscript}"
+
+        Analiza la transcripción y extrae la siguiente información:
+        1.  **trigger**: ¿Cuál fue el detonante principal? (Ej: "La conversación sobre problemas económicos generó estrés.")
+        2.  **socialPressure**: ¿Hubo presión social? Descríbela. (Ej: "Juan le ofreció directamente y se burló cuando dudó.")
+        3.  **justification**: ¿Qué justificaciones o pensamientos permisivos usó el usuario o otros para racionalizar el consumo? (Ej: "El usuario dijo 'solo por hoy no pasa nada' para minimizar las consecuencias.")
+        4.  **turningPoint**: ¿Cuál fue el punto de inflexión donde la decisión de consumir se volvió casi inevitable? (Ej: "Cuando aceptó quedarse 'solo cinco minutos más' después de que sacaron la droga.")
+        5.  **escapeStrategy**: ¿Qué estrategia concreta podría haber usado para evitar el consumo en esa situación? (Ej: "Podría haber dicho 'Tengo un compromiso temprano mañana, debo irme' en el momento en que la conversación se volvió incómoda.")
+
+        Responde únicamente con un objeto JSON, sin explicaciones adicionales. El formato debe ser:
+        {
+          "trigger": "...",
+          "socialPressure": "...",
+          "justification": "...",
+          "turningPoint": "...",
+          "escapeStrategy": "..."
+        }
+    `;
+
+    try {
+        const response = await getGeminiResponse(prompt);
+        const parsedAnalysis: IGuardianAnalysis = JSON.parse(response);
+        setGuardianAnalysis(parsedAnalysis);
+    } catch(error) {
+        console.error("Error parsing guardian analysis:", error);
+        setGuardianAnalysis({
+            trigger: "Error",
+            socialPressure: "Error",
+            justification: "Error",
+            turningPoint: "Error",
+            escapeStrategy: "No se pudo procesar el análisis de la transcripción. Por favor, inténtalo de nuevo."
+        });
+    }
+
+    setGuardianTranscript('');
+    setIsGuardianLoading(false);
+  };
+
 
   if (!apiKey) {
     return (
@@ -268,6 +431,11 @@ const App: React.FC = () => {
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
                   userFocus={userFocus}
+                  isGuardianActive={isGuardianActive}
+                  guardianAnalysis={guardianAnalysis}
+                  isGuardianLoading={isGuardianLoading}
+                  onStartGuardian={handleStartGuardian}
+                  onStopGuardian={handleStopGuardian}
                 />;
       case 'kai':
         return <KaiView 
@@ -307,6 +475,11 @@ const App: React.FC = () => {
                   onReset={handleResetProgress}
                   onLogWellnessActivity={handleLogWellnessActivity}
                   userFocus={userFocus}
+                  isGuardianActive={isGuardianActive}
+                  guardianAnalysis={guardianAnalysis}
+                  isGuardianLoading={isGuardianLoading}
+                  onStartGuardian={handleStartGuardian}
+                  onStopGuardian={handleStopGuardian}
                 />;
     }
   }

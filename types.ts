@@ -74,3 +74,11 @@ export const USER_FOCUS_OPTIONS: Record<UserFocus, string> = {
   depression: 'Gestionar Depresión/Ansiedad',
   grief: 'Sanar una Pérdida',
 };
+
+export interface IGuardianAnalysis {
+  trigger: string;
+  socialPressure: string;
+  justification: string;
+  turningPoint: string;
+  escapeStrategy: string;
+}
