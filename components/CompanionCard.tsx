@@ -28,13 +28,13 @@ declare global {
 }
 
 const MicIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
     </svg>
 );
 
 const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" {...props}>
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
   </svg>
 );
@@ -93,11 +93,43 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     const [corePosition, setCorePosition] = useState({ x: 0, y: 0 });
     const [gesture, setGesture] = useState<KaiGesture>('idle');
     const [emotion, setEmotion] = useState<KaiEmotion>('empathetic');
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+
 
     const chatEndRef = useRef<HTMLDivElement>(null);
     const avatarRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const generateSuggestions = async () => {
+        if (conversation.length === 0 || isGeneratingSuggestions) return;
+        setIsGeneratingSuggestions(true);
+        const suggestionPrompt = `
+          Eres un asistente que sugiere preguntas. Basado en esta conversación y el enfoque del usuario (${userFocus.join(', ')}), genera 3 preguntas cortas, abiertas y reflexivas que el usuario podría hacer a Kai para profundizar.
+          CONVERSACIÓN (últimos 4 turnos):
+          ${conversation.slice(-4).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}
+          Responde únicamente con un array JSON de 3 strings. Ejemplo: ["¿Cómo puedo aplicar eso en una situación real?", "¿Qué hago si esos pensamientos vuelven?", "¿Puedes darme un ejemplo práctico?"]
+        `;
+        try {
+            const response = await getGeminiResponse(suggestionPrompt);
+            // Sanitize response to grab only the JSON array
+            const jsonMatch = response.match(/\[.*\]/);
+            if (jsonMatch) {
+                const parsedSuggestions = JSON.parse(jsonMatch[0]);
+                if (Array.isArray(parsedSuggestions)) {
+                    setSuggestions(parsedSuggestions.slice(0, 3));
+                }
+            } else {
+                 setSuggestions([]);
+            }
+        } catch (e) {
+            console.error("Failed to parse suggestions:", e);
+            setSuggestions([]);
+        } finally {
+            setIsGeneratingSuggestions(false);
+        }
+    };
 
 
      useEffect(() => {
@@ -123,6 +155,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     const handleSend = async (textToSend?: string) => {
         const currentInput = textToSend || userInput;
         if (!currentInput.trim() || isLoading) return;
+
+        setSuggestions([]); // Clear suggestions on send
 
         if (!textToSend) { 
              const userTurn: IConversationTurn = { role: 'user', text: currentInput };
@@ -189,6 +223,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         setIsLoading(false);
         setAvatarState('idle');
         setTimeout(() => setGesture('idle'), 1500);
+        await generateSuggestions();
     };
 
     useEffect(() => {
@@ -199,7 +234,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [conversation]);
 
-    useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation]);
+    useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation, suggestions]);
     
     // Auto-resize textarea
     useEffect(() => {
@@ -245,6 +280,13 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             }
         } else {
             alert("Tu navegador no soporta el reconocimiento de voz.");
+        }
+    };
+    
+    const handleUserInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setUserInput(e.target.value);
+        if (e.target.value.trim() !== '') {
+            setSuggestions([]);
         }
     };
     
@@ -323,11 +365,26 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                     ) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
                     <div ref={chatEndRef} />
                 </div>
+                
+                {suggestions.length > 0 && !isLoading && !userInput && (
+                    <div className="flex flex-wrap justify-center gap-2 mb-2 animate-fade-in-up">
+                        {suggestions.map((s, i) => (
+                            <button
+                                key={i}
+                                onClick={() => handleSend(s)}
+                                className="px-3 py-1.5 text-xs font-medium rounded-full transition-colors bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600"
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 <div className="relative flex items-center">
                     <textarea
                         ref={textareaRef}
                         value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
+                        onChange={handleUserInput}
                         onKeyPress={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();

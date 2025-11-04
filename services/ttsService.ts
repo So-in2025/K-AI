@@ -85,12 +85,14 @@ class TtsService {
 
     this.stop();
 
-    // Chunk the text into sentences to avoid "text-too-long" errors.
-    // Fix: Explicitly type `chunks` as string[] to resolve type inference issue where it could be inferred as `never[]`.
-    const chunks: string[] = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+    // Clean markdown characters like asterisks before processing
+    const cleanedText = text.replace(/\*/g, '');
 
-    if (chunks.length === 0 && text.trim().length > 0) {
-      chunks.push(text);
+    // Chunk the text into sentences to avoid "text-too-long" errors.
+    const chunks: string[] = cleanedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+
+    if (chunks.length === 0 && cleanedText.trim().length > 0) {
+      chunks.push(cleanedText);
     }
     
     this.utteranceQueue = chunks
