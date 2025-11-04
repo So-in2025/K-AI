@@ -2,14 +2,14 @@
 import React from 'react';
 
 const IntrospectionIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w.org/2000/svg" className="h-6 w-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10l-2.5 2.5" />
     </svg>
 );
 
 
 const AwarenessIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w.org/2000/svg" className="h-6 w-6 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
 );
@@ -51,11 +51,17 @@ export const UpgradeCard: React.FC = () => {
     return (
         <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-6 rounded-2xl shadow-lg border border-teal-500/50">
             <div className="text-center">
-                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400">Desbloquea KIA Plus</h2>
-                <p className="text-slate-300 mt-2">Apoya este proyecto con una donación y profundiza en tu viaje con herramientas avanzadas.</p>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400">Tu Apoyo Sostiene Este Espacio Seguro</h2>
+                <p className="text-slate-300 mt-2 text-sm max-w-xl mx-auto">
+                    KIA es un proyecto nacido del corazón, creado para ser un refugio y una herramienta de sanación gratuita. Mantener este espacio seguro, libre de anuncios y en constante mejora requiere dedicación y recursos. Tu donación nos ayuda directamente a cubrir los costos y a seguir desarrollando nuevas herramientas para todos.
+                </p>
             </div>
             
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="mt-6 text-center">
+                <p className="text-slate-200 font-semibold">Como agradecimiento, tu donación desbloquea las herramientas de KIA Plus:</p>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Introspection Column */}
                 <div className="bg-slate-800/50 p-4 rounded-lg">
                     <h3 className="font-semibold text-lg text-indigo-300 flex items-center mb-3">
@@ -93,7 +99,7 @@ export const UpgradeCard: React.FC = () => {
                 onClick={handleUpgrade}
                 className="w-full mt-6 bg-teal-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-lg flex items-center justify-center">
                 <BrainIcon />
-                <span className="ml-2">Actualizar Ahora con Cafecito</span>
+                <span className="ml-2">Apoyar la Misión de KIA con Cafecito</span>
             </button>
         </div>
     );

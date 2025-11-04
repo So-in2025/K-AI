@@ -639,7 +639,7 @@ const App: React.FC = () => {
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
       <Header onSettingsClick={handleOpenApiKeyModal} onboardingData={onboardingData} />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-40">
+      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-48">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
         <div className="mt-6">
           {renderView()}
