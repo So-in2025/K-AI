@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const IntrospectionIcon = () => (
@@ -34,11 +35,24 @@ export const UpgradeCard: React.FC = () => {
         "Generación de Metas Inteligentes"
     ];
 
+    const handleUpgrade = () => {
+        const activationCode = crypto.randomUUID();
+        localStorage.setItem('activationCode', activationCode);
+        
+        // **IMPORTANTE**: Reemplaza 'TU_USUARIO_CAFECITO' con tu nombre de usuario real de Cafecito.
+        const cafecitoUser = 'TU_USUARIO_CAFECITO'; 
+        
+        const cafecitoMessage = `Quiero activar KIA Plus. Mi código de activación es: ${activationCode}`;
+        const cafecitoUrl = `https://cafecito.app/${cafecitoUser}?message=${encodeURIComponent(cafecitoMessage)}`;
+        
+        window.open(cafecitoUrl, '_blank');
+    };
+
     return (
         <div className="bg-gradient-to-br from-slate-700 to-slate-800 p-6 rounded-2xl shadow-lg border border-teal-500/50">
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400">Desbloquea KIA Plus</h2>
-                <p className="text-slate-300 mt-2">Profundiza en tu viaje con herramientas avanzadas para la introspección y la conciencia.</p>
+                <p className="text-slate-300 mt-2">Apoya este proyecto con una donación y profundiza en tu viaje con herramientas avanzadas.</p>
             </div>
             
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -75,9 +89,11 @@ export const UpgradeCard: React.FC = () => {
                 </div>
             </div>
             
-            <button className="w-full mt-6 bg-teal-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-lg flex items-center justify-center">
+            <button 
+                onClick={handleUpgrade}
+                className="w-full mt-6 bg-teal-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-lg flex items-center justify-center">
                 <BrainIcon />
-                <span className="ml-2">Actualizar Ahora</span>
+                <span className="ml-2">Actualizar Ahora con Cafecito</span>
             </button>
         </div>
     );

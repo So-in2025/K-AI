@@ -21,6 +21,8 @@ const JOURNAL_STORAGE_KEY = 'journalEntry';
 const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
 const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
 const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
+const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
+const ACTIVATION_CODE_KEY = 'activationCode';
 
 
 // Helper to encode audio data for Gemini Live API
@@ -140,6 +142,41 @@ const App: React.FC = () => {
     ttsService.init();
     updateLastInteraction();
   }, [updateLastInteraction]);
+
+  // Subscription check effect
+  useEffect(() => {
+    const checkActivation = async () => {
+        const activationCode = localStorage.getItem(ACTIVATION_CODE_KEY);
+        if (activationCode && !isSubscribed) {
+            try {
+                const response = await fetch('/.netlify/functions/check-activation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: activationCode }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.activated) {
+                        console.log("Subscription activated!");
+                        setIsSubscribed(true);
+                        localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, 'true');
+                        localStorage.removeItem(ACTIVATION_CODE_KEY); // Clean up
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking activation:', error);
+            }
+        }
+    };
+
+    const storedSubscription = localStorage.getItem(SUBSCRIPTION_STORAGE_KEY);
+    if (storedSubscription === 'true') {
+        setIsSubscribed(true);
+    } else {
+        checkActivation();
+    }
+  }, [isSubscribed]);
+
   
   useEffect(() => {
     if (!onboardingData) return;
