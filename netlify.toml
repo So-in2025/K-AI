@@ -1,18 +1,18 @@
-// POR FAVOR, RENOMBRA ESTE ARCHIVO A "netlify.toml"
-// Este es el archivo de configuración que Netlify necesita para construir tu sitio y activar la base de datos.
+# POR FAVOR, RENOMBRA ESTE ARCHIVO A "netlify.toml"
+# Este es el archivo de configuración que Netlify necesita para construir tu sitio y activar la base de datos.
 
-// Build settings: le dice a Netlify cómo construir tu proyecto Vite.
+# Build settings: le dice a Netlify cómo construir tu proyecto Vite.
 [build]
-  // El comando para construir el sitio.
+  # El comando para construir el sitio.
   command = "npm run build"
-  // La carpeta que Netlify debe publicar después de la construcción.
+  # La carpeta que Netlify debe publicar después de la construcción.
   publish = "dist"
 
-// Functions settings: le dice a Netlify dónde encontrar tus funciones de backend.
+# Functions settings: le dice a Netlify dónde encontrar tus funciones de backend.
 [functions]
   directory = "netlify/functions"
 
-// Blobs settings: activa la "base de datos" de Netlify.
+# Blobs settings: activa la "base de datos" de Netlify.
 [blobs]
-  // Habilita un "almacén" de blobs llamado "activation-codes" que usarán tus funciones.
+  # Habilita un "almacén" de blobs llamado "activation-codes" que usarán tus funciones.
   store = "activation-codes"
