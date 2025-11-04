@@ -1,6 +1,6 @@
 {
   "name": "KIA: Kindness, Introspection, Awareness",
-  "description": "KIA es tu santuario digital para el bienestar. Ofrece apoyo personalizado para superar adicciones, gestionar la depresión/ansiedad y sanar el duelo, basado en los principios de Amabilidad, Introspección y Conciencia.",
+  "description": "KIA es tu santuario digital y compañero de sanación. A través de la IA empática Kai, te ofrecemos herramientas avanzadas para la recuperación: un Jardín Interior que visualiza tu progreso, un Laboratorio de Pensamientos para aplicar TCC, un Modo Guardián para analizar situaciones de riesgo, y un Círculo de Confianza para conectar con tu red de apoyo. Un ecosistema completo para cultivar Amabilidad, Introspección y Conciencia.",
   "requestFramePermissions": [
     "microphone"
   ]

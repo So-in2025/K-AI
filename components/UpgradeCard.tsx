@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 
 // --- ICONOS ---
 const IntrospectionIcon = () => (
@@ -20,8 +20,8 @@ const BrainIcon = () => (
 // --- FIN ICONOS ---
 
 export const UpgradeCard: React.FC = () => {
-    // IMPORTANTE: Reemplaza esta URL con tu link de pago de Hotmart
-    const HOTMART_CHECKOUT_URL = 'https://pay.hotmart.com/TU_LINK_DE_PAGO_AQUI';
+    // URL de pago oficial de Hotmart para "Acceso KIA Plus"
+    const HOTMART_CHECKOUT_URL = 'https://pay.hotmart.com/F102777841D?off=yx1yoozm';
 
     const introspectionFeatures = [
         "Análisis del Modo Guardián",
@@ -41,7 +41,8 @@ export const UpgradeCard: React.FC = () => {
         
         // Hotmart nos permite pasar datos personalizados a través del parámetro 'src'.
         // Nuestro webhook leerá este código para activar la cuenta.
-        const checkoutUrlWithCode = `${HOTMART_CHECKOUT_URL}?src=${newActivationCode}`;
+        // Se usa '&' porque el link de Hotmart ya tiene un parámetro ('?off=...').
+        const checkoutUrlWithCode = `${HOTMART_CHECKOUT_URL}&src=${newActivationCode}`;
         
         window.open(checkoutUrlWithCode, '_blank');
     };
