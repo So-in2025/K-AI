@@ -153,3 +153,10 @@ export interface IFreedomVaultConfig {
     goalAmount: number;
     goalDescription: string;
 }
+
+export interface IDopamineQuest {
+    id: 'gratitude' | 'victory' | 'mindfulness';
+    name: string;
+    description: string;
+    activityLogName: string;
+}

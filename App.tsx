@@ -560,6 +560,7 @@ const App: React.FC = () => {
     setDopamineHits(updatedHits);
     localStorage.setItem(DOPAMINE_DIET_KEY, JSON.stringify(updatedHits));
     updateGardenGrowth(1); // Small reward for logging
+    ttsService.speak(`Misión completada: ${hit.activity}. ¡Excelente trabajo!`);
   };
 
   const handleAddHabitLoop = (loop: IHabitLoop) => {
@@ -819,7 +820,7 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-48">
+      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
         <div className="mt-6">
           {renderView()}

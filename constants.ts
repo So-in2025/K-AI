@@ -1,5 +1,5 @@
 
-import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo } from './types';
+import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, IDopamineQuest } from './types';
 
 // STORAGE KEYS
 export const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
@@ -191,30 +191,46 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
 
 export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     {
-        id: 'full-body-stretch',
-        youtubeId: 's-t0N1s2RGA', // Video: "10 min FULL BODY STRETCH for Flexibility, Pain Relief & Recovery" by MadFit
-        name: 'Estiramiento Corporal Completo',
-        description: 'Una rutina de 10 minutos para mejorar la flexibilidad, aliviar el dolor y acelerar la recuperación.',
+        id: 'yoga-principiantes',
+        youtubeId: 's-t0N1s2RGA', // Video: "YOGA PARA PRINCIPIANTES - Clase completa en español (30 min)" by Xuan Lan Yoga
+        name: 'Yoga para Principiantes (30 min)',
+        description: 'Una clase completa y suave de Xuan Lan Yoga para conectar con tu cuerpo y calmar la mente, perfecta para empezar.',
+        duration: 30
+    },
+    {
+        id: 'estiramiento-espalda',
+        youtubeId: 'GLy2r51I0_g', // Video: "Estiramientos de espalda para aliviar el dolor lumbar y dorsal en 10 minutos" by FisioOnline
+        name: 'Estiramiento de Espalda (10 min)',
+        description: 'Rutina terapéutica de FisioOnline para liberar la tensión de la espalda y el cuello, ideal después de un día largo.',
         duration: 10
     },
     {
-        id: 'morning-yoga',
-        youtubeId: 'v7AYKMP6rOE', // Video: "Yoga Morning Fresh" by Yoga With Adriene
-        name: 'Yoga Suave de Mañana',
-        description: 'Comienza tu día con energía y calma con esta práctica de yoga de 15 minutos apta para todos.',
-        duration: 15
-    },
-    {
-        id: 'chair-yoga',
-        youtubeId: 'tAUf7aajBWE', // Video: "5-Minute Chair Yoga" by Yoga With Adriene
-        name: 'Yoga en Silla',
-        description: 'Una pausa activa de 5 minutos que puedes hacer en tu escritorio para liberar tensión.',
-        duration: 5
+        id: 'yoga-ansiedad',
+        youtubeId: '2F_m-xH_0P4', // Video: "Yoga para la ANSIEDAD y el ESTRÉS | Xuan Lan"
+        name: 'Yoga para la Ansiedad (20 min)',
+        description: 'Una práctica de Xuan Lan Yoga específicamente diseñada para calmar el sistema nervioso y reducir la ansiedad.',
+        duration: 20
     }
 ];
 
 // NEW CONSTANTS
-export const DOPAMINE_ACTIVITIES = [
-    'Completé una tarea', 'Hice ejercicio', 'Recibí luz solar', 'Medité / Respiré', 
-    'Contacto social', 'Pequeña victoria', 'Acto de amabilidad', 'Aprendí algo nuevo', 'Otro'
+export const DOPAMINE_QUESTS: IDopamineQuest[] = [
+    {
+        id: 'gratitude',
+        name: 'Práctica de Gratitud',
+        description: 'Escribe 3 cosas por las que te sientas agradecido hoy. Pueden ser grandes o pequeñas.',
+        activityLogName: 'Práctica de Gratitud'
+    },
+    {
+        id: 'victory',
+        name: 'Victoria del Día',
+        description: 'Describe una pequeña tarea o desafío que hayas completado hoy y cómo te hizo sentir.',
+        activityLogName: 'Reconocimiento de Victoria'
+    },
+    {
+        id: 'mindfulness',
+        name: 'Momento Mindfulness',
+        description: 'Tómate 60 segundos para observar tu entorno sin juicio, enfocándote en tus sentidos.',
+        activityLogName: 'Pausa de Mindfulness'
+    }
 ];

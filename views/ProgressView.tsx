@@ -8,7 +8,7 @@ import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
 import { FreedomVaultCard } from '../components/FreedomVaultCard';
-import { DopamineDietCard } from '../components/DopamineDietCard';
+import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard';
 
 interface ProgressViewProps {
     cravings: ICraving[];
@@ -56,8 +56,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 </div>
 
                 <div className="space-y-6">
-                    <DopamineDietCard
-                        hits={props.dopamineHits}
+                    <DopamineSanctuaryCard
                         onLogHit={props.onLogDopamineHit}
                     />
                     <TrustCircleCard
