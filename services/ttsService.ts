@@ -1,10 +1,10 @@
-
 class TtsService {
   private voice: SpeechSynthesisVoice | null = null;
   private isReadyPromise: Promise<void>;
   private isInitialized = false;
   private utteranceQueue: { text: string; pause: number; rate?: number; pitch?: number }[] = [];
   private isSpeaking = false;
+  private currentSequenceResolver: (() => void) | null = null;
 
   constructor() {
     this.isReadyPromise = new Promise((resolve) => {
@@ -25,7 +25,6 @@ class TtsService {
           } else {
               window.speechSynthesis.onvoiceschanged = () => {
                 checkVoices();
-                // Re-resolve promise if voices change after initial load
                 this.isReadyPromise = Promise.resolve();
               };
           }
@@ -44,13 +43,18 @@ class TtsService {
 
   private processQueue() {
     if (this.utteranceQueue.length === 0 || this.isSpeaking) {
-        if(this.utteranceQueue.length === 0) this.isSpeaking = false;
+        if(this.utteranceQueue.length === 0 && !this.isSpeaking) {
+            if (this.currentSequenceResolver) {
+                this.currentSequenceResolver();
+                this.currentSequenceResolver = null;
+            }
+        }
         return;
     }
     this.isSpeaking = true;
 
     const item = this.utteranceQueue.shift();
-    if (!item || !item.text.trim()) { // Skip empty items
+    if (!item || !item.text.trim()) {
         this.isSpeaking = false;
         this.processQueue();
         return;
@@ -74,59 +78,71 @@ class TtsService {
     utterance.onerror = (event) => {
         console.error("TTS Utterance Error:", event.error, "for text:", `"${item.text}"`);
         this.isSpeaking = false;
-        this.processQueue(); // Try next item
+        this.processQueue();
     };
     
     window.speechSynthesis.speak(utterance);
   }
 
-  public async speak(text: string, rate = 1, pitch = 1) {
-    await this.isReadyPromise;
-    if (!text || typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    this.stop();
-
-    // Clean markdown characters like asterisks before processing
-    const cleanedText = text.replace(/\*/g, '');
-
-    // Chunk the text into sentences to avoid "text-too-long" errors.
-    const chunks: string[] = cleanedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
-
-    if (chunks.length === 0 && cleanedText.trim().length > 0) {
-      chunks.push(cleanedText);
-    }
-    
-    this.utteranceQueue = chunks
-        .map(chunk => chunk.trim())
-        .filter(chunk => chunk.length > 0) // Remove empty chunks
-        .map(chunk => ({
-            text: chunk,
-            pause: 300, // <-- ADDED NATURAL PAUSE
-            rate,
-            pitch
-        }));
-
-    if (this.utteranceQueue.length > 0) {
-        // No pause after the last sentence
-        this.utteranceQueue[this.utteranceQueue.length - 1].pause = 0;
-    }
-
-    this.processQueue();
-  }
-
-  public async speakSequence(script: { text: string; pause: number }[]) {
+  public speak(text: string, rate = 1, pitch = 1): Promise<void> {
+    return new Promise(async (resolve) => {
       await this.isReadyPromise;
-      if (!script || script.length === 0 || typeof window === 'undefined' || !window.speechSynthesis) return;
+      if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
+        resolve();
+        return;
+      }
 
       this.stop();
-      this.utteranceQueue = [...script];
+
+      const cleanedText = text.replace(/\*/g, '');
+      const chunks: string[] = cleanedText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+
+      if (chunks.length === 0 && cleanedText.trim().length > 0) {
+        chunks.push(cleanedText);
+      }
+      
+      this.utteranceQueue = chunks
+          .map(chunk => chunk.trim())
+          .filter(chunk => chunk.length > 0)
+          .map(chunk => ({
+              text: chunk,
+              pause: 300, 
+              rate,
+              pitch
+          }));
+
+      if (this.utteranceQueue.length > 0) {
+          this.utteranceQueue[this.utteranceQueue.length - 1].pause = 0;
+      }
+
+      this.currentSequenceResolver = resolve;
       this.processQueue();
+    });
+  }
+
+  public speakSequence(script: { text: string; pause: number }[]): Promise<void> {
+      return new Promise(async (resolve) => {
+        await this.isReadyPromise;
+        if (!script || script.length === 0 || typeof window === 'undefined' || !window.speechSynthesis) {
+            resolve();
+            return;
+        }
+
+        this.stop();
+        this.utteranceQueue = [...script];
+        this.currentSequenceResolver = resolve;
+        this.processQueue();
+      });
   }
 
   public stop() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
         this.utteranceQueue = [];
         this.isSpeaking = false;
+        if (this.currentSequenceResolver) {
+            this.currentSequenceResolver();
+            this.currentSequenceResolver = null;
+        }
         window.speechSynthesis.cancel();
     }
   }

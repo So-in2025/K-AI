@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS, SHAMANIC_DRUM_VIDEO_ID } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
@@ -6,7 +5,7 @@ import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const LungsIcon = () => (
-    <svg xmlns="http://www.w.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
 );
@@ -70,7 +69,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         
         if (youtubePlayerRef.current) {
-            youtubePlayerRef.current.destroy();
+            try {
+              youtubePlayerRef.current.destroy();
+            } catch (e) {
+              console.error("Error destroying YouTube player:", e);
+            }
             youtubePlayerRef.current = null;
         }
 
@@ -87,7 +90,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setView('menu');
     };
 
-    const startBreathingExercise = () => {
+    const startBreathingExercise = async () => {
         if (!selectedExercise) return;
         setIsActive(true);
         let elapsedTime = 0;
@@ -101,6 +104,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             let stepIndex = -1;
             let breathCount = 0;
             const cycle = () => {
+                if(!isActive) return;
                 stepIndex = (stepIndex + 1) % selectedExercise.steps.length;
                 const currentStep = selectedExercise.steps[stepIndex];
                 const animationClass = currentStep.name.toLowerCase().includes('inhala') ? 'animate-inhale' : currentStep.name.toLowerCase().includes('exhala') ? 'animate-exhale' : 'animate-hold';
@@ -120,13 +124,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         };
 
         if (selectedExercise.setup) {
-            ttsService.speakSequence(selectedExercise.setup).then(() => {
-                 if(isActive) runCycle();
-            });
+            await ttsService.speakSequence(selectedExercise.setup);
+            if(isActive) runCycle();
         } else {
             runCycle();
         }
-
 
         intervalRef.current = window.setInterval(() => {
             elapsedTime += 100;
@@ -138,7 +140,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }, 100);
     };
 
-    const startMeditation = (meditation: IMeditation) => {
+    const startMeditation = async (meditation: IMeditation) => {
         setSelectedMeditation(meditation);
         setIsActive(true);
         const totalDuration = meditation.script.reduce((sum, step) => sum + step.text.split(' ').length * 300 + step.pause, 0);
@@ -149,37 +151,37 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             setProgress((elapsedTime / totalDuration) * 100);
         }, 100);
 
-        ttsService.speakSequence(meditation.script).then(() => {
-            if (isActive) {
-                resetState(true, { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
-            }
-        });
+        await ttsService.speakSequence(meditation.script);
+        if (isActive) {
+            resetState(true, { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
+        }
     }
     
     const startShamanicJourney = () => {
       // Load the YouTube IFrame API script
-      const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
+      if (!(window as any).YT) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
+      } else {
+         (window as any).onYouTubeIframeAPIReady();
+      }
 
       (window as any).onYouTubeIframeAPIReady = () => {
+        if (youtubePlayerRef.current) return;
         youtubePlayerRef.current = new (window as any).YT.Player('youtube-player', {
           height: '1',
           width: '1',
           videoId: SHAMANIC_DRUM_VIDEO_ID,
-          playerVars: {
-            'autoplay': 1,
-            'controls': 0,
-            'loop': 1,
-          },
-          events: {
-            'onReady': onPlayerReady,
-          }
+          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playsinline': 1 },
+          events: { 'onReady': onPlayerReady }
         });
       };
       
       const onPlayerReady = (event: any) => {
+        event.target.unMute();
+        event.target.setVolume(100);
         event.target.playVideo();
         setJourneyStep('intention');
       };
@@ -187,74 +189,79 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
 
     useEffect(() => {
-        if(journeyStep === 'intention') {
-             ttsService.speakSequence([
-                { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
-                { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
-                { text: "Mantenla en tu corazón.", pause: 1000 }
-            ]).then(() => { if(journeyStep === 'intention') setJourneyStep('breathing'); });
-        }
-        if(journeyStep === 'breathing') {
-            ttsService.speakSequence([
-                { text: "Ahora, sincroniza tu respiración con el tambor que está sonando.", pause: 2000 },
-                { text: "Inhala profundo... exhala lento.", pause: 1000 }
-            ]).then(() => {
-                if(journeyStep === 'breathing') {
-                    setJourneyStep('mantra');
-                }
-            });
-        }
-        if(journeyStep === 'mantra') {
-            ttsService.speakSequence([
-                { text: "Repite conmigo, internamente...", pause: 1000 },
-                { text: "Suelto lo que pesa...", pause: 3000 },
-                { text: "recibo lo que sana.", pause: 4000 },
-                { text: "Suelto lo que pesa...", pause: 3000 },
-                { text: "recibo lo que sana.", pause: 2000 }
-            ]).then(() => { if(journeyStep === 'mantra') setJourneyStep('journey'); });
-        }
-        if(journeyStep === 'journey') {
-            ttsService.speakSequence([
-                { text: "Ahora, déjate llevar por el sonido.", pause: 3000 },
-                { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 1000 }
-            ]).then(() => {
+        const runJourneyStep = async () => {
+            if(journeyStep === 'intention') {
+                 await ttsService.speakSequence([
+                    { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
+                    { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
+                    { text: "Mantenla en tu corazón.", pause: 2000 }
+                ]);
+                if(journeyStep === 'intention') setJourneyStep('breathing');
+            }
+            if(journeyStep === 'breathing') {
+                await ttsService.speakSequence([
+                    { text: "Ahora, sincroniza tu respiración con el tambor que está sonando.", pause: 4000 },
+                    { text: "Inhala profundo... exhala lento.", pause: 3000 }
+                ]);
+                if(journeyStep === 'breathing') setJourneyStep('mantra');
+            }
+            if(journeyStep === 'mantra') {
+                await ttsService.speakSequence([
+                    { text: "Repite conmigo, internamente...", pause: 2000 },
+                    { text: "Suelto lo que pesa...", pause: 4000 },
+                    { text: "recibo lo que sana.", pause: 5000 },
+                    { text: "Suelto lo que pesa...", pause: 4000 },
+                    { text: "recibo lo que sana.", pause: 3000 }
+                ]);
+                if(journeyStep === 'mantra') setJourneyStep('journey');
+            }
+            if(journeyStep === 'journey') {
+                await ttsService.speakSequence([
+                    { text: "Ahora, déjate llevar por el sonido.", pause: 4000 },
+                    { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 2000 }
+                ]);
                 if(journeyStep === 'journey') {
                     journeyTimeoutRef.current = window.setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
                 }
-            });
+            }
+            if(journeyStep === 'return') {
+                await ttsService.speakSequence([
+                    { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 4000 },
+                    { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 2000 }
+                ]);
+                if(journeyStep === 'return') setJourneyStep('integration');
+            }
         }
-        if(journeyStep === 'return') {
-            ttsService.speakSequence([
-                { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 3000 },
-                { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 1000 }
-            ]).then(() => { if(journeyStep === 'return') setJourneyStep('integration'); });
-        }
+        runJourneyStep();
     }, [journeyStep]);
 
 
     // Neuro Quest Logic
-    const handleStartQuest = (quest: INeuroQuest) => {
+    const handleStartQuest = async (quest: INeuroQuest) => {
         setActiveQuest(quest);
         setQuestStep('intention');
         const stepScript = quest.script.find(s => s.step === 'intention');
         if (stepScript) {
-            ttsService.speak(stepScript.text);
-            setTimeout(() => setQuestStep('practice'), stepScript.pauseAfter);
+            await ttsService.speak(stepScript.text);
+            if(activeQuest) setQuestStep('practice');
         } else {
             setQuestStep('practice');
         }
     };
 
     useEffect(() => {
-        if (activeQuest && questStep === 'practice') {
-             const stepScript = activeQuest.script.find(s => s.step === 'practice');
-             if (stepScript) {
-                ttsService.speak(stepScript.text);
-                setTimeout(() => setQuestStep('reflection'), stepScript.pauseAfter);
-             } else {
-                setQuestStep('reflection');
-             }
+        const runPractice = async () => {
+            if (activeQuest && questStep === 'practice') {
+                 const stepScript = activeQuest.script.find(s => s.step === 'practice');
+                 if (stepScript) {
+                    await ttsService.speak(stepScript.text);
+                    if(activeQuest) setQuestStep('reflection');
+                 } else {
+                    setQuestStep('reflection');
+                 }
+            }
         }
+        runPractice();
     }, [questStep, activeQuest]);
     
     useEffect(() => {
@@ -289,7 +296,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
             if (youtubePlayerRef.current) {
-                youtubePlayerRef.current.destroy();
+                try {
+                    youtubePlayerRef.current.destroy();
+                } catch(e) {}
                 youtubePlayerRef.current = null;
             }
         };
@@ -318,8 +327,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderRestRitual = () => {
         const ritualSteps = [
-            { name: "Estiramiento Nocturno (15 min)", description: "Libera la tensión del día con una rutina suave.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda')!); setView('active_movement'); } },
-            { name: "Yoga Nidra (Sueño Yóguico)", description: "Calma tu mente con esta meditación de relajación profunda.", action: () => { startMeditation(GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra')!); } },
+            { name: "Estiramiento Nocturno (10 min)", description: "Libera la tensión del día con una rutina suave.", action: () => { const video = MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda'); if(video) { setSelectedVideo(video); setView('active_movement'); } } },
+            { name: "Yoga Nidra (Sueño Yóguico)", description: "Calma tu mente con esta meditación de relajación profunda.", action: () => { const meditation = GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra'); if(meditation) startMeditation(meditation); } },
             { name: "Vaciado Mental (Diario)", description: "Escribe y suelta tus preocupaciones en el diario para un descanso reparador.", action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); } },
         ];
         return (
@@ -345,7 +354,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderBreathingSelection = () => (
         <>
-             <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+             <button onClick={() => { setIsActive(false); setView('menu'); }} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
              <h3 className="font-bold text-slate-100 text-lg mb-2">Ejercicios de Respiración</h3>
              <div className="space-y-3">
                 {BREATHING_EXERCISES.map(ex => (
@@ -373,7 +382,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     
     const renderMeditationSelection = () => (
         <>
-            <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+            <button onClick={() => { setIsActive(false); setView('menu'); }} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
             <h3 className="font-bold text-slate-100 text-lg mb-2">Meditaciones Guiadas</h3>
             <div className="space-y-3">
                 {GUIDED_MEDITATIONS.map(med => (
@@ -506,6 +515,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
        const isBreathing = !!selectedExercise;
        return (
             <div>
+                <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
                 <h3 className="text-lg font-bold text-center text-slate-100 mb-4">{sessionName}</h3>
                 <div className="flex flex-col items-center justify-center my-4 h-40">
                     <div className="relative w-36 h-36">
@@ -571,6 +581,13 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     return (
         <div ref={cardRef} className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
              <style>{`
+                @keyframes inhale { from { transform: scale(1); } to { transform: scale(1.15); } }
+                @keyframes exhale { from { transform: scale(1.15); } to { transform: scale(1); } }
+                @keyframes hold { /* No visual change */ }
+                .animate-inhale { animation: inhale 4s ease-in-out forwards; }
+                .animate-exhale { animation: exhale 4s ease-in-out forwards; }
+                .animate-hold { animation: hold 4s ease-in-out forwards; }
+                .animation-delay-300 { animation-delay: 300ms; }
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
                 .aspect-h-9 { height: 0; }
                 .aspect-w-16 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }

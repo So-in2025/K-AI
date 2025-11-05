@@ -1,4 +1,3 @@
-
 import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest } from './types';
 
 // STORAGE KEYS
@@ -219,26 +218,27 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
     }
 ];
 
+// VIDEOS REEMPLAZADOS POR PLACEHOLDERS. PEGA AQUÍ LOS IDs DE YOUTUBE DE TU INVESTIGACIÓN.
 export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     {
         id: 'yoga-principiantes',
-        youtubeId: 's-t0N1s2RGA', // Video: "Yoga Suave para Relajar el Cuerpo y la Mente | 20 min" by Xuan Lan Yoga
-        name: 'Yoga Suave para Principiantes (20 min)',
-        description: 'Una clase completa y suave de Xuan Lan Yoga para conectar con tu cuerpo y calmar la mente, perfecta para empezar.',
+        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_YOGA_PRINCIPIANTES', 
+        name: 'Yoga Suave para Principiantes',
+        description: 'Una clase completa y suave para conectar con tu cuerpo y calmar la mente, perfecta para empezar.',
         duration: 20
     },
     {
         id: 'estiramiento-espalda',
-        youtubeId: 'ACYs94n6i30', // Video: "Ejercicios para relajar la tensión en la espalda | DW En forma"
+        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_ESTIRAMIENTO_ESPALDA',
         name: 'Estiramiento Nocturno (10 min)',
         description: 'Rutina terapéutica para liberar la tensión de la espalda y el cuello, ideal para el Ritual de Descanso.',
         duration: 10
     },
     {
         id: 'yoga-ansiedad',
-        youtubeId: '4pLUle_0A3M', // Video: "YOGA PARA LA ANSIEDAD (20 min) | Relajación para calmar la mente" by Xuan Lan Yoga
-        name: 'Yoga para la Ansiedad (20 min)',
-        description: 'Una práctica de Xuan Lan Yoga específicamente diseñada para calmar el sistema nervioso y reducir la ansiedad.',
+        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_YOGA_ANSIEDAD',
+        name: 'Yoga para la Ansiedad',
+        description: 'Una práctica específicamente diseñada para calmar el sistema nervioso y reducir la ansiedad.',
         duration: 20
     }
 ];
