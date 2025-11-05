@@ -220,8 +220,8 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     {
         id: 'estiramiento-espalda',
         youtubeId: '3-p_IT2d5jE', // Video: "ESTIRAMIENTOS para ALIVIAR el DOLOR DE ESPALDA y cuello en 10 MINUTOS" by FisioOnline
-        name: 'Estiramiento de Espalda (10 min)',
-        description: 'Rutina terapéutica de FisioOnline para liberar la tensión de la espalda y el cuello, ideal después de un día largo.',
+        name: 'Estiramiento Nocturno (10 min)',
+        description: 'Rutina terapéutica de FisioOnline para liberar la tensión del día, ideal para el Ritual de Descanso.',
         duration: 10
     },
     {
@@ -233,34 +233,44 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     }
 ];
 
-// NEW CONSTANTS
+export const SHAMANIC_DRUM_URL = 'https://aistudiocdn.com/kia-app/shamanic_drum.mp3';
+
+
 export const DOPAMINE_QUESTS: IDopamineQuest[] = [
     {
         id: 'gratitude',
-        name: 'Gratitud Focalizada',
-        description: 'Describe 3 cosas por las que te sientas agradecido y *por qué*. Activa las vías neuronales de la positividad.',
-        activityLogName: 'Práctica de Gratitud',
-        category: 'Gratitud'
+        name: 'Ritual de Gratitud Profunda',
+        description: 'Una práctica guiada para conectar con el sentimiento de gratitud y re-cablear tu cerebro hacia la positividad.',
+        activityLogName: 'Ritual de Gratitud',
+        category: 'Gratitud',
+        script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Gratitud. El objetivo no es solo pensar, sino sentir. Cierra los ojos y respira hondo. Tu intención es encontrar un momento de genuino agradecimiento.', pauseAfter: 5000 },
+            { step: 'practice', text: 'Ahora, trae a tu mente a una persona, un lugar, o una pequeña cosa que te traiga una chispa de calor. Puede ser el sol en tu cara, un gesto amable, o el recuerdo de una risa. No lo analices, solo siéntelo. Permite que esa sensación de gratitud llene tu pecho. Quédate ahí por un momento.', pauseAfter: 10000 },
+            { step: 'reflection', text: 'Excelente. Ahora, abre los ojos y usa el espacio de abajo para describir ese sentimiento. ¿Qué es y por qué te sientes agradecido por ello? Anclarlo en palabras potencia su efecto neuronal.', pauseAfter: 1000 },
+        ]
     },
     {
         id: 'victory',
-        name: 'Celebración de Micro-Logros',
-        description: 'Describe una pequeña victoria de hoy. Celebrar los pequeños pasos crea un bucle de retroalimentación positiva.',
-        activityLogName: 'Reconocimiento de Victoria',
-        category: 'Logro'
+        name: 'Ritual de Logro Consciente',
+        description: 'Celebra una pequeña victoria para solidificar el bucle de recompensa neuronal del logro y la capacidad.',
+        activityLogName: 'Ritual de Logro',
+        category: 'Logro',
+        script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Logro. Vamos a enseñarle a tu cerebro a reconocer tu propia fuerza. Piensa en una cosa, por pequeña que sea, que hayas completado hoy. Puede ser hacer la cama, terminar una tarea, o simplemente levantarte.', pauseAfter: 6000 },
+            { step: 'practice', text: 'Ahora, cierra los ojos y revive ese momento. Siente la sensación de haberlo hecho. El orgullo, el alivio, la capacidad. Conecta con ese sentimiento de "yo hice esto". Permite que ese sentimiento te llene.', pauseAfter: 8000 },
+            { step: 'reflection', text: 'Maravilloso. Ahora, abre los ojos y describe esa victoria. ¿Qué hiciste y cómo te hizo sentir? Celebrarlo conscientemente es un acto de auto-reconocimiento.', pauseAfter: 1000 },
+        ]
     },
     {
-        id: 'movement',
-        name: 'Movimiento Consciente',
-        description: 'Dedica 5 minutos a una actividad física ligera. El ejercicio libera endorfinas y dopamina.',
-        activityLogName: 'Pausa de Movimiento',
-        category: 'Movimiento'
-    },
-    {
-        id: 'creative',
-        name: 'Acto Creativo / Aprendizaje',
-        description: 'Dedica 5 minutos a crear o aprender algo nuevo. La novedad y la habilidad activan el sistema de recompensa.',
-        activityLogName: 'Acto Creativo',
-        category: 'Creatividad'
+        id: 'savoring',
+        name: 'Ritual de Saboreo (Savoring)',
+        description: 'Una práctica de mindfulness para extraer la máxima recompensa de una experiencia sensorial simple.',
+        activityLogName: 'Ritual de Saboreo',
+        category: 'Mindfulness',
+         script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Saboreo. Esta práctica entrena a tu cerebro para encontrar placer en el presente. Toma una bebida, como un té o un vaso de agua, o un pequeño trozo de comida.', pauseAfter: 6000 },
+            { step: 'practice', text: 'Ahora, antes de probarlo, obsérvalo. Nota su color, su temperatura. Acércalo y huele su aroma. Finalmente, dale un pequeño sorbo o mordisco, y mantenlo en tu boca. ¿Qué texturas sientes? ¿Qué sabores? Explóralo con tu atención plena, como si fuera la primera vez. Hazlo lentamente.', pauseAfter: 12000 },
+            { step: 'reflection', text: 'Bien. Ahora, usa el espacio de abajo para describir un detalle que notaste durante esta experiencia. ¿Qué descubriste al prestar atención? Esto enseña a tu cerebro a encontrar novedad y placer en lo simple.', pauseAfter: 1000 },
+        ]
     }
 ];

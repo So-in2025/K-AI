@@ -156,9 +156,10 @@ export interface IFreedomVaultConfig {
 }
 
 export interface IDopamineQuest {
-    id: 'gratitude' | 'victory' | 'mindfulness' | 'movement' | 'creative';
+    id: 'gratitude' | 'victory' | 'savoring' | 'movement';
     name: string;
     description: string;
     activityLogName: string;
     category: string;
+    script: { step: 'intention' | 'practice' | 'reflection'; text: string; pauseAfter: number }[];
 }

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, DOPAMINE_QUESTS } from '../constants';
+import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, DOPAMINE_QUESTS, SHAMANIC_DRUM_URL } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, IDopamineQuest } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -16,7 +16,10 @@ interface WellnessSanctuaryCardProps {
     onLogDopamineHit: (hit: IDopamineHit) => void;
 }
 
-type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'dopamine';
+type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'dopamine' | 'shamanic_journey';
+type JourneyStep = 'idle' | 'intention' | 'breathing' | 'mantra' | 'journey' | 'return' | 'integration';
+type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
+
 
 export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit }) => {
     const [view, setView] = useState<View>('menu');
@@ -28,15 +31,17 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const [progress, setProgress] = useState(0);
     const [currentStepInfo, setCurrentStepInfo] = useState({ name: '', duration: 0, animationClass: '' });
 
+    // Shamanic Journey State
+    const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
+    const drumAudioRef = useRef<HTMLAudioElement>(null);
+
     // Dopamine Quest State
     const [activeQuest, setActiveQuest] = useState<IDopamineQuest | null>(null);
+    const [questStep, setQuestStep] = useState<QuestStep>('intention');
     const [questTextInput, setQuestTextInput] = useState('');
-    const [questTimer, setQuestTimer] = useState(300); // 5 minutes for movement/creative
-    const [isQuestTimerActive, setIsQuestTimerActive] = useState(false);
     
     const intervalRef = useRef<number | null>(null);
     const stepTimeoutRef = useRef<number | null>(null);
-    const questTimerRef = useRef<number | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
      useEffect(() => {
@@ -52,17 +57,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }
     }, [view]);
 
-     useEffect(() => {
-        if (isQuestTimerActive && questTimer > 0) {
-            questTimerRef.current = window.setInterval(() => {
-                setQuestTimer(prev => prev - 1);
-            }, 1000);
-        } else if (questTimer === 0) {
-            setIsQuestTimerActive(false);
-            if(questTimerRef.current) clearInterval(questTimerRef.current);
-        }
-        return () => { if(questTimerRef.current) clearInterval(questTimerRef.current); };
-    }, [isQuestTimerActive, questTimer]);
 
     const resetState = (completed = false, activity?: IWellnessActivity) => {
         setIsActive(false);
@@ -80,6 +74,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setSelectedExercise(null);
         setSelectedMeditation(null);
         setSelectedVideo(null);
+        setJourneyStep('idle');
+        if (drumAudioRef.current) {
+            drumAudioRef.current.pause();
+            drumAudioRef.current.currentTime = 0;
+        }
         setView('menu');
     };
 
@@ -89,7 +88,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         let elapsedTime = 0;
         let totalDuration = selectedDuration * 60 * 1000;
         
-        // Special case for Wim Hof inspired breathing
         if (selectedExercise.id === 'wim-hof') {
             totalDuration = 30 * 3000; // 30 breaths, 3s each
         }
@@ -116,20 +114,20 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             
             if (selectedExercise.id === 'wim-hof') {
                 breathCount++;
-                if (breathCount < 60) { // 30 inhales + 30 exhales
+                if (breathCount < 60) {
                      stepTimeoutRef.current = window.setTimeout(runCycle, currentStep.duration);
                 }
             } else {
                 stepTimeoutRef.current = window.setTimeout(runCycle, currentStep.duration);
             }
         };
-        setTimeout(runCycle, 2000); // Initial delay
+        setTimeout(runCycle, 2000);
     };
 
     const startMeditation = (meditation: IMeditation) => {
         setSelectedMeditation(meditation);
         setIsActive(true);
-        const totalDuration = meditation.script.reduce((sum, step) => sum + step.text.split(' ').length * 300 + step.pause, 0); // Estimate duration
+        const totalDuration = meditation.script.reduce((sum, step) => sum + step.text.split(' ').length * 300 + step.pause, 0);
         let elapsedTime = 0;
         
         intervalRef.current = window.setInterval(() => {
@@ -138,24 +136,83 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }, 100);
 
         ttsService.speakSequence(meditation.script).then(() => {
-            // Check if still active before logging
-            if (selectedMeditation?.id === meditation.id && isActive) {
+            if (isActive) {
                 resetState(true, { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
             }
         });
     }
 
+    const startShamanicJourney = () => {
+      setJourneyStep('intention');
+      ttsService.speak("Bienvenido al Viaje de Sonido. Vamos a prepararnos. Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar? Mantenla en tu corazón.");
+      setTimeout(() => setJourneyStep('breathing'), 8000);
+    };
+
+    useEffect(() => {
+        if(journeyStep === 'breathing') {
+            ttsService.speak("Ahora, sincroniza tu respiración con el tambor que va a comenzar. Inhala profundo, exhala lento.");
+            setTimeout(() => {
+                if (drumAudioRef.current) {
+                    drumAudioRef.current.volume = 0.5;
+                    drumAudioRef.current.play();
+                }
+                setJourneyStep('mantra');
+            }, 5000);
+        }
+        if(journeyStep === 'mantra') {
+            ttsService.speak("Repite conmigo, internamente... Suelto lo que pesa... recibo lo que sana.");
+            setTimeout(() => ttsService.speak("Suelto lo que pesa... recibo lo que sana."), 6000);
+            setTimeout(() => setJourneyStep('journey'), 12000);
+        }
+        if(journeyStep === 'journey') {
+            ttsService.speak("Ahora, déjate llevar por el sonido. Observa sin juicio lo que surja. Estás en un espacio seguro.");
+            setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
+        }
+        if(journeyStep === 'return') {
+            if (drumAudioRef.current) drumAudioRef.current.pause();
+            ttsService.speak("Poco a poco, regresa a la conciencia de tu cuerpo. Siente tus manos, tus pies. El viaje ha terminado.");
+            setTimeout(() => setJourneyStep('integration'), 8000);
+        }
+    }, [journeyStep]);
+
+
+    // Dopamine Quest Logic
     const handleStartQuest = (quest: IDopamineQuest) => {
         setActiveQuest(quest);
-        if (quest.id === 'movement' || quest.id === 'creative') {
-            setQuestTimer(300); // 5 minutes
-            setIsQuestTimerActive(true);
+        setQuestStep('intention');
+        const stepScript = quest.script.find(s => s.step === 'intention');
+        if (stepScript) {
+            ttsService.speak(stepScript.text);
+            setTimeout(() => setQuestStep('practice'), stepScript.pauseAfter);
+        } else {
+            setQuestStep('practice');
         }
     };
 
+    useEffect(() => {
+        if (activeQuest && questStep === 'practice') {
+             const stepScript = activeQuest.script.find(s => s.step === 'practice');
+             if (stepScript) {
+                ttsService.speak(stepScript.text);
+                setTimeout(() => setQuestStep('reflection'), stepScript.pauseAfter);
+             } else {
+                setQuestStep('reflection');
+             }
+        }
+    }, [questStep, activeQuest]);
+    
+    useEffect(() => {
+        if (activeQuest && questStep === 'reflection') {
+             const stepScript = activeQuest.script.find(s => s.step === 'reflection');
+             if (stepScript) {
+                ttsService.speak(stepScript.text);
+             }
+        }
+    }, [questStep, activeQuest]);
+
+
     const handleCompleteQuest = () => {
         if (!activeQuest) return;
-
         const newHit: IDopamineHit = {
             id: crypto.randomUUID(),
             date: new Date().toISOString(),
@@ -166,37 +223,21 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         
         setActiveQuest(null);
         setQuestTextInput('');
-        setQuestTimer(300);
-        setIsQuestTimerActive(false);
+        setQuestStep('intention');
     };
-
-    const isQuestCompletionValid = () => {
-        if (!activeQuest) return false;
-        switch (activeQuest.id) {
-            case 'gratitude':
-            case 'victory':
-                return questTextInput.trim().length >= 15;
-            case 'movement':
-            case 'creative':
-                return questTimer === 0;
-            default:
-                return false;
-        }
-    };
-
 
     useEffect(() => {
         return () => {
             ttsService.stop();
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
-            if (questTimerRef.current) clearInterval(questTimerRef.current);
+            if (drumAudioRef.current) drumAudioRef.current.pause();
         };
     }, []);
 
     const renderMenu = () => (
         <>
-            <TtsInfoButton explanation="Este es tu Santuario de Bienestar. Un espacio para conectar contigo a través de prácticas guiadas. Elige 'Respiración' para calmar tu sistema nervioso, 'Meditación' para encontrar paz, 'Movimiento' para liberar tensiones, 'Recalibración de Dopamina' para entrenar tu cerebro, o el 'Ritual de Descanso' para preparar un sueño reparador." />
+            <TtsInfoButton explanation="Este es tu Santuario de Bienestar. Un espacio para conectar contigo a través de prácticas guiadas y rituales. Cada sección está diseñada para apoyarte de una forma única, desde calmar tu sistema nervioso hasta re-cablear tu cerebro para el bienestar." />
             <div className="flex items-center space-x-3 mb-3">
                 <LungsIcon />
                 <h2 className="text-xl font-bold text-slate-100">Santuario de Bienestar</h2>
@@ -207,8 +248,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 <button onClick={() => setView('meditation')} className="bg-indigo-900/50 text-indigo-300 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-900 transition-colors">Meditación</button>
                 <button onClick={() => setView('movement')} className="bg-lime-900/50 text-lime-300 font-semibold py-3 px-4 rounded-lg hover:bg-lime-900 transition-colors">Movimiento</button>
                 <button onClick={() => setView('dopamine')} className="bg-yellow-900/50 text-yellow-300 font-semibold py-3 px-4 rounded-lg hover:bg-yellow-900 transition-colors">Recalibración de Dopamina</button>
-                <div className="md:col-span-2">
-                    <button onClick={() => setView('rest_ritual')} className="w-full bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors">Ritual de Descanso</button>
+                <button onClick={() => setView('shamanic_journey')} className="bg-purple-900/50 text-purple-300 font-semibold py-3 px-4 rounded-lg hover:bg-purple-900 transition-colors">Viaje Chamánico</button>
+                <div className="md:col-span-1">
+                    <button onClick={() => setView('rest_ritual')} className="w-full h-full bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors">Ritual de Descanso</button>
                 </div>
             </div>
         </>
@@ -216,9 +258,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderRestRitual = () => {
         const ritualSteps = [
-            { name: "Estiramiento Nocturno", description: "Libera la tensión del día con 10 minutos de estiramiento suave.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda')!); setView('active_movement'); } },
+            { name: "Estiramiento Nocturno (10 min)", description: "Libera la tensión del día con una rutina suave de FisioOnline.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda')!); setView('active_movement'); } },
             { name: "Yoga Nidra (Sueño Yóguico)", description: "Calma tu mente con esta meditación de relajación profunda.", action: () => { startMeditation(GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra')!); } },
-            { name: "Vaciado Mental (Diario)", description: "Escribe y suelta tus preocupaciones en el diario para un descanso reparador.", action: () => { alert("Ve a la sección 'Herramientas' para usar tu diario. Esta función se integrará aquí próximamente."); } },
+            { name: "Vaciado Mental (Diario)", description: "Escribe y suelta tus preocupaciones en el diario para un descanso reparador.", action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); } },
         ];
         return (
              <>
@@ -300,64 +342,90 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     );
 
     const renderDopamineQuests = () => {
-        const formatTime = (seconds: number) => {
-            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toString().padStart(2, '0');
-            return `${mins}:${secs}`;
+        if (!activeQuest) {
+            return (
+                 <>
+                    <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                    <h3 className="font-bold text-slate-100 text-lg mb-2">Rituales de Dopamina</h3>
+                    <p className="text-slate-400 mb-4 text-sm">Elige un ritual guiado para entrenar tu cerebro y generar una recompensa natural. Tu progreso se registrará automáticamente al completar la práctica.</p>
+                    <div className="space-y-2">
+                        {DOPAMINE_QUESTS.map(quest => (
+                            <button key={quest.id} onClick={() => handleStartQuest(quest)} className="w-full text-left p-3 rounded-lg border-2 border-slate-700 hover:border-yellow-500">
+                                <h4 className="font-semibold text-slate-200">{quest.name}</h4>
+                                <p className="text-xs text-slate-400">{quest.description}</p>
+                            </button>
+                        ))}
+                    </div>
+                </>
+            );
         }
 
-        const renderQuestContent = () => {
-            if (!activeQuest) return null;
-            switch (activeQuest.id) {
-                case 'gratitude': case 'victory':
-                    return <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión aquí..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-lg"/>;
-                case 'movement': case 'creative':
-                    return <div className="text-center p-4"><p className="text-4xl font-bold font-mono text-yellow-300">{formatTime(questTimer)}</p></div>;
-                default: return null;
-            }
-        };
+        const currentStepScript = activeQuest.script.find(s => s.step === questStep);
+        const isReflectionStep = questStep === 'reflection';
+        const canComplete = isReflectionStep && questTextInput.trim().length >= 10;
 
         return (
-            <>
-                <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
-                <h3 className="font-bold text-slate-100 text-lg mb-2">Recalibración de Dopamina</h3>
-                {!activeQuest ? (
-                     <>
-                        <p className="text-slate-400 mb-4 text-sm">Elige una misión para entrenar tu cerebro y generar una recompensa natural. Tu progreso se registrará automáticamente al completar la tarea.</p>
-                        <div className="space-y-2">
-                            {DOPAMINE_QUESTS.map(quest => (
-                                <button key={quest.id} onClick={() => handleStartQuest(quest)} className="w-full text-left p-3 rounded-lg border-2 border-slate-700 hover:border-yellow-500">
-                                    <h4 className="font-semibold text-slate-200">{quest.name}</h4>
-                                    <p className="text-xs text-slate-400">{quest.description}</p>
-                                </button>
-                            ))}
-                        </div>
-                    </>
-                ) : (
-                    <div className="p-3 bg-slate-700/50 rounded-lg">
-                        <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest.name}</h3>
-                        <div className="mb-3">{renderQuestContent()}</div>
-                        <div className="flex gap-2">
-                             <button onClick={() => setActiveQuest(null)} className="flex-1 text-xs text-slate-400 text-center hover:underline">Cancelar</button>
-                             <button onClick={handleCompleteQuest} disabled={!isQuestCompletionValid()} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 disabled:bg-slate-500">Completar Misión</button>
-                        </div>
-                    </div>
+            <div className="p-3 bg-slate-700/50 rounded-lg">
+                <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest.name}</h3>
+                <p className="text-sm text-slate-300 mb-3 text-center">{currentStepScript?.text}</p>
+                {isReflectionStep && (
+                     <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión aquí..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-lg"/>
                 )}
-            </>
-        )
+                <div className="flex gap-2 mt-3">
+                     <button onClick={() => { setActiveQuest(null); ttsService.stop(); }} className="flex-1 text-xs text-slate-400 text-center hover:underline">Cancelar</button>
+                     <button onClick={handleCompleteQuest} disabled={!canComplete} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 disabled:bg-slate-500">Completar Ritual</button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderShamanicJourney = () => {
+        const stepText: Record<JourneyStep, string> = {
+            idle: '',
+            intention: 'Estableciendo Intención...',
+            breathing: 'Sincronizando Respiración...',
+            mantra: 'Anclando con el Mantra...',
+            journey: 'Viajando con el Sonido...',
+            return: 'Regresando al Presente...',
+            integration: 'Integrando la Experiencia.'
+        };
+        return (
+             <div className="text-center">
+                 <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                 <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3>
+                 {journeyStep === 'idle' ? (
+                     <>
+                        <TtsInfoButton explanation="Esta es una práctica de inmersión profunda. Usa un ritmo de tambor constante para guiar tu cerebro a un estado de meditación Theta, ideal para la introspección. Te guiaré para establecer una intención, respirar y usar un mantra antes de dejarte con el sonido." />
+                        <p className="text-slate-400 mb-4 text-sm">Prepara un espacio tranquilo y usa auriculares para una mejor experiencia. Este viaje dura aproximadamente 2 minutos.</p>
+                        <button onClick={startShamanicJourney} className="w-full bg-purple-600 text-white font-semibold py-3 px-5 rounded-lg">Comenzar Viaje</button>
+                    </>
+                 ) : (
+                     <div className="p-4 bg-slate-900/50 rounded-lg">
+                         <div className="flex justify-center items-center my-4 h-32">
+                             <div className="relative w-32 h-32">
+                                 <div className="absolute inset-0 bg-purple-500 rounded-full animate-pulse opacity-75"></div>
+                                 <div className="absolute inset-2 bg-purple-700 rounded-full animate-pulse animation-delay-300"></div>
+                             </div>
+                         </div>
+                         <p className="text-purple-300 font-semibold">{stepText[journeyStep]}</p>
+                         {journeyStep === 'integration' && (
+                            <div className="mt-4">
+                                <p className="text-slate-400 text-sm mb-2">La sesión ha terminado. Tómate un momento. Te recomiendo ir a tu Diario para escribir cualquier palabra o imagen que haya surgido.</p>
+                                <button onClick={() => resetState()} className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button>
+                            </div>
+                         )}
+                     </div>
+                 )}
+                 <audio ref={drumAudioRef} src={SHAMANIC_DRUM_URL} loop />
+             </div>
+        );
     };
 
     const renderActiveSession = () => {
        const sessionName = selectedExercise?.name || selectedMeditation?.name;
        const isBreathing = !!selectedExercise;
        return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-                <style>{`
-                    @keyframes inhale { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
-                    @keyframes exhale { 0% { transform: scale(1.2); } 100% { transform: scale(0.8); } }
-                    .animate-inhale { animation: inhale ${currentStepInfo.duration / 1000}s ease-in-out forwards; }
-                    .animate-exhale { animation: exhale ${currentStepInfo.duration / 1000}s ease-in-out forwards; }
-                `}</style>
+            <div>
                 <h3 className="text-lg font-bold text-center text-slate-100 mb-4">{sessionName}</h3>
                 <div className="flex flex-col items-center justify-center my-4 h-40">
                     <div className="relative w-36 h-36">
@@ -414,6 +482,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             case 'movement': return renderMovementSelection();
             case 'dopamine': return renderDopamineQuests();
             case 'rest_ritual': return renderRestRitual();
+            case 'shamanic_journey': return renderShamanicJourney();
             default: return renderMenu();
         }
     }
@@ -424,7 +493,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
                 .aspect-h-9 { height: 0; }
                 .aspect-w-16 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-            `}</style>
+             `}</style>
             {renderContent()}
         </div>
     );
