@@ -243,8 +243,6 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     }
 ];
 
-export const SHAMANIC_DRUM_VIDEO_ID = '_qg0f-4v5_o'; // Video: "Tambor Chamánico 15 minutos de Trance."
-
 export const NEURO_QUESTS: INeuroQuest[] = [
     // Rituales de Dopamina
     {
@@ -327,5 +325,3 @@ export const NEURO_QUESTS: INeuroQuest[] = [
         ]
     }
 ];
-
-
