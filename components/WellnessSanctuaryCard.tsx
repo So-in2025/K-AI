@@ -6,7 +6,7 @@ import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const LungsIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
 );
@@ -36,6 +36,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     // Shamanic Journey State
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
     const journeyTimeoutRef = useRef<number | null>(null);
+    const youtubePlayerRef = useRef<any>(null); // To hold the YouTube player instance
 
     // Neuro Quest State
     const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
@@ -68,6 +69,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         
+        if (youtubePlayerRef.current) {
+            youtubePlayerRef.current.destroy();
+            youtubePlayerRef.current = null;
+        }
+
         if (completed && activity) {
             onLogActivity(activity);
         } else {
@@ -149,20 +155,48 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             }
         });
     }
-
+    
     const startShamanicJourney = () => {
-      setJourneyStep('intention');
-      ttsService.speakSequence([
-          { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
-          { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
-          { text: "Mantenla en tu corazón.", pause: 1000 }
-      ]).then(() => { if(journeyStep === 'intention') setJourneyStep('breathing'); });
+      // Load the YouTube IFrame API script
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
+
+      (window as any).onYouTubeIframeAPIReady = () => {
+        youtubePlayerRef.current = new (window as any).YT.Player('youtube-player', {
+          height: '1',
+          width: '1',
+          videoId: SHAMANIC_DRUM_VIDEO_ID,
+          playerVars: {
+            'autoplay': 1,
+            'controls': 0,
+            'loop': 1,
+          },
+          events: {
+            'onReady': onPlayerReady,
+          }
+        });
+      };
+      
+      const onPlayerReady = (event: any) => {
+        event.target.playVideo();
+        setJourneyStep('intention');
+      };
     };
 
+
     useEffect(() => {
+        if(journeyStep === 'intention') {
+             ttsService.speakSequence([
+                { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
+                { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
+                { text: "Mantenla en tu corazón.", pause: 1000 }
+            ]).then(() => { if(journeyStep === 'intention') setJourneyStep('breathing'); });
+        }
         if(journeyStep === 'breathing') {
             ttsService.speakSequence([
-                { text: "Ahora, sincroniza tu respiración con el tambor que va a comenzar.", pause: 2000 },
+                { text: "Ahora, sincroniza tu respiración con el tambor que está sonando.", pause: 2000 },
                 { text: "Inhala profundo... exhala lento.", pause: 1000 }
             ]).then(() => {
                 if(journeyStep === 'breathing') {
@@ -254,6 +288,10 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
+            if (youtubePlayerRef.current) {
+                youtubePlayerRef.current.destroy();
+                youtubePlayerRef.current = null;
+            }
         };
     }, []);
 
@@ -280,7 +318,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderRestRitual = () => {
         const ritualSteps = [
-            { name: "Estiramiento Nocturno (10 min)", description: "Libera la tensión del día con una rutina suave de FisioOnline.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda')!); setView('active_movement'); } },
+            { name: "Estiramiento Nocturno (15 min)", description: "Libera la tensión del día con una rutina suave.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda')!); setView('active_movement'); } },
             { name: "Yoga Nidra (Sueño Yóguico)", description: "Calma tu mente con esta meditación de relajación profunda.", action: () => { startMeditation(GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra')!); } },
             { name: "Vaciado Mental (Diario)", description: "Escribe y suelta tus preocupaciones en el diario para un descanso reparador.", action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); } },
         ];
@@ -427,11 +465,15 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             return: 'Regresando al Presente...',
             integration: 'Integrando la Experiencia.'
         };
-        const showVideo = journeyStep === 'breathing' || journeyStep === 'mantra' || journeyStep === 'journey';
+        const showVideo = journeyStep !== 'idle' && journeyStep !== 'integration';
+        
         return (
              <div className="text-center">
                  <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
                  <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3>
+                 
+                 <div id="youtube-player" className="absolute w-1 h-1 -top-96 -left-96"></div>
+
                  {journeyStep === 'idle' ? (
                      <>
                         <TtsInfoButton explanation="Esta es una práctica de inmersión profunda. Usa un ritmo de tambor constante para guiar tu cerebro a un estado de meditación Theta, ideal para la introspección. Te guiaré para establecer una intención, respirar y usar un mantra antes de dejarte con el sonido." />
@@ -441,13 +483,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                  ) : (
                      <div className="p-4 bg-slate-900/50 rounded-lg">
                          <div className="flex justify-center items-center my-4 h-32 relative">
-                             {showVideo && (
-                                <iframe
-                                    src={`https://www.youtube.com/embed/${SHAMANIC_DRUM_VIDEO_ID}?autoplay=1&loop=1&controls=0`}
-                                    className="absolute top-0 left-0 w-full h-full opacity-0 pointer-events-none"
-                                    allow="autoplay"
-                                ></iframe>
-                            )}
                              <div className="relative w-32 h-32">
                                  <div className="absolute inset-0 bg-purple-500 rounded-full animate-pulse opacity-75"></div>
                                  <div className="absolute inset-2 bg-purple-700 rounded-full animate-pulse animation-delay-300"></div>
