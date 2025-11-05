@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { IHabitLoop } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
-import ttsService from '../services/ttsService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const LoopIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -14,12 +13,6 @@ const LoopIcon = () => (
 const LockIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-);
-
-const InfoIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
@@ -72,10 +65,6 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
         resetState();
     };
     
-    const handlePlayExplanation = () => {
-        ttsService.speak("Esta es una herramienta de neurociencia avanzada. Todo hábito es un bucle de tres pasos: una señal, una rutina y una recompensa. Para cambiar un hábito, necesitas identificar estos tres componentes. Esta herramienta te guía, con la ayuda de Kai, para deconstruir un bucle destructivo y diseñar conscientemente una nueva rutina que te dé una recompensa similar, pero de una forma constructiva. Es la ingeniería inversa de tus patrones.");
-    };
-
     const renderStepContent = () => {
         switch(step) {
             case 1: return (
@@ -113,14 +102,10 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
     if (isLocked) {
         return (
             <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative h-full">
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-3 mb-3">
-                        <LoopIcon />
-                        <h2 className="text-xl font-bold text-slate-100">Arquitecto de Hábitos</h2>
-                    </div>
-                     <button onClick={handlePlayExplanation} className="text-slate-400 hover:text-teal-400" aria-label="Explicación de la herramienta">
-                        <InfoIcon />
-                    </button>
+                 <TtsInfoButton explanation="Esta es una herramienta de neurociencia avanzada. Todo hábito es un bucle de tres pasos: una señal, una rutina y una recompensa. Para cambiar un hábito, necesitas identificar estos tres componentes. Esta herramienta te guía, con la ayuda de Kai, para deconstruir un bucle destructivo y diseñar conscientemente una nueva rutina que te dé una recompensa similar, pero de una forma constructiva. Es la ingeniería inversa de tus patrones." />
+                <div className="flex items-center space-x-3 mb-3">
+                    <LoopIcon />
+                    <h2 className="text-xl font-bold text-slate-100">Arquitecto de Hábitos</h2>
                 </div>
                  <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4 mt-4">
                     <LockIcon />
@@ -132,15 +117,11 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
     }
     
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-            <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-3 mb-3">
-                    <LoopIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Arquitecto de Hábitos</h2>
-                </div>
-                <button onClick={handlePlayExplanation} className="text-slate-400 hover:text-teal-400" aria-label="Explicación de la herramienta">
-                    <InfoIcon />
-                </button>
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta es una herramienta de neurociencia avanzada. Todo hábito es un bucle de tres pasos: una señal, una rutina y una recompensa. Para cambiar un hábito, necesitas identificar estos tres componentes. Esta herramienta te guía, con la ayuda de Kai, para deconstruir un bucle destructivo y diseñar conscientemente una nueva rutina que te dé una recompensa similar, pero de una forma constructiva. Es la ingeniería inversa de tus patrones." />
+            <div className="flex items-center space-x-3 mb-3">
+                <LoopIcon />
+                <h2 className="text-xl font-bold text-slate-100">Arquitecto de Hábitos</h2>
             </div>
             {!isCreating ? (
                 <>

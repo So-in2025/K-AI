@@ -1,20 +1,12 @@
-
 import React, { useState, useMemo } from 'react';
 import { IFreedomVaultConfig } from '../types';
-import ttsService from '../services/ttsService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const VaultIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
     </svg>
 );
-
-const InfoIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-);
-
 
 interface FreedomVaultCardProps {
     config: IFreedomVaultConfig | null;
@@ -51,21 +43,13 @@ export const FreedomVaultCard: React.FC<FreedomVaultCardProps> = ({ config, onUp
         return Math.floor(moneyRecovered / coffeePrice);
     }, [moneyRecovered]);
 
-    const handlePlayExplanation = () => {
-        ttsService.speak("Esta herramienta es tu alquimista personal. Te ayuda a visualizar cómo tu esfuerzo de recuperación se transmuta en recursos tangibles. Al registrar lo que gastabas, cada día de progreso se convierte en dinero recuperado, acercándote a los sueños que el vicio te había alejado. Es la prueba de que estás convirtiendo tu pasado en tu futuro.");
-    };
-
     if (!isEditing && !config) {
         return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-3 mb-3">
-                        <VaultIcon />
-                        <h2 className="text-xl font-bold text-slate-100">Bóveda de la Libertad</h2>
-                    </div>
-                    <button onClick={handlePlayExplanation} className="text-slate-400 hover:text-teal-400" aria-label="Explicación de la herramienta">
-                        <InfoIcon />
-                    </button>
+            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+                <TtsInfoButton explanation="Esta herramienta es tu alquimista personal. Te ayuda a visualizar cómo tu esfuerzo de recuperación se transmuta en recursos tangibles. Al registrar lo que gastabas, cada día de progreso se convierte en dinero recuperado, acercándote a los sueños que el vicio te había alejado. Es la prueba de que estás convirtiendo tu pasado en tu futuro." />
+                <div className="flex items-center space-x-3 mb-3">
+                    <VaultIcon />
+                    <h2 className="text-xl font-bold text-slate-100">Bóveda de la Libertad</h2>
                 </div>
                 <p className="text-slate-400 mb-4 text-sm">Transmuta tu recuperación en tus sueños. Calcula el dinero que estás recuperando y ponle un objetivo.</p>
                 <button onClick={() => setIsEditing(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30">
@@ -76,15 +60,11 @@ export const FreedomVaultCard: React.FC<FreedomVaultCardProps> = ({ config, onUp
     }
     
     return (
-         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-            <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-3 mb-3">
-                    <VaultIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Bóveda de la Libertad</h2>
-                </div>
-                <button onClick={handlePlayExplanation} className="text-slate-400 hover:text-teal-400" aria-label="Explicación de la herramienta">
-                    <InfoIcon />
-                </button>
+         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta herramienta es tu alquimista personal. Te ayuda a visualizar cómo tu esfuerzo de recuperación se transmuta en recursos tangibles. Al registrar lo que gastabas, cada día de progreso se convierte en dinero recuperado, acercándote a los sueños que el vicio te había alejado. Es la prueba de que estás convirtiendo tu pasado en tu futuro." />
+            <div className="flex items-center space-x-3 mb-3">
+                <VaultIcon />
+                <h2 className="text-xl font-bold text-slate-100">Bóveda de la Libertad</h2>
             </div>
             {isEditing ? (
                  <div className="space-y-4">

@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { ITrustCircleConfig, ICraving, IWellnessActivity } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const UsersIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,7 +46,8 @@ export const TrustCircleCard: React.FC<TrustCircleCardProps> = ({ config, onUpda
 
     if (!isEditing && !config) {
         return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+                <TtsInfoButton explanation="La sanación es más fuerte en comunidad. Esta herramienta te permite configurar a una persona de tu confianza para compartir tu progreso. Para proteger tu privacidad al máximo, KIA nunca enviará un correo automáticamente. En su lugar, preparará un borrador para que seas tú quien revise y envíe el informe desde tu propio email." />
                 <div className="flex items-center space-x-3 mb-3">
                     <UsersIcon />
                     <h2 className="text-xl font-bold text-slate-100">Círculo de Confianza</h2>
@@ -60,7 +61,8 @@ export const TrustCircleCard: React.FC<TrustCircleCardProps> = ({ config, onUpda
     }
     
     return (
-         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="La sanación es más fuerte en comunidad. Esta herramienta te permite configurar a una persona de tu confianza para compartir tu progreso. Para proteger tu privacidad al máximo, KIA nunca enviará un correo automáticamente. En su lugar, preparará un borrador para que seas tú quien revise y envíe el informe desde tu propio email." />
             <div className="flex items-center space-x-3 mb-3">
                 <UsersIcon />
                 <h2 className="text-xl font-bold text-slate-100">Círculo de Confianza</h2>

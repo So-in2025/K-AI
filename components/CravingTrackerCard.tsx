@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ICraving } from '../types';
 import { LogCravingModal } from './LogCravingModal';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const WaveIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -65,7 +66,8 @@ export const CravingTrackerCard: React.FC<CravingTrackerCardProps> = ({ cravings
 
     return (
         <>
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Un antojo no es una debilidad, es información. Al registrarlo, nos das los datos para entender qué lo detona y qué estrategias te funcionan mejor. Con el tiempo, esta herramienta te ayudará a predecir y desarmar los antojos antes de que tomen fuerza." />
             <div className="flex items-center space-x-3 mb-3">
                 <WaveIcon />
                 <h2 className="text-xl font-bold text-slate-100">Registro de Antojos</h2>

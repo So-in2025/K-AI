@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { JOURNAL_PROMPTS } from '../constants';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const EditIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -72,7 +72,8 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry: initialEntry, o
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+        <TtsInfoButton explanation="El diario es tu espacio sagrado para la introspección. Escribir tus pensamientos te ayuda a procesar emociones y ganar claridad. Si no sabes por dónde empezar, usa una de las guías para inspirarte. Tu progreso se guarda automáticamente y, al presionar 'Guardar y Reflexionar', Kai recibirá un resumen de tu entrada para entenderte mejor." />
         <div className="flex items-center space-x-3 mb-3">
             <EditIcon/>
             <h2 className="text-xl font-bold text-slate-100">Mi Diario Personal</h2>

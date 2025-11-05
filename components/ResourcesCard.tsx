@@ -1,6 +1,7 @@
 import React from 'react';
 import { RESOURCES } from '../constants';
 import { IResource } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const ResourceIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -11,7 +12,8 @@ const ResourceIcon = () => (
 
 export const ResourcesCard: React.FC = () => {
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+      <TtsInfoButton explanation="Recuerda que no estás solo. Esta tarjeta contiene un directorio de organizaciones y líneas de ayuda profesionales. KIA es una herramienta de apoyo, pero no reemplaza la ayuda de un profesional cualificado. Usa estos recursos cuando necesites un apoyo más estructurado." />
       <div className="flex items-center space-x-3 mb-4">
         <ResourceIcon />
         <h2 className="text-xl font-bold text-slate-100">Recursos de Ayuda</h2>

@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { IReminder } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const ClockIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,7 +36,8 @@ export const RemindersCard: React.FC<RemindersCardProps> = ({ reminders, onAddRe
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta herramienta te ayuda a mantener el rumbo. Crea recordatorios para cualquier cosa que necesites: tomar un medicamento, hacer una pausa para respirar, o una reunión importante. Recibirás una notificación en tu dispositivo a la hora que elijas, incluso si no tienes la aplicación abierta." />
             <div className="flex items-center space-x-3 mb-3">
                 <ClockIcon />
                 <h2 className="text-xl font-bold text-slate-100">Mis Recordatorios</h2>

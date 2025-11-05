@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserFocus } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const CalendarIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -36,7 +37,8 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
   }
 
   return (
-    <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-6 rounded-2xl shadow-lg text-white h-full flex flex-col justify-between">
+    <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-6 rounded-2xl shadow-lg text-white h-full flex flex-col justify-between relative">
+      <TtsInfoButton explanation="Esta tarjeta es tu ancla. Muestra el número de días que has avanzado en tu camino, un recordatorio constante de tu fuerza y compromiso." />
       <div>
         <div className="flex items-center space-x-4 mb-4">
           <CalendarIcon />

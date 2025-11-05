@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { GuardianAnalysisResult, IGuardianAnalysis } from '../types';
 import { UpgradeCard } from './UpgradeCard';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const ShieldIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -172,8 +172,9 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
             {showConsent && <ConsentModal onAccept={handleAcceptConsent} onDecline={() => setShowConsent(false)} />}
+            <TtsInfoButton explanation="El Modo Guardián es una herramienta de autoconocimiento. Cuando lo activas en una situación de riesgo, como una reunión social, usa el micrófono para transcribir el ambiente. Después, Kai analiza la conversación para ayudarte a identificar detonantes, presión social y puntos de inflexión. Tu privacidad es clave: el audio nunca se guarda y la transcripción se elimina tras el análisis." />
             <div className="flex items-center space-x-3 mb-3">
                 <ShieldIcon />
                 <h2 className="text-xl font-bold text-slate-100">Modo Guardián</h2>

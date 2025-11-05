@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { ICraving, IWellnessActivity, UserFocus, IDopamineHit } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 // Using a simple markdown parser to convert **bold** and lists
 const parseMarkdown = (text: string) => {
@@ -117,6 +117,7 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
 
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta es una de las herramientas más potentes de KIA Plus. Cada semana, Kai analiza todos tus datos: antojos, diario, actividades de bienestar y más, para darte un resumen inteligente. Identificará tu fortaleza principal, el patrón más relevante de la semana y te dará una sugerencia clara y personalizada para seguir avanzando." />
             <div className={`transition-all duration-300 ${isLocked ? 'blur-md pointer-events-none' : ''}`}>
                 <div className="flex items-center space-x-3 mb-3">
                     <BrainIcon />

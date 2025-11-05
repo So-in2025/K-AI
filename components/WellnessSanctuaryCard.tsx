@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo } from '../types';
 import ttsService from '../services/ttsService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const LungsIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
 );
@@ -119,6 +119,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderMenu = () => (
         <>
+            <TtsInfoButton explanation="Este es tu Santuario de Bienestar. Un espacio para conectar contigo a través de prácticas guiadas. Elige 'Respiración' para calmar tu sistema nervioso, 'Meditación' para encontrar paz, 'Movimiento' para liberar tensiones, o el 'Ritual de Descanso' para preparar un sueño reparador." />
             <div className="flex items-center space-x-3 mb-3">
                 <LungsIcon />
                 <h2 className="text-xl font-bold text-slate-100">Santuario de Bienestar</h2>
@@ -289,7 +290,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
 
     return (
-        <div ref={cardRef} className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div ref={cardRef} className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
              <style>{`
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
                 .aspect-h-9 { height: 0; }

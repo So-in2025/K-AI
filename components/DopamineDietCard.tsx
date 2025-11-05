@@ -1,19 +1,12 @@
-
 import React, { useState, useMemo } from 'react';
 import { IDopamineHit } from '../types';
 import { DOPAMINE_ACTIVITIES } from '../constants';
-import ttsService from '../services/ttsService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const BrainCircuitIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.94 13.94A8.5 8.5 0 014.06 4.06M4.06 13.94A8.5 8.5 0 0117.94 4.06" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v.01M12 15v.01" />
-    </svg>
-);
-
-const InfoIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
@@ -68,20 +61,12 @@ export const DopamineDietCard: React.FC<DopamineDietCardProps> = ({ hits, onLogH
         return { topActivities, maxValue };
     }, [hits]);
 
-    const handlePlayExplanation = () => {
-        ttsService.speak("Esta herramienta te ayuda a re-calibrar el sistema de recompensa de tu cerebro. El objetivo es entrenarte para reconocer y valorar las recompensas naturales, como hacer ejercicio o completar una tarea. Al registrar estas pequeñas victorias, debilitas la dependencia de los 'picos' artificiales del vicio y fortaleces las autopistas neuronales del bienestar sostenible.");
-    };
-
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-            <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-3 mb-3">
-                    <BrainCircuitIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Re-calibrador de Dopamina</h2>
-                </div>
-                <button onClick={handlePlayExplanation} className="text-slate-400 hover:text-teal-400" aria-label="Explicación de la herramienta">
-                    <InfoIcon />
-                </button>
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta herramienta te ayuda a re-calibrar el sistema de recompensa de tu cerebro. El objetivo es entrenarte para reconocer y valorar las recompensas naturales, como hacer ejercicio o completar una tarea. Al registrar estas pequeñas victorias, debilitas la dependencia de los 'picos' artificiales del vicio y fortaleces las autopistas neuronales del bienestar sostenible." />
+            <div className="flex items-center space-x-3 mb-3">
+                <BrainCircuitIcon />
+                <h2 className="text-xl font-bold text-slate-100">Re-calibrador de Dopamina</h2>
             </div>
             <p className="text-slate-400 mb-4 text-sm">Entrena tu cerebro para encontrar recompensa en lo saludable. Registra una pequeña victoria o un placer natural.</p>
             

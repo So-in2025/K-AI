@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const SparklesIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -37,7 +38,8 @@ export const AffirmationGeneratorCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Las palabras tienen poder. Esta herramienta es tu alquimista personal. Escribe cómo te sientes, sin filtros, y Kai transformará esa energía en una afirmación positiva y personalizada en primera persona, dándote una frase de poder para anclar tu intención." />
             <div className="flex items-center space-x-3 mb-3">
                 <SparklesIcon />
                 <h2 className="text-xl font-bold text-slate-100">Generador de Afirmaciones</h2>

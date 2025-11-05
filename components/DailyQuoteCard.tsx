@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const QuoteIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-14l2-2 2 2m-4 5l2 2 2-2m-3 9l2 2 2-2" />
     </svg>
 );
@@ -27,7 +27,8 @@ export const DailyQuoteCard: React.FC = () => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white">
+    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white relative">
+      <TtsInfoButton explanation="Cada día, Kai genera una cita inspiradora única para ti, diseñada para ofrecerte una dosis de fuerza y perspectiva en tu camino." className="text-white hover:text-indigo-200" />
       <div className="flex items-center space-x-3 mb-4">
         <QuoteIcon />
         <h2 className="text-xl font-bold">Inspiración del Día</h2>
@@ -50,4 +51,3 @@ export const DailyQuoteCard: React.FC = () => {
     </div>
   );
 };
-   

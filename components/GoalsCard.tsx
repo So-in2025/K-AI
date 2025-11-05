@@ -1,5 +1,6 @@
 import React from 'react';
 import { IGoal, GoalType } from '../types';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const TargetIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,7 +28,8 @@ export const GoalsCard: React.FC<GoalsCardProps> = ({ goals, onGenerateGoal, isL
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="Esta herramienta convierte tu progreso en un plan de acción. Kai analiza tus datos recientes para generar metas S.M.A.R.T.: específicas, medibles, alcanzables, relevantes y con un plazo. Usa estos objetivos para darte una dirección clara y enfocada cada día, semana y mes." />
             <div className="flex items-center space-x-3 mb-3">
                 <TargetIcon />
                 <h2 className="text-xl font-bold text-slate-100">Mis Metas con IA</h2>
