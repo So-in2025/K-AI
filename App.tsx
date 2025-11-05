@@ -100,6 +100,7 @@ const App: React.FC = () => {
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isSubscribed, setIsSubscribed] = useState(false); // Monetization state
+  const [isDevMode, setIsDevMode] = useState(false); // Temporary dev mode state
 
   const [cravings, setCravings] = useState<ICraving[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -131,6 +132,9 @@ const App: React.FC = () => {
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
+  // Derived state for premium access
+  const hasPremiumAccess = isSubscribed || isDevMode;
+
   const updateLastInteraction = useCallback(() => {
     localStorage.setItem(LAST_INTERACTION_KEY, new Date().toISOString());
   }, []);
@@ -142,6 +146,24 @@ const App: React.FC = () => {
         return newPoints;
     });
   }, []);
+
+  // Dev mode effect
+  useEffect(() => {
+    const devModeActive = sessionStorage.getItem('isDevMode') === 'true';
+    if (devModeActive) {
+      setIsDevMode(true);
+    }
+  }, []);
+
+  const handleToggleDevMode = () => {
+    const newDevModeState = !isDevMode;
+    setIsDevMode(newDevModeState);
+    if (newDevModeState) {
+      sessionStorage.setItem('isDevMode', 'true');
+    } else {
+      sessionStorage.removeItem('isDevMode');
+    }
+  };
 
   useEffect(() => {
     const existingApiKey = getApiKey();
@@ -362,7 +384,7 @@ const App: React.FC = () => {
   const handleOpenApiKeyModal = () => setIsApiKeyModalOpen(true);
   
   const updateKaiMemory = useCallback(async (conversationHistory: IConversationTurn[], currentMemory: string) => {
-    if (!isSubscribed) return; // Only for Plus users
+    if (!hasPremiumAccess) return; // Only for Plus users
 
     const recentConversation = conversationHistory.slice(-10).map(t => `${t.role}: ${t.text}`).join('\n');
     const prompt = `
@@ -388,7 +410,7 @@ const App: React.FC = () => {
         console.error("Failed to update Kai's memory:", e);
     }
 
-  }, [isSubscribed]);
+  }, [hasPremiumAccess]);
   
   const handleNewConversationTurn = useCallback((turn: IConversationTurn) => {
     setConversation(prev => {
@@ -648,7 +670,7 @@ const App: React.FC = () => {
     
     dispatchGuardian({ type: 'START_ANALYSIS' });
 
-    if (!isSubscribed) {
+    if (!hasPremiumAccess) {
         dispatchGuardian({ type: 'SET_ANALYSIS', payload: { isLocked: true } });
         return;
     }
@@ -733,7 +755,7 @@ const App: React.FC = () => {
                   goals={goals}
                   onboardingData={onboardingData}
                   kaiMemory={kaiMemory}
-                  isSubscribed={isSubscribed}
+                  isSubscribed={hasPremiumAccess}
                   dopamineHits={dopamineHits}
                 />;
       case 'tools':
@@ -753,7 +775,7 @@ const App: React.FC = () => {
                   onAddThoughtLabEntry={handleAddThoughtLabEntry}
                   habitLoops={habitLoops}
                   onAddHabitLoop={handleAddHabitLoop}
-                  isSubscribed={isSubscribed}
+                  isSubscribed={hasPremiumAccess}
                 />;
       case 'progress':
         return <ProgressView 
@@ -762,7 +784,7 @@ const App: React.FC = () => {
                   wellnessLog={wellnessLog}
                   daysSober={daysSober}
                   onboardingData={onboardingData}
-                  isSubscribed={isSubscribed}
+                  isSubscribed={hasPremiumAccess}
                   gardenGrowthPoints={gardenGrowthPoints}
                   trustCircleConfig={trustCircleConfig}
                   onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
@@ -789,7 +811,12 @@ const App: React.FC = () => {
   return (
     <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
-      <Header onSettingsClick={handleOpenApiKeyModal} onboardingData={onboardingData} />
+      <Header 
+        onSettingsClick={handleOpenApiKeyModal} 
+        onboardingData={onboardingData} 
+        onDevClick={handleToggleDevMode}
+        isDevMode={isDevMode}
+      />
       
       <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-48">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}

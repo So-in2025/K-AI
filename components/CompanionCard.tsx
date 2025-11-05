@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit } from '../types';
@@ -334,7 +333,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     }
 
     return (
-        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl flex flex-col h-full">
+        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl flex flex-col min-h-[calc(100vh-22rem)]">
             <style>{`
                 .kai-container { perspective: 800px; }
                 .kai-orb { width: 120px; height: 120px; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out; }
