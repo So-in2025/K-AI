@@ -218,25 +218,25 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
     }
 ];
 
-// VIDEOS REEMPLAZADOS POR PLACEHOLDERS. PEGA AQUÍ LOS IDs DE YOUTUBE DE TU INVESTIGACIÓN.
+// Videos de YouTube curados para prácticas de movimiento y descanso.
 export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     {
         id: 'yoga-principiantes',
-        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_YOGA_PRINCIPIANTES', 
+        youtubeId: 'k2c8gJ0_k5c', 
         name: 'Yoga Suave para Principiantes',
         description: 'Una clase completa y suave para conectar con tu cuerpo y calmar la mente, perfecta para empezar.',
         duration: 20
     },
     {
         id: 'estiramiento-espalda',
-        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_ESTIRAMIENTO_ESPALDA',
+        youtubeId: 'Bqij_i3O0o4',
         name: 'Estiramiento Nocturno (10 min)',
         description: 'Rutina terapéutica para liberar la tensión de la espalda y el cuello, ideal para el Ritual de Descanso.',
         duration: 10
     },
     {
         id: 'yoga-ansiedad',
-        youtubeId: 'REEMPLAZAR_YOUTUBE_ID_YOGA_ANSIEDAD',
+        youtubeId: 'hjjA0t22a28',
         name: 'Yoga para la Ansiedad',
         description: 'Una práctica específicamente diseñada para calmar el sistema nervioso y reducir la ansiedad.',
         duration: 20

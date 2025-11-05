@@ -67,8 +67,15 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }, [view]);
 
 
-    const resetState = (completed = false, activity?: IWellnessActivity) => {
-        setIsActive(false);
+    const resetState = (options: {
+        completed?: boolean;
+        activity?: IWellnessActivity;
+        keepTts?: boolean;
+    } = {}) => {
+        const { completed = false, activity, keepTts = false } = options;
+        const wasActive = isActiveRef.current;
+    
+        // Limpiar todos los temporizadores y contextos de audio
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
         if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
@@ -76,21 +83,36 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             clearInterval(drumIntervalRef.current);
             drumIntervalRef.current = null;
         }
-
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
+    
+        // Restablecer el estado de la UI
+        setIsActive(false);
         setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
-        
-        if (completed && activity) {
-            onLogActivity(activity);
-        } else {
-            ttsService.stop();
-        }
-        
         setSelectedExercise(null);
         setSelectedMeditation(null);
         setSelectedVideo(null);
         setJourneyStep('idle');
+        setActiveQuest(null);
+        setQuestTextInput('');
+        setQuestStep('intention');
         setView('menu');
+    
+        // Lógica de feedback de voz
+        if (!keepTts) {
+            ttsService.stop();
+        }
+    
+        if (completed && activity) {
+            onLogActivity(activity); // Esto da su propio feedback positivo
+        } else if (wasActive && !completed) {
+            if (!keepTts) {
+                ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
+            }
+        }
     };
 
     const startBreathingExercise = async () => {
@@ -141,7 +163,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             const currentProgress = (elapsedTime / totalDuration) * 100;
             setProgress(currentProgress);
             if (currentProgress >= 100) {
-                 resetState(true, { date: new Date().toISOString(), exerciseName: selectedExercise.name, durationMinutes: selectedDuration });
+                 resetState({ completed: true, activity: { date: new Date().toISOString(), exerciseName: selectedExercise.name, durationMinutes: selectedDuration } });
             }
         }, 100);
     };
@@ -159,12 +181,13 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
         await ttsService.speakSequence(meditation.script);
         if (isActiveRef.current) {
-            resetState(true, { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
+            resetState({ completed: true, activity: { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 } });
         }
     }
     
     const startShamanicJourney = () => {
         if (drumIntervalRef.current) return;
+        setIsActive(true);
 
         if (!audioContextRef.current) {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -204,14 +227,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
                     { text: "Mantenla en tu corazón.", pause: 2000 }
                 ]);
-                if(journeyStep === 'intention') setJourneyStep('breathing');
+                if(isActiveRef.current && journeyStep === 'intention') setJourneyStep('breathing');
             }
             if(journeyStep === 'breathing') {
                 await ttsService.speakSequence([
                     { text: "Ahora, sincroniza tu respiración con el tambor que está sonando.", pause: 4000 },
                     { text: "Inhala profundo... exhala lento.", pause: 3000 }
                 ]);
-                if(journeyStep === 'breathing') setJourneyStep('mantra');
+                if(isActiveRef.current && journeyStep === 'breathing') setJourneyStep('mantra');
             }
             if(journeyStep === 'mantra') {
                 await ttsService.speakSequence([
@@ -221,14 +244,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     { text: "Suelto lo que pesa...", pause: 4000 },
                     { text: "recibo lo que sana.", pause: 3000 }
                 ]);
-                if(journeyStep === 'mantra') setJourneyStep('journey');
+                if(isActiveRef.current && journeyStep === 'mantra') setJourneyStep('journey');
             }
             if(journeyStep === 'journey') {
                 await ttsService.speakSequence([
                     { text: "Ahora, déjate llevar por el sonido.", pause: 4000 },
                     { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 2000 }
                 ]);
-                if(journeyStep === 'journey') {
+                if(isActiveRef.current && journeyStep === 'journey') {
                     journeyTimeoutRef.current = window.setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
                 }
             }
@@ -237,21 +260,24 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 4000 },
                     { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 2000 }
                 ]);
-                if(journeyStep === 'return') setJourneyStep('integration');
+                if(isActiveRef.current && journeyStep === 'return') setJourneyStep('integration');
             }
         }
-        runJourneyStep();
+        if (isActiveRef.current) {
+            runJourneyStep();
+        }
     }, [journeyStep]);
 
 
     // Neuro Quest Logic
     const handleStartQuest = async (quest: INeuroQuest) => {
+        setIsActive(true);
         setActiveQuest(quest);
         setQuestStep('intention');
         const stepScript = quest.script.find(s => s.step === 'intention');
         if (stepScript) {
             await ttsService.speak(stepScript.text);
-            if(activeQuest) setQuestStep('practice');
+            if(isActiveRef.current && activeQuest) setQuestStep('practice');
         } else {
             setQuestStep('practice');
         }
@@ -259,11 +285,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     useEffect(() => {
         const runPractice = async () => {
-            if (activeQuest && questStep === 'practice') {
+            if (isActiveRef.current && activeQuest && questStep === 'practice') {
                  const stepScript = activeQuest.script.find(s => s.step === 'practice');
                  if (stepScript) {
                     await ttsService.speak(stepScript.text);
-                    if(activeQuest) setQuestStep('reflection');
+                    if(isActiveRef.current && activeQuest) setQuestStep('reflection');
                  } else {
                     setQuestStep('reflection');
                  }
@@ -273,7 +299,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }, [questStep, activeQuest]);
     
     useEffect(() => {
-        if (activeQuest && questStep === 'reflection') {
+        if (isActiveRef.current && activeQuest && questStep === 'reflection') {
              const stepScript = activeQuest.script.find(s => s.step === 'reflection');
              if (stepScript) {
                 ttsService.speak(stepScript.text);
@@ -291,19 +317,26 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             category: activeQuest.category,
         };
         onLogDopamineHit(newHit);
-        
-        setActiveQuest(null);
-        setQuestTextInput('');
-        setQuestStep('intention');
+        resetState({ keepTts: true });
     };
 
     useEffect(() => {
         return () => {
+            const wasActive = isActiveRef.current;
+            
             ttsService.stop();
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
             if (drumIntervalRef.current) clearInterval(drumIntervalRef.current);
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+            
+            if (wasActive) {
+                ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
+            }
         };
     }, []);
 
@@ -460,7 +493,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                      <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión aquí..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-lg"/>
                 )}
                 <div className="flex gap-2 mt-3">
-                     <button onClick={() => { setActiveQuest(null); ttsService.stop(); }} className="flex-1 text-xs text-slate-400 text-center hover:underline">Cancelar</button>
+                     <button onClick={() => resetState({})} className="flex-1 text-xs text-slate-400 text-center hover:underline">Cancelar</button>
                      <button onClick={handleCompleteQuest} disabled={!canComplete} className={`flex-1 bg-${colorClass}-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-${colorClass}-700 disabled:bg-slate-500`}>Completar Ritual</button>
                 </div>
             </div>
@@ -480,7 +513,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         
         return (
              <div className="text-center">
-                 <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                 <button onClick={() => resetState({})} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
                  <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3>
                  
                  {journeyStep === 'idle' ? (
@@ -501,7 +534,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                          {journeyStep === 'integration' && (
                             <div className="mt-4">
                                 <p className="text-slate-400 text-sm mb-2">La sesión ha terminado. Tómate un momento. Te recomiendo ir a tu Diario para escribir cualquier palabra o imagen que haya surgido.</p>
-                                <button onClick={() => resetState()} className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button>
+                                <button onClick={() => resetState({})} className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button>
                             </div>
                          )}
                      </div>
@@ -515,7 +548,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
        const isBreathing = !!selectedExercise;
        return (
             <div>
-                <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                <button onClick={() => resetState({})} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
                 <h3 className="text-lg font-bold text-center text-slate-100 mb-4">{sessionName}</h3>
                 <div className="flex flex-col items-center justify-center my-4 h-40">
                     <div className="relative w-36 h-36">
@@ -528,7 +561,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4">
                     <div className={`${isBreathing ? 'bg-teal-600' : 'bg-indigo-600'} h-2.5 rounded-full`} style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}></div>
                 </div>
-                <button onClick={() => resetState()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700">
+                <button onClick={() => resetState({})} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700">
                     Detener Práctica
                 </button>
             </div>
@@ -552,7 +585,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     ></iframe>
                 </div>
                  <button 
-                    onClick={() => resetState(true, { date: new Date().toISOString(), exerciseName: selectedVideo.name, durationMinutes: selectedVideo.duration })}
+                    onClick={() => resetState({ completed: true, activity: { date: new Date().toISOString(), exerciseName: selectedVideo.name, durationMinutes: selectedVideo.duration }})}
                     className="w-full mt-4 bg-lime-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-lime-700 transition-colors"
                 >
                     He completado esta rutina
