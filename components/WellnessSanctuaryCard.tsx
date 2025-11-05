@@ -16,7 +16,7 @@ interface WellnessSanctuaryCardProps {
 }
 
 type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'neuro_selection' | 'neuro_quests' | 'shamanic_journey';
-type JourneyStep = 'idle' | 'intention' | 'breathing' | 'mantra' | 'journey' | 'return' | 'integration';
+type JourneyStep = 'idle' | 'intention' | 'callingIn' | 'journeyDeep' | 'returnCall' | 'integration' | 'finished';
 type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
 type Neurotransmitter = 'dopamine' | 'serotonin';
 
@@ -34,9 +34,10 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     // Shamanic Journey State
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
+    // Fix: Changed NodeJS.Timeout to number for browser compatibility as setTimeout in browsers returns a number.
     const journeyTimeoutRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const drumIntervalRef = useRef<number | null>(null);
+    const audioElementsRef = useRef<{ [key: string]: any }>({});
 
 
     // Neuro Quest State
@@ -75,20 +76,23 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         const { completed = false, activity, keepTts = false } = options;
         const wasActive = isActiveRef.current;
     
-        // Limpiar todos los temporizadores y contextos de audio
+        // Clear all timers and audio contexts
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
         if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
-        if (drumIntervalRef.current) {
-            clearInterval(drumIntervalRef.current);
-            drumIntervalRef.current = null;
-        }
+        
+        // Stop all shamanic journey sounds
+        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+        if (audioElementsRef.current.rattleInterval) clearInterval(audioElementsRef.current.rattleInterval);
+        if (audioElementsRef.current.wind) audioElementsRef.current.wind.stop();
+
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
             audioContextRef.current.close();
             audioContextRef.current = null;
         }
+        audioElementsRef.current = {};
     
-        // Restablecer el estado de la UI
+        // Reset UI state
         setIsActive(false);
         setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
@@ -101,13 +105,13 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setQuestStep('intention');
         setView('menu');
     
-        // Lógica de feedback de voz
+        // Voice feedback logic
         if (!keepTts) {
             ttsService.stop();
         }
     
         if (completed && activity) {
-            onLogActivity(activity); // Esto da su propio feedback positivo
+            onLogActivity(activity); // This gives its own positive feedback
         } else if (wasActive && !completed) {
             if (!keepTts) {
                 ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
@@ -186,85 +190,156 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
     
     const startShamanicJourney = () => {
-        if (drumIntervalRef.current) return;
+        if (journeyStep !== 'idle') return;
         setIsActive(true);
 
-        if (!audioContextRef.current) {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        const audioCtx = audioContextRef.current;
-        audioCtx.resume(); // Ensure context is active
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioCtx;
+        audioCtx.resume();
 
+        // --- Sound Generators ---
         const playDrum = () => {
-            if (!audioCtx) return;
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-
-            // Drum sound characteristics
-            oscillator.frequency.setValueAtTime(120, audioCtx.currentTime); 
+            oscillator.frequency.setValueAtTime(120, audioCtx.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
-
-            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime); // Lowered volume
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + 0.5);
         };
 
-        drumIntervalRef.current = window.setInterval(playDrum, 400); // ~150 BPM
+        const playRattle = () => {
+            const bufferSize = audioCtx.sampleRate * 0.1;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // Lowered volume
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            noise.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            noise.start(audioCtx.currentTime);
+            noise.stop(audioCtx.currentTime + 0.1);
+        };
+
+        const playChime = () => {
+            [440, 880, 1320].forEach(freq => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.value = freq;
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 4);
+            });
+        };
+
+        const createWind = () => {
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            let lastOut = 0;
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                output[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = output[i];
+                output[i] *= 3.5;
+            }
+            const wind = audioCtx.createBufferSource();
+            wind.buffer = buffer;
+            wind.loop = true;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.1;
+            wind.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            wind.start();
+            return wind;
+        };
+        
+        audioElementsRef.current = { playChime };
+        audioElementsRef.current.wind = createWind();
+        
+        // Start the journey sequence
         setJourneyStep('intention');
     };
 
 
     useEffect(() => {
         const runJourneyStep = async () => {
-            if(journeyStep === 'intention') {
-                 await ttsService.speakSequence([
-                    { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
-                    { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
-                    { text: "Mantenla en tu corazón.", pause: 2000 }
-                ]);
-                if(isActiveRef.current && journeyStep === 'intention') setJourneyStep('breathing');
+            if (!isActiveRef.current) return;
+
+            const clearTimeouts = () => {
+                if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
+            };
+
+            switch (journeyStep) {
+                case 'intention':
+                    await ttsService.speakSequence([
+                        { text: "Bienvenido al Viaje de Sonido. Prepara un espacio tranquilo y usa auriculares.", pause: 3000 },
+                        { text: "Cierra los ojos. Establece una intención. ¿Qué buscas sanar? ¿Qué buscas encontrar?", pause: 5000 },
+                        { text: "Mantenla en tu corazón.", pause: 2000 }
+                    ]);
+                    if (isActiveRef.current) setJourneyStep('callingIn');
+                    break;
+
+                case 'callingIn':
+                    audioElementsRef.current.drumInterval = setInterval(audioElementsRef.current.playDrum, 333); // 180 BPM
+                    audioElementsRef.current.rattleInterval = setInterval(audioElementsRef.current.playRattle, 166);
+                    await ttsService.speakSequence([
+                        { text: "Sincroniza tu respiración con el ritmo. Inhala... exhala...", pause: 4000 },
+                        { text: "Repite conmigo, internamente...", pause: 2000 },
+                        { text: "Suelto lo que pesa... recibo lo que sana.", pause: 5000 },
+                    ]);
+                    if (isActiveRef.current) setJourneyStep('journeyDeep');
+                    break;
+                
+                case 'journeyDeep':
+                    await ttsService.speak("Ahora, déjate llevar. Observa sin juicio. Estás a salvo.", 0.9);
+                    clearTimeouts();
+                    journeyTimeoutRef.current = window.setTimeout(() => {
+                        if (isActiveRef.current) setJourneyStep('returnCall');
+                    }, 45000); // 45 seconds of deep journey
+                    break;
+                
+                case 'returnCall':
+                    if (audioElementsRef.current.rattleInterval) clearInterval(audioElementsRef.current.rattleInterval);
+                    audioElementsRef.current.playChime();
+                    await ttsService.speak("Es hora de volver. Escucha el llamado. Regresa a tu cuerpo.", 0.9);
+                    clearTimeouts();
+                    journeyTimeoutRef.current = window.setTimeout(() => {
+                         if (isActiveRef.current) setJourneyStep('integration');
+                    }, 10000); // 10 seconds to return
+                    break;
+
+                case 'integration':
+                    if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+                     await ttsService.speakSequence([
+                        { text: "Poco a poco, mueve tus dedos. Siente el espacio a tu alrededor.", pause: 4000 },
+                        { text: "El viaje ha terminado. Agradece la experiencia.", pause: 2000 }
+                    ]);
+                    if (isActiveRef.current) setJourneyStep('finished');
+                    break;
+
+                case 'finished':
+                     resetState({ completed: true, activity: { date: new Date().toISOString(), exerciseName: 'Viaje de Sonido Chamánico', durationMinutes: 3 } });
+                    break;
             }
-            if(journeyStep === 'breathing') {
-                await ttsService.speakSequence([
-                    { text: "Ahora, sincroniza tu respiración con el tambor que está sonando.", pause: 4000 },
-                    { text: "Inhala profundo... exhala lento.", pause: 3000 }
-                ]);
-                if(isActiveRef.current && journeyStep === 'breathing') setJourneyStep('mantra');
-            }
-            if(journeyStep === 'mantra') {
-                await ttsService.speakSequence([
-                    { text: "Repite conmigo, internamente...", pause: 2000 },
-                    { text: "Suelto lo que pesa...", pause: 4000 },
-                    { text: "recibo lo que sana.", pause: 5000 },
-                    { text: "Suelto lo que pesa...", pause: 4000 },
-                    { text: "recibo lo que sana.", pause: 3000 }
-                ]);
-                if(isActiveRef.current && journeyStep === 'mantra') setJourneyStep('journey');
-            }
-            if(journeyStep === 'journey') {
-                await ttsService.speakSequence([
-                    { text: "Ahora, déjate llevar por el sonido.", pause: 4000 },
-                    { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 2000 }
-                ]);
-                if(isActiveRef.current && journeyStep === 'journey') {
-                    journeyTimeoutRef.current = window.setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
-                }
-            }
-            if(journeyStep === 'return') {
-                await ttsService.speakSequence([
-                    { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 4000 },
-                    { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 2000 }
-                ]);
-                if(isActiveRef.current && journeyStep === 'return') setJourneyStep('integration');
-            }
-        }
-        if (isActiveRef.current) {
-            runJourneyStep();
+        };
+        runJourneyStep();
+
+        // Cleanup function
+        return () => {
+             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
         }
     }, [journeyStep]);
 
@@ -328,7 +403,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
-            if (drumIntervalRef.current) clearInterval(drumIntervalRef.current);
+            if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+            if (audioElementsRef.current.rattleInterval) clearInterval(audioElementsRef.current.rattleInterval);
+            if (audioElementsRef.current.wind) audioElementsRef.current.wind.stop();
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
                 audioContextRef.current.close();
                 audioContextRef.current = null;
@@ -353,7 +430,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 <button onClick={() => setView('meditation')} className="bg-indigo-900/50 text-indigo-300 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-900 transition-colors">Meditación</button>
                 <button onClick={() => setView('movement')} className="bg-lime-900/50 text-lime-300 font-semibold py-3 px-4 rounded-lg hover:bg-lime-900 transition-colors">Movimiento</button>
                 <button onClick={() => setView('neuro_selection')} className="bg-yellow-900/50 text-yellow-300 font-semibold py-3 px-4 rounded-lg hover:bg-yellow-900 transition-colors">Santuario Neuroquímico</button>
-                <button onClick={() => setView('shamanic_journey')} className="bg-purple-900/50 text-purple-300 font-semibold py-3 px-4 rounded-lg hover:bg-purple-900 transition-colors">Viaje Chamánico</button>
+                <button onClick={() => setView('shamanic_journey')} className="bg-purple-900/50 text-purple-300 font-semibold py-3 px-4 rounded-lg hover:bg-purple-900 transition-colors">Viaje de Sonido</button>
                 <div className="md:col-span-1">
                     <button onClick={() => setView('rest_ritual')} className="w-full h-full bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors">Ritual de Descanso</button>
                 </div>
@@ -504,11 +581,21 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         const stepText: Record<JourneyStep, string> = {
             idle: '',
             intention: 'Estableciendo Intención...',
-            breathing: 'Sincronizando Respiración...',
-            mantra: 'Anclando con el Mantra...',
-            journey: 'Viajando con el Sonido...',
-            return: 'Regresando al Presente...',
-            integration: 'Integrando la Experiencia.'
+            callingIn: 'Llamando a la Sanación...',
+            journeyDeep: 'Viajando con el Sonido...',
+            returnCall: 'Regresando al Presente...',
+            integration: 'Integrando la Experiencia...',
+            finished: 'Viaje Completado.'
+        };
+
+        const visualClasses: Record<JourneyStep, string> = {
+            idle: '',
+            intention: 'journey-intention',
+            callingIn: 'journey-callingIn',
+            journeyDeep: 'journey-deep',
+            returnCall: 'journey-return',
+            integration: 'journey-integration',
+            finished: 'journey-integration'
         };
         
         return (
@@ -519,19 +606,19 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                  {journeyStep === 'idle' ? (
                      <>
                         <TtsInfoButton explanation="Esta es una práctica de inmersión profunda. Usa un ritmo de tambor constante para guiar tu cerebro a un estado de meditación Theta, ideal para la introspección. Te guiaré para establecer una intención, respirar y usar un mantra antes de dejarte con el sonido." />
-                        <p className="text-slate-400 mb-4 text-sm">Prepara un espacio tranquilo y usa auriculares para una mejor experiencia. Este viaje dura aproximadamente 2 minutos.</p>
+                        <p className="text-slate-400 mb-4 text-sm">Prepara un espacio tranquilo y usa auriculares para una mejor experiencia. Este viaje dura aproximadamente 3 minutos.</p>
                         <button onClick={startShamanicJourney} className="w-full bg-purple-600 text-white font-semibold py-3 px-5 rounded-lg">Comenzar Viaje</button>
                     </>
                  ) : (
                      <div className="p-4 bg-slate-900/50 rounded-lg">
                          <div className="flex justify-center items-center my-4 h-32 relative">
-                             <div className="relative w-32 h-32">
-                                 <div className="absolute inset-0 bg-purple-500 rounded-full animate-pulse opacity-75"></div>
-                                 <div className="absolute inset-2 bg-purple-700 rounded-full animate-pulse animation-delay-300"></div>
+                             <div className={`relative w-32 h-32 ${visualClasses[journeyStep]}`}>
+                                 <div className="visual-bg"></div>
+                                 <div className="visual-core"></div>
                              </div>
                          </div>
-                         <p className="text-purple-300 font-semibold">{stepText[journeyStep]}</p>
-                         {journeyStep === 'integration' && (
+                         <p className="text-purple-300 font-semibold min-h-[24px]">{stepText[journeyStep]}</p>
+                         {journeyStep === 'finished' && (
                             <div className="mt-4">
                                 <p className="text-slate-400 text-sm mb-2">La sesión ha terminado. Tómate un momento. Te recomiendo ir a tu Diario para escribir cualquier palabra o imagen que haya surgido.</p>
                                 <button onClick={() => resetState({})} className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button>
@@ -595,7 +682,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
 
     const renderContent = () => {
-        if (isActive) return renderActiveSession();
+        if (isActive && !activeQuest && journeyStep === 'idle') return renderActiveSession();
         if (view === 'active_movement') return renderActiveMovement();
 
         switch(view) {
@@ -620,6 +707,31 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 .animate-inhale { animation: inhale 4s ease-in-out forwards; }
                 .animate-exhale { animation: exhale 4s ease-in-out forwards; }
                 .animate-hold { animation: hold 4s ease-in-out forwards; }
+                
+                .visual-bg, .visual-core {
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    border-radius: 50%;
+                    transition: all 1.5s ease-in-out;
+                }
+                .journey-intention .visual-bg { background: radial-gradient(circle, #384269, #1e293b); transform: scale(0.95); animation: pulse 4s infinite; }
+                .journey-intention .visual-core { background: #a5b4fc; box-shadow: 0 0 20px #a5b4fc; transform: scale(0.2); }
+                
+                .journey-callingIn .visual-bg { background: radial-gradient(circle, #4c1d95, #2e1065); transform: scale(1); animation: pulse 2s infinite; }
+                .journey-callingIn .visual-core { background: #c4b5fd; box-shadow: 0 0 30px #c4b5fd; transform: scale(0.25); }
+
+                .journey-deep .visual-bg { background: radial-gradient(circle, #1e1b4b, #171717); transform: scale(1.05); animation: swirl 10s linear infinite; }
+                .journey-deep .visual-core { background: #e0e7ff; box-shadow: 0 0 40px #e0e7ff; transform: scale(0.15); animation: pulse 3s infinite alternate; }
+                
+                .journey-return .visual-bg { background: radial-gradient(circle, #86198f, #4a044e); transform: scale(1); animation: pulse 1s infinite; }
+                .journey-return .visual-core { background: #f0abfc; box-shadow: 0 0 30px #f0abfc; transform: scale(0.3); }
+
+                .journey-integration .visual-bg { background: radial-gradient(circle, #384269, #1e293b); transform: scale(0.95); animation: pulse 5s infinite; }
+                .journey-integration .visual-core { background: #a5b4fc; box-shadow: 0 0 20px #a5b4fc; transform: scale(0.2); }
+
+                @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+                @keyframes swirl { from { transform: scale(1.05) rotate(0deg); } to { transform: scale(1.05) rotate(360deg); } }
+
                 .animation-delay-300 { animation-delay: 300ms; }
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
                 .aspect-h-9 { height: 0; }
