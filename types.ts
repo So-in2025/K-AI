@@ -58,6 +58,7 @@ export interface IExercise {
   id: string;
   name: string;
   description: string;
+  setup?: { text: string; pause: number }[]; // <-- ADDED FOR PREPARATION PHASE
   steps: { name: string; duration: number; instruction?: string }[];
 }
 
@@ -155,8 +156,9 @@ export interface IFreedomVaultConfig {
     goalDescription: string;
 }
 
-export interface IDopamineQuest {
-    id: 'gratitude' | 'victory' | 'savoring' | 'movement';
+export interface INeuroQuest { // RENAMED
+    id: 'gratitude' | 'victory' | 'savoring' | 'sunlight' | 'positive-memory' | 'self-massage';
+    neurotransmitter: 'dopamine' | 'serotonin'; // <-- ADDED
     name: string;
     description: string;
     activityLogName: string;

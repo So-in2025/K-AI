@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, DOPAMINE_QUESTS, SHAMANIC_DRUM_URL } from '../constants';
-import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, IDopamineQuest } from '../types';
+import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS, SHAMANIC_DRUM_URL } from '../constants';
+import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
 
@@ -16,9 +16,10 @@ interface WellnessSanctuaryCardProps {
     onLogDopamineHit: (hit: IDopamineHit) => void;
 }
 
-type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'dopamine' | 'shamanic_journey';
+type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'neuro_selection' | 'neuro_quests' | 'shamanic_journey';
 type JourneyStep = 'idle' | 'intention' | 'breathing' | 'mantra' | 'journey' | 'return' | 'integration';
 type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
+type Neurotransmitter = 'dopamine' | 'serotonin';
 
 
 export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit }) => {
@@ -30,13 +31,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const [isActive, setIsActive] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStepInfo, setCurrentStepInfo] = useState({ name: '', duration: 0, animationClass: '' });
+    const [selectedNeurotransmitter, setSelectedNeurotransmitter] = useState<Neurotransmitter>('dopamine');
 
     // Shamanic Journey State
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
     const drumAudioRef = useRef<HTMLAudioElement>(null);
 
-    // Dopamine Quest State
-    const [activeQuest, setActiveQuest] = useState<IDopamineQuest | null>(null);
+    // Neuro Quest State
+    const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
     const [questStep, setQuestStep] = useState<QuestStep>('intention');
     const [questTextInput, setQuestTextInput] = useState('');
     
@@ -92,7 +94,36 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             totalDuration = 30 * 3000; // 30 breaths, 3s each
         }
 
-        ttsService.speak(`Comenzando ${selectedExercise.name}.`);
+        const runCycle = () => {
+            let stepIndex = -1;
+            let breathCount = 0;
+            const cycle = () => {
+                stepIndex = (stepIndex + 1) % selectedExercise.steps.length;
+                const currentStep = selectedExercise.steps[stepIndex];
+                const animationClass = currentStep.name.toLowerCase().includes('inhala') ? 'animate-inhale' : currentStep.name.toLowerCase().includes('exhala') ? 'animate-exhale' : 'animate-hold';
+                setCurrentStepInfo({ name: currentStep.name, duration: currentStep.duration, animationClass });
+                ttsService.speak(currentStep.name, 0.9, 1.2);
+                
+                if (selectedExercise.id === 'wim-hof') {
+                    breathCount++;
+                    if (breathCount < 60) { // 30 pairs of inhale/exhale
+                         stepTimeoutRef.current = window.setTimeout(cycle, currentStep.duration);
+                    }
+                } else {
+                    stepTimeoutRef.current = window.setTimeout(cycle, currentStep.duration);
+                }
+            };
+            cycle();
+        };
+
+        if (selectedExercise.setup) {
+            ttsService.speakSequence(selectedExercise.setup).then(() => {
+                 if(isActive) runCycle();
+            });
+        } else {
+            runCycle();
+        }
+
 
         intervalRef.current = window.setInterval(() => {
             elapsedTime += 100;
@@ -102,26 +133,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                  resetState(true, { date: new Date().toISOString(), exerciseName: selectedExercise.name, durationMinutes: selectedDuration });
             }
         }, 100);
-
-        let stepIndex = -1;
-        let breathCount = 0;
-        const runCycle = () => {
-            stepIndex = (stepIndex + 1) % selectedExercise.steps.length;
-            const currentStep = selectedExercise.steps[stepIndex];
-            const animationClass = currentStep.name.toLowerCase().includes('inhala') ? 'animate-inhale' : currentStep.name.toLowerCase().includes('exhala') ? 'animate-exhale' : 'animate-hold';
-            setCurrentStepInfo({ name: currentStep.name, duration: currentStep.duration, animationClass });
-            ttsService.speak(currentStep.name, 0.9, 1.2);
-            
-            if (selectedExercise.id === 'wim-hof') {
-                breathCount++;
-                if (breathCount < 60) {
-                     stepTimeoutRef.current = window.setTimeout(runCycle, currentStep.duration);
-                }
-            } else {
-                stepTimeoutRef.current = window.setTimeout(runCycle, currentStep.duration);
-            }
-        };
-        setTimeout(runCycle, 2000);
     };
 
     const startMeditation = (meditation: IMeditation) => {
@@ -144,40 +155,59 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const startShamanicJourney = () => {
       setJourneyStep('intention');
-      ttsService.speak("Bienvenido al Viaje de Sonido. Vamos a prepararnos. Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar? Mantenla en tu corazón.");
-      setTimeout(() => setJourneyStep('breathing'), 8000);
+      ttsService.speakSequence([
+          { text: "Bienvenido al Viaje de Sonido. Vamos a prepararnos.", pause: 2000 },
+          { text: "Cierra los ojos y establece una intención. ¿Qué herida buscas sanar? ¿Qué fortaleza buscas encontrar?", pause: 4000 },
+          { text: "Mantenla en tu corazón.", pause: 1000 }
+      ]).then(() => { if(journeyStep === 'intention') setJourneyStep('breathing'); });
     };
 
     useEffect(() => {
         if(journeyStep === 'breathing') {
-            ttsService.speak("Ahora, sincroniza tu respiración con el tambor que va a comenzar. Inhala profundo, exhala lento.");
-            setTimeout(() => {
-                if (drumAudioRef.current) {
-                    drumAudioRef.current.volume = 0.5;
-                    drumAudioRef.current.play();
+            ttsService.speakSequence([
+                { text: "Ahora, sincroniza tu respiración con el tambor que va a comenzar.", pause: 2000 },
+                { text: "Inhala profundo... exhala lento.", pause: 1000 }
+            ]).then(() => {
+                if(journeyStep === 'breathing') {
+                    if (drumAudioRef.current) {
+                        drumAudioRef.current.volume = 0.8;
+                        drumAudioRef.current.play();
+                    }
+                    setJourneyStep('mantra');
                 }
-                setJourneyStep('mantra');
-            }, 5000);
+            });
         }
         if(journeyStep === 'mantra') {
-            ttsService.speak("Repite conmigo, internamente... Suelto lo que pesa... recibo lo que sana.");
-            setTimeout(() => ttsService.speak("Suelto lo que pesa... recibo lo que sana."), 6000);
-            setTimeout(() => setJourneyStep('journey'), 12000);
+            ttsService.speakSequence([
+                { text: "Repite conmigo, internamente...", pause: 1000 },
+                { text: "Suelto lo que pesa...", pause: 3000 },
+                { text: "recibo lo que sana.", pause: 4000 },
+                { text: "Suelto lo que pesa...", pause: 3000 },
+                { text: "recibo lo que sana.", pause: 2000 }
+            ]).then(() => { if(journeyStep === 'mantra') setJourneyStep('journey'); });
         }
         if(journeyStep === 'journey') {
-            ttsService.speak("Ahora, déjate llevar por el sonido. Observa sin juicio lo que surja. Estás en un espacio seguro.");
-            setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
+            ttsService.speakSequence([
+                { text: "Ahora, déjate llevar por el sonido.", pause: 3000 },
+                { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 1000 }
+            ]).then(() => {
+                if(journeyStep === 'journey') {
+                    setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
+                }
+            });
         }
         if(journeyStep === 'return') {
             if (drumAudioRef.current) drumAudioRef.current.pause();
-            ttsService.speak("Poco a poco, regresa a la conciencia de tu cuerpo. Siente tus manos, tus pies. El viaje ha terminado.");
-            setTimeout(() => setJourneyStep('integration'), 8000);
+            ttsService.speakSequence([
+                { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 3000 },
+                { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 1000 }
+            ]).then(() => { if(journeyStep === 'return') setJourneyStep('integration'); });
         }
     }, [journeyStep]);
 
 
-    // Dopamine Quest Logic
-    const handleStartQuest = (quest: IDopamineQuest) => {
+    // Neuro Quest Logic
+    const handleStartQuest = (quest: INeuroQuest) => {
         setActiveQuest(quest);
         setQuestStep('intention');
         const stepScript = quest.script.find(s => s.step === 'intention');
@@ -247,7 +277,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 <button onClick={() => setView('breathing')} className="bg-teal-900/50 text-teal-300 font-semibold py-3 px-4 rounded-lg hover:bg-teal-900 transition-colors">Respiración</button>
                 <button onClick={() => setView('meditation')} className="bg-indigo-900/50 text-indigo-300 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-900 transition-colors">Meditación</button>
                 <button onClick={() => setView('movement')} className="bg-lime-900/50 text-lime-300 font-semibold py-3 px-4 rounded-lg hover:bg-lime-900 transition-colors">Movimiento</button>
-                <button onClick={() => setView('dopamine')} className="bg-yellow-900/50 text-yellow-300 font-semibold py-3 px-4 rounded-lg hover:bg-yellow-900 transition-colors">Recalibración de Dopamina</button>
+                <button onClick={() => setView('neuro_selection')} className="bg-yellow-900/50 text-yellow-300 font-semibold py-3 px-4 rounded-lg hover:bg-yellow-900 transition-colors">Santuario Neuroquímico</button>
                 <button onClick={() => setView('shamanic_journey')} className="bg-purple-900/50 text-purple-300 font-semibold py-3 px-4 rounded-lg hover:bg-purple-900 transition-colors">Viaje Chamánico</button>
                 <div className="md:col-span-1">
                     <button onClick={() => setView('rest_ritual')} className="w-full h-full bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors">Ritual de Descanso</button>
@@ -340,17 +370,33 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             </div>
         </>
     );
+    
+    const renderNeuroSelection = () => (
+         <>
+            <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+            <h3 className="font-bold text-slate-100 text-lg mb-2">Santuario Neuroquímico</h3>
+             <p className="text-slate-400 mb-4 text-sm">Elige un camino para re-cablear conscientemente tu cerebro. Cada ritual es una práctica guiada para liberar neurotransmisores de bienestar.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <button onClick={() => { setSelectedNeurotransmitter('dopamine'); setView('neuro_quests'); }} className="bg-yellow-900/50 text-yellow-300 font-semibold py-3 px-4 rounded-lg hover:bg-yellow-900 transition-colors">Rituales de Dopamina</button>
+                <button onClick={() => { setSelectedNeurotransmitter('serotonin'); setView('neuro_quests'); }} className="bg-sky-900/50 text-sky-300 font-semibold py-3 px-4 rounded-lg hover:bg-sky-900 transition-colors">Rituales de Serotonina</button>
+            </div>
+        </>
+    );
 
-    const renderDopamineQuests = () => {
+
+    const renderNeuroQuests = () => {
+        const quests = NEURO_QUESTS.filter(q => q.neurotransmitter === selectedNeurotransmitter);
+        const colorClass = selectedNeurotransmitter === 'dopamine' ? 'yellow' : 'sky';
+
         if (!activeQuest) {
             return (
                  <>
-                    <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
-                    <h3 className="font-bold text-slate-100 text-lg mb-2">Rituales de Dopamina</h3>
-                    <p className="text-slate-400 mb-4 text-sm">Elige un ritual guiado para entrenar tu cerebro y generar una recompensa natural. Tu progreso se registrará automáticamente al completar la práctica.</p>
+                    <button onClick={() => setView('neuro_selection')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                    <h3 className={`font-bold text-${colorClass}-300 text-lg mb-2`}>Rituales de {selectedNeurotransmitter === 'dopamine' ? 'Dopamina' : 'Serotonina'}</h3>
+                    <p className="text-slate-400 mb-4 text-sm">Elige un ritual guiado para entrenar tu cerebro. Tu progreso se registrará automáticamente.</p>
                     <div className="space-y-2">
-                        {DOPAMINE_QUESTS.map(quest => (
-                            <button key={quest.id} onClick={() => handleStartQuest(quest)} className="w-full text-left p-3 rounded-lg border-2 border-slate-700 hover:border-yellow-500">
+                        {quests.map(quest => (
+                            <button key={quest.id} onClick={() => handleStartQuest(quest)} className={`w-full text-left p-3 rounded-lg border-2 border-slate-700 hover:border-${colorClass}-500`}>
                                 <h4 className="font-semibold text-slate-200">{quest.name}</h4>
                                 <p className="text-xs text-slate-400">{quest.description}</p>
                             </button>
@@ -365,15 +411,15 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         const canComplete = isReflectionStep && questTextInput.trim().length >= 10;
 
         return (
-            <div className="p-3 bg-slate-700/50 rounded-lg">
-                <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest.name}</h3>
+            <div className={`p-3 bg-slate-700/50 rounded-lg border border-${colorClass}-500/50`}>
+                <h3 className={`text-md font-semibold mb-2 text-center text-${colorClass}-300`}>{activeQuest.name}</h3>
                 <p className="text-sm text-slate-300 mb-3 text-center">{currentStepScript?.text}</p>
                 {isReflectionStep && (
                      <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión aquí..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-lg"/>
                 )}
                 <div className="flex gap-2 mt-3">
                      <button onClick={() => { setActiveQuest(null); ttsService.stop(); }} className="flex-1 text-xs text-slate-400 text-center hover:underline">Cancelar</button>
-                     <button onClick={handleCompleteQuest} disabled={!canComplete} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 disabled:bg-slate-500">Completar Ritual</button>
+                     <button onClick={handleCompleteQuest} disabled={!canComplete} className={`flex-1 bg-${colorClass}-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-${colorClass}-700 disabled:bg-slate-500`}>Completar Ritual</button>
                 </div>
             </div>
         );
@@ -480,7 +526,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             case 'breathing': return renderBreathingSelection();
             case 'meditation': return renderMeditationSelection();
             case 'movement': return renderMovementSelection();
-            case 'dopamine': return renderDopamineQuests();
+            case 'neuro_selection': return renderNeuroSelection();
+            case 'neuro_quests': return renderNeuroQuests();
             case 'rest_ritual': return renderRestRitual();
             case 'shamanic_journey': return renderShamanicJourney();
             default: return renderMenu();

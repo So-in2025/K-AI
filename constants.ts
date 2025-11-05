@@ -1,5 +1,5 @@
 
-import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, IDopamineQuest } from './types';
+import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest } from './types';
 
 // STORAGE KEYS
 export const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
@@ -117,11 +117,19 @@ export const JOURNAL_PROMPTS: Record<string, { title: string; prompts: string[] 
   }
 };
 
+const preparationScript = [
+    { text: 'Preparando.', pause: 500 },
+    { text: 'Comenzamos en 3...', pause: 1000 },
+    { text: '2...', pause: 1000 },
+    { text: '1...', pause: 1000 },
+];
+
 export const BREATHING_EXERCISES: IExercise[] = [
   {
     id: 'box',
     name: 'Respiración Cuadrada',
     description: 'Para calmar el sistema nervioso y enfocar la mente.',
+    setup: preparationScript,
     steps: [
       { name: 'Inhala', duration: 4000, instruction: 'Inhala profundamente por la nariz durante 4 segundos.' },
       { name: 'Sostén', duration: 4000, instruction: 'Sostén la respiración durante 4 segundos.' },
@@ -133,6 +141,7 @@ export const BREATHING_EXERCISES: IExercise[] = [
     id: '478',
     name: 'Respiración 4-7-8',
     description: 'Técnica de relajación profunda para combatir el insomnio y la ansiedad.',
+    setup: preparationScript,
     steps: [
       { name: 'Inhala', duration: 4000, instruction: 'Inhala en silencio por la nariz contando hasta 4.' },
       { name: 'Sostén', duration: 7000, instruction: 'Sostén la respiración contando hasta 7.' },
@@ -143,6 +152,7 @@ export const BREATHING_EXERCISES: IExercise[] = [
     id: 'wim-hof',
     name: 'Respiración Cíclica Energizante',
     description: 'Inspirada en el método Wim Hof para reducir inflamación y aumentar la energía.',
+    setup: preparationScript,
     steps: [
       { name: 'Inhala', duration: 1500, instruction: 'Inhala profundamente por la boca.' },
       { name: 'Exhala', duration: 1500, instruction: 'Exhala de forma natural, sin forzar.' },
@@ -235,42 +245,85 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
 
 export const SHAMANIC_DRUM_URL = 'https://aistudiocdn.com/kia-app/shamanic_drum.mp3';
 
-
-export const DOPAMINE_QUESTS: IDopamineQuest[] = [
+export const NEURO_QUESTS: INeuroQuest[] = [
+    // Rituales de Dopamina
     {
         id: 'gratitude',
+        neurotransmitter: 'dopamine',
         name: 'Ritual de Gratitud Profunda',
-        description: 'Una práctica guiada para conectar con el sentimiento de gratitud y re-cablear tu cerebro hacia la positividad.',
+        description: 'Siente la gratitud en tu cuerpo para re-cablear tu cerebro hacia la positividad.',
         activityLogName: 'Ritual de Gratitud',
         category: 'Gratitud',
         script: [
             { step: 'intention', text: 'Bienvenido al Ritual de Gratitud. El objetivo no es solo pensar, sino sentir. Cierra los ojos y respira hondo. Tu intención es encontrar un momento de genuino agradecimiento.', pauseAfter: 5000 },
-            { step: 'practice', text: 'Ahora, trae a tu mente a una persona, un lugar, o una pequeña cosa que te traiga una chispa de calor. Puede ser el sol en tu cara, un gesto amable, o el recuerdo de una risa. No lo analices, solo siéntelo. Permite que esa sensación de gratitud llene tu pecho. Quédate ahí por un momento.', pauseAfter: 10000 },
-            { step: 'reflection', text: 'Excelente. Ahora, abre los ojos y usa el espacio de abajo para describir ese sentimiento. ¿Qué es y por qué te sientes agradecido por ello? Anclarlo en palabras potencia su efecto neuronal.', pauseAfter: 1000 },
+            { step: 'practice', text: 'Ahora, trae a tu mente a una persona, un lugar, o una pequeña cosa que te traiga una chispa de calor. Permite que esa sensación de gratitud llene tu pecho. Quédate ahí por un momento.', pauseAfter: 10000 },
+            { step: 'reflection', text: 'Excelente. Ahora, abre los ojos y usa el espacio de abajo para describir ese sentimiento. Anclarlo en palabras potencia su efecto neuronal.', pauseAfter: 1000 },
         ]
     },
     {
         id: 'victory',
+        neurotransmitter: 'dopamine',
         name: 'Ritual de Logro Consciente',
-        description: 'Celebra una pequeña victoria para solidificar el bucle de recompensa neuronal del logro y la capacidad.',
+        description: 'Celebra una pequeña victoria para solidificar el bucle de recompensa neuronal del logro.',
         activityLogName: 'Ritual de Logro',
         category: 'Logro',
         script: [
-            { step: 'intention', text: 'Bienvenido al Ritual de Logro. Vamos a enseñarle a tu cerebro a reconocer tu propia fuerza. Piensa en una cosa, por pequeña que sea, que hayas completado hoy. Puede ser hacer la cama, terminar una tarea, o simplemente levantarte.', pauseAfter: 6000 },
-            { step: 'practice', text: 'Ahora, cierra los ojos y revive ese momento. Siente la sensación de haberlo hecho. El orgullo, el alivio, la capacidad. Conecta con ese sentimiento de "yo hice esto". Permite que ese sentimiento te llene.', pauseAfter: 8000 },
-            { step: 'reflection', text: 'Maravilloso. Ahora, abre los ojos y describe esa victoria. ¿Qué hiciste y cómo te hizo sentir? Celebrarlo conscientemente es un acto de auto-reconocimiento.', pauseAfter: 1000 },
+            { step: 'intention', text: 'Bienvenido al Ritual de Logro. Vamos a enseñarle a tu cerebro a reconocer tu propia fuerza. Piensa en una cosa, por pequeña que sea, que hayas completado hoy.', pauseAfter: 6000 },
+            { step: 'practice', text: 'Ahora, cierra los ojos y revive ese momento. Siente el orgullo, el alivio, la capacidad. Conecta con ese sentimiento de "yo hice esto". Permite que esa sensación te llene.', pauseAfter: 8000 },
+            { step: 'reflection', text: 'Maravilloso. Ahora, abre los ojos y describe esa victoria. Celebrarlo conscientemente es un acto de auto-reconocimiento.', pauseAfter: 1000 },
         ]
     },
     {
         id: 'savoring',
+        neurotransmitter: 'dopamine',
         name: 'Ritual de Saboreo (Savoring)',
-        description: 'Una práctica de mindfulness para extraer la máxima recompensa de una experiencia sensorial simple.',
+        description: 'Extrae la máxima recompensa de una experiencia sensorial simple.',
         activityLogName: 'Ritual de Saboreo',
         category: 'Mindfulness',
          script: [
-            { step: 'intention', text: 'Bienvenido al Ritual de Saboreo. Esta práctica entrena a tu cerebro para encontrar placer en el presente. Toma una bebida, como un té o un vaso de agua, o un pequeño trozo de comida.', pauseAfter: 6000 },
-            { step: 'practice', text: 'Ahora, antes de probarlo, obsérvalo. Nota su color, su temperatura. Acércalo y huele su aroma. Finalmente, dale un pequeño sorbo o mordisco, y mantenlo en tu boca. ¿Qué texturas sientes? ¿Qué sabores? Explóralo con tu atención plena, como si fuera la primera vez. Hazlo lentamente.', pauseAfter: 12000 },
-            { step: 'reflection', text: 'Bien. Ahora, usa el espacio de abajo para describir un detalle que notaste durante esta experiencia. ¿Qué descubriste al prestar atención? Esto enseña a tu cerebro a encontrar novedad y placer en lo simple.', pauseAfter: 1000 },
+            { step: 'intention', text: 'Bienvenido al Ritual de Saboreo. Esta práctica entrena a tu cerebro para encontrar placer en el presente. Toma una bebida o un pequeño trozo de comida.', pauseAfter: 6000 },
+            { step: 'practice', text: 'Ahora, antes de probarlo, obsérvalo. Nota su color, su aroma. Finalmente, dale un pequeño sorbo o mordisco, y explóralo con tu atención plena, como si fuera la primera vez. Hazlo lentamente.', pauseAfter: 12000 },
+            { step: 'reflection', text: 'Bien. Ahora, usa el espacio de abajo para describir un detalle que notaste. Esto enseña a tu cerebro a encontrar novedad y placer en lo simple.', pauseAfter: 1000 },
+        ]
+    },
+    // Rituales de Serotonina
+    {
+        id: 'sunlight',
+        neurotransmitter: 'serotonin',
+        name: 'Ritual de Baño de Luz Solar',
+        description: 'Una meditación mindfulness para absorber los beneficios de la luz solar.',
+        activityLogName: 'Ritual de Luz Solar',
+        category: 'Naturaleza',
+        script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Luz Solar. Si es posible, acércate a una ventana o sal afuera. La luz solar es un potente regulador del estado de ánimo. Tu intención es absorber conscientemente esta energía.', pauseAfter: 7000 },
+            { step: 'practice', text: 'Cierra los ojos. Siente el calor del sol en tu piel. Imagina que cada rayo de luz disuelve la tensión y llena tus células de calma y bienestar. Respira esta luz. Quédate aquí, simplemente sintiendo, por un momento.', pauseAfter: 12000 },
+            { step: 'reflection', text: 'Perfecto. Abre los ojos. ¿Qué sensación te deja esta práctica? Escribe una palabra para describirla. Anclar este sentimiento te ayuda a volver a él más tarde.', pauseAfter: 1000 },
+        ]
+    },
+    {
+        id: 'positive-memory',
+        neurotransmitter: 'serotonin',
+        name: 'Ritual de Recuerdo Positivo',
+        description: 'Revive y siente en tu cuerpo una memoria feliz para elevar tu estado de ánimo.',
+        activityLogName: 'Ritual de Recuerdo Positivo',
+        category: 'Reflexión',
+        script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Recuerdo Positivo. Tu cerebro no distingue entre una experiencia real y una vívidamente imaginada. Vamos a usar ese poder. Tu intención es revivir una memoria genuinamente feliz.', pauseAfter: 7000 },
+            { step: 'practice', text: 'Cierra los ojos. Trae a tu mente un recuerdo feliz. No solo la imagen, sino los sonidos, los olores, y más importante, la emoción. ¿Cómo se sentía en tu cuerpo? ¿Una calidez en el pecho, una sonrisa en tu rostro? Sumérgete en esa sensación por completo.', pauseAfter: 12000 },
+            { step: 'reflection', text: 'Maravilloso. Mantén esa sensación mientras abres los ojos. Escribe el nombre de esa memoria. Será tu ancla, un lugar seguro al que tu mente puede regresar.', pauseAfter: 1000 },
+        ]
+    },
+    {
+        id: 'self-massage',
+        neurotransmitter: 'serotonin',
+        name: 'Ritual de Autocompasión Táctil',
+        description: 'Un ritual de auto-masaje para liberar oxitocina y serotonina, reduciendo el estrés.',
+        activityLogName: 'Ritual de Autocompasión Táctil',
+        category: 'Cuerpo',
+        script: [
+            { step: 'intention', text: 'Bienvenido al Ritual de Autocompasión Táctil. El tacto es una de las formas más primarias de calmar el sistema nervioso. Tu intención es darte a ti mismo el cuidado que mereces.', pauseAfter: 7000 },
+            { step: 'practice', text: 'Comienza masajeando suavemente tu mano izquierda con tu pulgar derecho, prestando atención a cada músculo. Luego, cambia de mano. Ahora, lleva tus manos a tu cuello y hombros, y aplica una presión suave donde sientas tensión. Hazlo con amabilidad, como lo harías con un ser querido.', pauseAfter: 12000 },
+            { step: 'reflection', text: 'Bien. ¿Qué notaste? ¿Había más tensión de la que pensabas? Describe brevemente la sensación de soltar, aunque sea un poco. Este es un acto de profundo cuidado propio.', pauseAfter: 1000 },
         ]
     }
 ];

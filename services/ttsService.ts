@@ -1,3 +1,4 @@
+
 class TtsService {
   private voice: SpeechSynthesisVoice | null = null;
   private isReadyPromise: Promise<void>;
@@ -100,7 +101,7 @@ class TtsService {
         .filter(chunk => chunk.length > 0) // Remove empty chunks
         .map(chunk => ({
             text: chunk,
-            pause: 200, // Short pause between sentences
+            pause: 300, // <-- ADDED NATURAL PAUSE
             rate,
             pitch
         }));
