@@ -8,7 +8,8 @@ import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
 import { FreedomVaultCard } from '../components/FreedomVaultCard';
-import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard';
+import { DopamineRecalibrationSummaryCard } from '../components/DopamineRecalibrationSummaryCard';
+
 
 interface ProgressViewProps {
     cravings: ICraving[];
@@ -21,7 +22,6 @@ interface ProgressViewProps {
     trustCircleConfig: ITrustCircleConfig | null;
     onUpdateTrustCircleConfig: (config: ITrustCircleConfig) => void;
     dopamineHits: IDopamineHit[];
-    onLogDopamineHit: (hit: IDopamineHit) => void;
     freedomVaultConfig: IFreedomVaultConfig | null;
     onUpdateFreedomVaultConfig: (config: IFreedomVaultConfig) => void;
 }
@@ -39,6 +39,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 
                 <div className="lg:col-span-2 space-y-6">
                     <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
+                    <DopamineRecalibrationSummaryCard dopamineHits={props.dopamineHits} />
                     <FreedomVaultCard 
                         config={props.freedomVaultConfig}
                         onUpdateConfig={props.onUpdateFreedomVaultConfig}
@@ -56,9 +57,6 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 </div>
 
                 <div className="space-y-6">
-                    <DopamineSanctuaryCard
-                        onLogHit={props.onLogDopamineHit}
-                    />
                     <TrustCircleCard
                         config={props.trustCircleConfig}
                         onUpdateConfig={props.onUpdateTrustCircleConfig}

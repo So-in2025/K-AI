@@ -140,12 +140,12 @@ export const BREATHING_EXERCISES: IExercise[] = [
     ],
   },
   {
-    id: 'rhythmic',
-    name: 'Respiración Rítmica',
-    description: 'Para energizar el cuerpo y mejorar la concentración.',
+    id: 'wim-hof',
+    name: 'Respiración Cíclica Energizante',
+    description: 'Inspirada en el método Wim Hof para reducir inflamación y aumentar la energía.',
     steps: [
-      { name: 'Inhala', duration: 5000, instruction: 'Inhala de forma constante durante 5 segundos.' },
-      { name: 'Exhala', duration: 5000, instruction: 'Exhala de forma constante durante 5 segundos.' },
+      { name: 'Inhala', duration: 1500, instruction: 'Inhala profundamente por la boca.' },
+      { name: 'Exhala', duration: 1500, instruction: 'Exhala de forma natural, sin forzar.' },
     ],
   },
 ];
@@ -171,20 +171,40 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
         ]
     },
     {
-        id: 'grounding-presence',
-        name: 'Presencia Anclada',
-        description: 'Ancla tu atención en el presente a través de las sensaciones de tu cuerpo.',
+        id: 'body-scan',
+        name: 'Escaneo Corporal',
+        description: 'Reconecta con tu cuerpo y libera tensiones a través de la atención plena.',
         script: [
-            { text: 'Comencemos esta práctica de presencia anclada.', pause: 1000 },
-            { text: 'Encuentra una posición cómoda.', pause: 2000 },
-            { text: 'Lleva tu atención a los sonidos a tu alrededor. Solo nótalos, sin juzgarlos.', pause: 5000 },
-            { text: 'Ahora, lleva tu atención a las sensaciones de tu cuerpo.', pause: 3000 },
-            { text: 'Siente el contacto de tu cuerpo con la silla o el suelo. Siente el peso, la presión.', pause: 5000 },
-            { text: 'Siente el aire en tu piel. ¿Es cálido, es frío?', pause: 5000 },
-            { text: 'Ahora, enfoca toda tu atención en tus pies. Siente el contacto con tus calcetines, tus zapatos, el suelo.', pause: 6000 },
-            { text: 'Imagina raíces creciendo desde las plantas de tus pies, conectándote con la tierra. Fuerte. Estable.', pause: 6000 },
-            { text: 'Estás aquí. Estás ahora. Estás a salvo.', pause: 4000 },
-            { text: 'Respira profundamente, y cuando estés listo, regresa tu atención a la habitación. La práctica ha terminado.', pause: 1000 },
+            { text: 'Comencemos este escaneo corporal. Encuentra una posición cómoda.', pause: 2000 },
+            { text: 'Lleva tu atención a la sensación de tu cuerpo como un todo. Nota tu respiración.', pause: 4000 },
+            { text: 'Ahora, dirige tu atención a los dedos de tu pie izquierdo. Simplemente nota cualquier sensación.', pause: 5000 },
+            { text: 'Lentamente, expande tu atención para incluir toda la planta del pie... el talón... el tobillo.', pause: 6000 },
+            { text: 'Sigue subiendo por tu pierna izquierda... la pantorrilla... la rodilla... el muslo.', pause: 7000 },
+            { text: 'Ahora, lleva tu atención a tu pie derecho y repite el proceso.', pause: 5000 },
+            { text: 'Ve subiendo por tu pierna derecha, notando cualquier sensación sin juicio.', pause: 7000 },
+            { text: 'Continúa este viaje de atención por tu cadera, tu abdomen, tu pecho, tu espalda.', pause: 8000 },
+            { text: 'Siente tus brazos, tus manos, hasta la punta de los dedos.', pause: 6000 },
+            { text: 'Finalmente, tu cuello, tu rostro, tu cabeza. Permite que cualquier tensión se disuelva.', pause: 7000 },
+            { text: 'Descansa en la conciencia de tu cuerpo como un todo. Estás presente. La práctica ha terminado.', pause: 2000 },
+        ]
+    },
+    {
+        id: 'yoga-nidra',
+        name: 'Yoga Nidra (Sueño Yóguico)',
+        description: 'Una poderosa práctica de relajación profunda (NSDR) para restaurar cuerpo y mente.',
+        script: [
+            { text: 'Bienvenido a Yoga Nidra, el sueño yóguico. Acuéstate cómodamente y cierra los ojos.', pause: 3000 },
+            { text: 'Permite que tu cuerpo se sienta pesado y completamente sostenido por el suelo.', pause: 4000 },
+            { text: 'Lleva tu conciencia a los sonidos lejanos... y luego a los sonidos cercanos.', pause: 6000 },
+            { text: 'Ahora, establece una intención para tu práctica. Una afirmación corta y positiva. Repítela mentalmente tres veces.', pause: 8000 },
+            { text: 'Comienza una rotación de la conciencia por tu cuerpo. Simplemente nombra la parte y siente. Pulgar derecho, segundo dedo, tercero, cuarto, quinto...', pause: 10000 },
+            { text: 'Palma de la mano, muñeca, codo, hombro... todo el brazo derecho.', pause: 8000 },
+            { text: 'Ahora el pulgar izquierdo... y sigue el mismo recorrido por tu lado izquierdo.', pause: 10000 },
+            { text: 'Lleva tu conciencia a tu respiración. Siente el aire entrar y salir, sin cambiar nada.', pause: 8000 },
+            { text: 'Ahora, siente la sensación de pesadez en todo tu cuerpo. Y luego, la sensación de ligereza.', pause: 8000 },
+            { text: 'Vuelve a tu intención. Repítela mentalmente tres veces. La semilla ha sido plantada.', pause: 8000 },
+            { text: 'Poco a poco, comienza a mover los dedos de las manos y los pies. Regresa a tu cuerpo.', pause: 6000 },
+            { text: 'Cuando estés listo, abre suavemente los ojos. La práctica de Yoga Nidra ha concluido.', pause: 2000 },
         ]
     }
 ];
@@ -199,7 +219,7 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'estiramiento-espalda',
-        youtubeId: 'GLy2r51I0_g', // Video: "Estiramientos de espalda para aliviar el dolor lumbar y dorsal en 10 minutos" by FisioOnline
+        youtubeId: '3-p_IT2d5jE', // Video: "ESTIRAMIENTOS para ALIVIAR el DOLOR DE ESPALDA y cuello en 10 MINUTOS" by FisioOnline
         name: 'Estiramiento de Espalda (10 min)',
         description: 'Rutina terapéutica de FisioOnline para liberar la tensión de la espalda y el cuello, ideal después de un día largo.',
         duration: 10
@@ -217,20 +237,30 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
 export const DOPAMINE_QUESTS: IDopamineQuest[] = [
     {
         id: 'gratitude',
-        name: 'Práctica de Gratitud',
-        description: 'Escribe 3 cosas por las que te sientas agradecido hoy. Pueden ser grandes o pequeñas.',
-        activityLogName: 'Práctica de Gratitud'
+        name: 'Gratitud Focalizada',
+        description: 'Describe 3 cosas por las que te sientas agradecido y *por qué*. Activa las vías neuronales de la positividad.',
+        activityLogName: 'Práctica de Gratitud',
+        category: 'Gratitud'
     },
     {
         id: 'victory',
-        name: 'Victoria del Día',
-        description: 'Describe una pequeña tarea o desafío que hayas completado hoy y cómo te hizo sentir.',
-        activityLogName: 'Reconocimiento de Victoria'
+        name: 'Celebración de Micro-Logros',
+        description: 'Describe una pequeña victoria de hoy. Celebrar los pequeños pasos crea un bucle de retroalimentación positiva.',
+        activityLogName: 'Reconocimiento de Victoria',
+        category: 'Logro'
     },
     {
-        id: 'mindfulness',
-        name: 'Momento Mindfulness',
-        description: 'Tómate 60 segundos para observar tu entorno sin juicio, enfocándote en tus sentidos.',
-        activityLogName: 'Pausa de Mindfulness'
+        id: 'movement',
+        name: 'Movimiento Consciente',
+        description: 'Dedica 5 minutos a una actividad física ligera. El ejercicio libera endorfinas y dopamina.',
+        activityLogName: 'Pausa de Movimiento',
+        category: 'Movimiento'
+    },
+    {
+        id: 'creative',
+        name: 'Acto Creativo / Aprendizaje',
+        description: 'Dedica 5 minutos a crear o aprender algo nuevo. La novedad y la habilidad activan el sistema de recompensa.',
+        activityLogName: 'Acto Creativo',
+        category: 'Creatividad'
     }
 ];

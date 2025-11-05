@@ -136,6 +136,7 @@ export interface IDopamineHit {
     id: string;
     date: string; // ISO string
     activity: string;
+    category: string;
 }
 
 export interface IHabitLoop {
@@ -155,8 +156,9 @@ export interface IFreedomVaultConfig {
 }
 
 export interface IDopamineQuest {
-    id: 'gratitude' | 'victory' | 'mindfulness';
+    id: 'gratitude' | 'victory' | 'mindfulness' | 'movement' | 'creative';
     name: string;
     description: string;
     activityLogName: string;
+    category: string;
 }

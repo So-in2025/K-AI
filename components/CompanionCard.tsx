@@ -69,7 +69,7 @@ El usuario te ha proporcionado la siguiente información inicial sobre sí mismo
         if (kaiMemory) {
             basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
         }
-        basePrompt += `\n**HERRAMIENTAS PLUS:**\nEl usuario tiene acceso a herramientas avanzadas. Utiliza la información de su Bóveda de la Libertad y su Re-calibrador de Dopamina para motivarlo. Conecta sus acciones diarias con sus metas a largo plazo y sus fuentes de bienestar natural. Por ejemplo: 'Veo que registraste [actividad de dopamina], ¡genial! Cada pequeña acción como esa te acerca a tu meta de [meta de la bóveda].'\n`;
+        basePrompt += `\n**HERRAMIENTAS PLUS:**\nEl usuario tiene acceso a herramientas avanzadas. Utiliza la información de su Bóveda de la Libertad y su Resumen de Bienestar (prácticas de dopamina) para motivarlo. Conecta sus acciones diarias con sus metas a largo plazo y sus fuentes de bienestar natural. Por ejemplo: 'Veo en tu resumen que el [Categoría de Dopamina] ha sido importante para ti. ¡Genial! Cada pequeña acción como esa te acerca a tu meta de [meta de la bóveda].'\n`;
     }
 
     basePrompt += `\nREGLAS DE RESPUESTA:
@@ -191,10 +191,16 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         const wellnessSummary = lastWeekWellness.length > 0
             ? `Ha completado ${lastWeekWellness.length} ejercicio(s) de bienestar esta semana. El más reciente: ${lastWeekWellness[0]?.exerciseName}.`
             : "No ha registrado ejercicios de bienestar esta semana.";
+        
         const dopamineThisWeek = dopamineHits.filter(h => new Date(h.date) >= oneWeekAgo);
+        const dopamineCategoryCounts = dopamineThisWeek.reduce((acc, hit) => {
+            acc[hit.category] = (acc[hit.category] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
         const dopamineSummary = dopamineThisWeek.length > 0 
-            ? `Ha registrado ${dopamineThisWeek.length} fuentes de dopamina saludable esta semana. La más reciente: ${dopamineThisWeek[0]?.activity}.`
-            : "No ha registrado fuentes de dopamina saludable esta semana.";
+            ? `Ha completado ${dopamineThisWeek.length} prácticas de bienestar. Resumen: ${Object.entries(dopamineCategoryCounts).map(([cat, count]) => `${cat}: ${count}`).join(', ')}.`
+            : "No ha realizado prácticas de dopamina saludable esta semana.";
+
         const goalsSummary = goals.length > 0 
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
@@ -216,7 +222,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             - Resumen de antojos (última semana): ${cravingsSummary}
             - Última entrada del diario: ${journalSummary}
             - Resumen de bienestar (última semana): ${wellnessSummary}
-            - Resumen de dopamina saludable (última semana): ${dopamineSummary}
+            - Resumen de Dopamina Saludable (última semana): ${dopamineSummary}
             - Resumen de Bóveda de la Libertad: ${freedomVaultSummary}
 
             CONVERSACIÓN ACTUAL (últimos 5 turnos):

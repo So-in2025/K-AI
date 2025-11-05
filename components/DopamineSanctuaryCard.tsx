@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { IDopamineHit, IDopamineQuest } from '../types';
 import { DOPAMINE_QUESTS } from '../constants';
@@ -48,6 +49,8 @@ export const DopamineSanctuaryCard: React.FC<DopamineSanctuaryCardProps> = ({ on
             id: crypto.randomUUID(),
             date: new Date().toISOString(),
             activity: activeQuest.activityLogName,
+            // FIX: Add the missing 'category' property from the active quest.
+            category: activeQuest.category,
         };
         onLogHit(newHit);
         

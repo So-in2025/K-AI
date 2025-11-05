@@ -744,6 +744,8 @@ const App: React.FC = () => {
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
+                  dopamineHits={dopamineHits}
+                  onLogDopamineHit={handleLogDopamineHit}
                 />;
       case 'kai':
         return <KaiView 
@@ -791,7 +793,6 @@ const App: React.FC = () => {
                   trustCircleConfig={trustCircleConfig}
                   onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
                   dopamineHits={dopamineHits}
-                  onLogDopamineHit={handleLogDopamineHit}
                   freedomVaultConfig={freedomVaultConfig}
                   onUpdateFreedomVaultConfig={handleUpdateFreedomVaultConfig}
                 />;
@@ -806,6 +807,8 @@ const App: React.FC = () => {
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
                   onStopGuardian={handleStopGuardian}
+                  dopamineHits={dopamineHits}
+                  onLogDopamineHit={handleLogDopamineHit}
                 />;
     }
   }

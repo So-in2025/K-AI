@@ -3,7 +3,7 @@ import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
 import { WellnessSanctuaryCard } from '../components/WellnessSanctuaryCard';
-import { IWellnessActivity, UserFocus, OnboardingData } from '../types';
+import { IWellnessActivity, UserFocus, OnboardingData, IDopamineHit } from '../types';
 import { GuardianModeCard } from '../components/GuardianModeCard';
 
 // Define a type for the guardian state passed as a prop
@@ -22,6 +22,8 @@ interface HomeViewProps {
     guardianState: GuardianState;
     onStartGuardian: () => void;
     onStopGuardian: () => void;
+    dopamineHits: IDopamineHit[];
+    onLogDopamineHit: (hit: IDopamineHit) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = (props) => {
@@ -48,7 +50,10 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                 )}
                 <DailyQuoteCard />
                 <div className="lg:col-span-2">
-                    <WellnessSanctuaryCard onLogActivity={props.onLogWellnessActivity} />
+                    <WellnessSanctuaryCard 
+                        onLogActivity={props.onLogWellnessActivity}
+                        onLogDopamineHit={props.onLogDopamineHit}
+                    />
                 </div>
             </div>
             <div className="h-24" />
