@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
-import { ICraving, IConversationTurn, IWellnessActivity, IGoal, OnboardingData, IDopamineHit } from '../types';
+import { ICraving, IConversationTurn, IWellnessActivity, IGoal, OnboardingData, IDopamineHit, IFreedomVaultConfig } from '../types';
 
 interface KaiViewProps {
     daysSober: number;
@@ -14,6 +15,7 @@ interface KaiViewProps {
     kaiMemory: string;
     isSubscribed: boolean;
     dopamineHits: IDopamineHit[];
+    freedomVaultConfig: IFreedomVaultConfig | null;
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {

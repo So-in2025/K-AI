@@ -1,6 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit } from '../types';
+import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit, IFreedomVaultConfig } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -64,8 +65,11 @@ El usuario te ha proporcionado la siguiente información inicial sobre sí mismo
         basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística.\n`;
     }
 
-    if (isSubscribed && kaiMemory) {
-        basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
+    if (isSubscribed) {
+        if (kaiMemory) {
+            basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
+        }
+        basePrompt += `\n**HERRAMIENTAS PLUS:**\nEl usuario tiene acceso a herramientas avanzadas. Utiliza la información de su Bóveda de la Libertad y su Re-calibrador de Dopamina para motivarlo. Conecta sus acciones diarias con sus metas a largo plazo y sus fuentes de bienestar natural. Por ejemplo: 'Veo que registraste [actividad de dopamina], ¡genial! Cada pequeña acción como esa te acerca a tu meta de [meta de la bóveda].'\n`;
     }
 
     basePrompt += `\nREGLAS DE RESPUESTA:
@@ -92,9 +96,10 @@ interface CompanionCardProps {
     kaiMemory: string;
     isSubscribed: boolean;
     dopamineHits: IDopamineHit[];
+    freedomVaultConfig: IFreedomVaultConfig | null;
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits, freedomVaultConfig }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -194,6 +199,14 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
         
+        let freedomVaultSummary = "El usuario no ha configurado su Bóveda de la Libertad.";
+        if (freedomVaultConfig && freedomVaultConfig.goalDescription) {
+            const dailySpending = (freedomVaultConfig.weeklySpending || 0) / 7;
+            const moneyRecovered = dailySpending * daysSober;
+            const progressPercentage = freedomVaultConfig.goalAmount > 0 ? Math.min(100, (moneyRecovered / freedomVaultConfig.goalAmount) * 100) : 0;
+            freedomVaultSummary = `El usuario está ahorrando para '${freedomVaultConfig.goalDescription}'. Ha recuperado $${moneyRecovered.toFixed(0)} y ha completado un ${progressPercentage.toFixed(0)}% de su meta.`;
+        }
+        
         const systemInstruction = getKaiSystemPrompt(onboardingData, kaiMemory, isSubscribed);
 
         const prompt = `
@@ -204,6 +217,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             - Última entrada del diario: ${journalSummary}
             - Resumen de bienestar (última semana): ${wellnessSummary}
             - Resumen de dopamina saludable (última semana): ${dopamineSummary}
+            - Resumen de Bóveda de la Libertad: ${freedomVaultSummary}
 
             CONVERSACIÓN ACTUAL (últimos 5 turnos):
             ${conversation.slice(-5).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}

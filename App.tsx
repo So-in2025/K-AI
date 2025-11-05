@@ -757,6 +757,7 @@ const App: React.FC = () => {
                   kaiMemory={kaiMemory}
                   isSubscribed={hasPremiumAccess}
                   dopamineHits={dopamineHits}
+                  freedomVaultConfig={freedomVaultConfig}
                 />;
       case 'tools':
         return <ToolsView
