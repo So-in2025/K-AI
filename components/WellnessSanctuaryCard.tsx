@@ -47,6 +47,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const intervalRef = useRef<number | null>(null);
     const stepTimeoutRef = useRef<number | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
+    const isActiveRef = useRef(isActive);
+
+    useEffect(() => {
+        isActiveRef.current = isActive;
+    }, [isActive]);
 
      useEffect(() => {
         if (view !== 'menu' && cardRef.current) {
@@ -102,7 +107,10 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             let stepIndex = -1;
             let breathCount = 0;
             const cycle = () => {
-                if(!isActive) return;
+                if (!isActiveRef.current) {
+                    if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
+                    return;
+                }
                 stepIndex = (stepIndex + 1) % selectedExercise.steps.length;
                 const currentStep = selectedExercise.steps[stepIndex];
                 const animationClass = currentStep.name.toLowerCase().includes('inhala') ? 'animate-inhale' : currentStep.name.toLowerCase().includes('exhala') ? 'animate-exhale' : 'animate-hold';
@@ -123,7 +131,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
         if (selectedExercise.setup) {
             await ttsService.speakSequence(selectedExercise.setup);
-            if(isActive) runCycle();
+            if(isActiveRef.current) runCycle();
         } else {
             runCycle();
         }
@@ -150,7 +158,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }, 100);
 
         await ttsService.speakSequence(meditation.script);
-        if (isActive) {
+        if (isActiveRef.current) {
             resetState(true, { date: new Date().toISOString(), exerciseName: meditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
         }
     }
