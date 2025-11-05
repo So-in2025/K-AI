@@ -75,6 +75,7 @@ export interface IMovementVideo {
   name: string;
   description: string;
   duration: number; // in minutes
+  category: 'movement' | 'rest';
 }
 
 export interface IReminder {

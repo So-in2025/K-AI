@@ -220,26 +220,55 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
 
 // Videos de YouTube curados para prácticas de movimiento y descanso.
 export const MOVEMENT_VIDEOS: IMovementVideo[] = [
+    // Movimiento
     {
-        id: 'yoga-principiantes',
-        youtubeId: 'k2c8gJ0_k5c', 
-        name: 'Yoga Suave para Principiantes',
-        description: 'Una clase completa y suave para conectar con tu cuerpo y calmar la mente, perfecta para empezar.',
-        duration: 20
+        id: 'mov-yoga-suave',
+        youtubeId: 'bKwt_6DvTA0',
+        name: 'Yoga Suave para Empezar Desde Cero',
+        description: 'Una clase de 24 minutos ideal para principiantes. Ritmo pausado y guiado para crear un espacio seguro y terapéutico.',
+        duration: 24,
+        category: 'movement'
     },
     {
-        id: 'estiramiento-espalda',
-        youtubeId: 'Bqij_i3O0o4',
-        name: 'Estiramiento Nocturno (10 min)',
-        description: 'Rutina terapéutica para liberar la tensión de la espalda y el cuello, ideal para el Ritual de Descanso.',
-        duration: 10
+        id: 'mov-yoga-ansiedad',
+        youtubeId: '6s4gjLhPgwk',
+        name: 'Yoga para Calmar la Ansiedad',
+        description: 'Práctica de 20 minutos con foco en "grounding", torsiones suaves y aperturas de pecho para liberar tensión.',
+        duration: 20,
+        category: 'movement'
     },
     {
-        id: 'yoga-ansiedad',
-        youtubeId: 'hjjA0t22a28',
-        name: 'Yoga para la Ansiedad',
-        description: 'Una práctica específicamente diseñada para calmar el sistema nervioso y reducir la ansiedad.',
-        duration: 20
+        id: 'mov-yoga-energia',
+        youtubeId: '_F-bJ8jLgqA',
+        name: 'Yoga Energizante de Mañana',
+        description: 'Rutina de 15 minutos para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
+        duration: 15,
+        category: 'movement'
+    },
+    // Ritual de Descanso
+    {
+        id: 'des-estiramiento-cama',
+        youtubeId: 'i2WsfawlmTY',
+        name: 'Yoga en la Cama Antes de Dormir',
+        description: 'Rutina de 11 minutos con una voz excepcionalmente calmada, 100% realizable en la cama para liberar tensión.',
+        duration: 11,
+        category: 'rest'
+    },
+    {
+        id: 'des-meditacion-dormir',
+        youtubeId: 'iZ-x0LqBf6s',
+        name: 'Meditación Guiada para Dormir',
+        description: 'Meditación de 20 minutos con una voz suave y pausada, guiando un escaneo corporal para calmar la mente.',
+        duration: 20,
+        category: 'rest'
+    },
+    {
+        id: 'des-yoga-caderas',
+        youtubeId: 'W-5i0qgS0-s',
+        name: 'Yoga Restaurativo para Soltar Caderas',
+        description: 'Sesión de Yin Yoga de 15 minutos con posturas pasivas y mantenidas para una relajación profunda.',
+        duration: 15,
+        category: 'rest'
     }
 ];
 

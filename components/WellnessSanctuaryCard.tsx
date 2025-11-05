@@ -439,11 +439,29 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     );
 
     const renderRestRitual = () => {
-        const ritualSteps = [
-            { name: "Estiramiento Nocturno (10 min)", description: "Libera la tensión del día con una rutina suave.", action: () => { const video = MOVEMENT_VIDEOS.find(v => v.id === 'estiramiento-espalda'); if(video) { setSelectedVideo(video); setView('active_movement'); } } },
-            { name: "Yoga Nidra (Sueño Yóguico)", description: "Calma tu mente con esta meditación de relajación profunda.", action: () => { const meditation = GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra'); if(meditation) startMeditation(meditation); } },
-            { name: "Vaciado Mental (Diario)", description: "Escribe y suelta tus preocupaciones en el diario para un descanso reparador.", action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); } },
+        const restVideos = MOVEMENT_VIDEOS.filter(v => v.category === 'rest');
+        const otherSteps = [
+             {
+                name: "Yoga Nidra (Sueño Yóguico)",
+                description: "Calma tu mente con esta meditación de relajación profunda.",
+                action: () => { const meditation = GUIDED_MEDITATIONS.find(m => m.id === 'yoga-nidra'); if(meditation) startMeditation(meditation); }
+            },
+            {
+                name: "Vaciado Mental (Diario)",
+                description: "Escribe y suelta tus preocupaciones para un descanso reparador.",
+                action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); }
+            },
         ];
+
+        const ritualSteps = [
+            ...restVideos.map(video => ({
+                name: video.name,
+                description: video.description,
+                action: () => { setSelectedVideo(video); setView('active_movement'); }
+            })),
+            ...otherSteps
+        ];
+
         return (
              <>
                 <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
@@ -513,7 +531,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
             <h3 className="font-bold text-slate-100 text-lg mb-2">Prácticas de Movimiento</h3>
             <div className="space-y-3">
-                {MOVEMENT_VIDEOS.map(vid => (
+                {MOVEMENT_VIDEOS.filter(v => v.category === 'movement').map(vid => (
                     <button key={vid.id} onClick={() => { setSelectedVideo(vid); setView('active_movement'); }} className="w-full text-left p-3 rounded-lg border-2 border-slate-700 hover:border-lime-500">
                         <h4 className="font-semibold text-slate-200">{vid.name}</h4>
                         <p className="text-xs text-slate-400">{vid.description}</p>
