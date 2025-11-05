@@ -1,6 +1,25 @@
 
 import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo } from './types';
 
+// STORAGE KEYS
+export const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
+export const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
+export const JOURNAL_STORAGE_KEY = 'journalEntry';
+export const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
+export const REMINDERS_STORAGE_KEY = 'remindersList';
+export const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
+export const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
+export const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
+export const ACTIVATION_CODE_KEY = 'activationCode';
+export const GARDEN_GROWTH_POINTS_KEY = 'gardenGrowthPoints';
+export const THOUGHT_LAB_STORAGE_KEY = 'thoughtLabEntries';
+export const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
+export const KAI_MEMORY_KEY = 'kaiMemory';
+export const DOPAMINE_DIET_KEY = 'dopamineDiet';
+export const HABIT_LOOPS_KEY = 'habitLoops';
+export const FREEDOM_VAULT_KEY = 'freedomVault';
+
+
 export const MESSAGES: Record<MessageCategory, IMessage[]> = {
   [MessageCategory.Morning]: [
     { id: 1, category: MessageCategory.Morning, title: 'Un Nuevo Comienzo', content: 'Hoy es una nueva oportunidad. Elige la recuperación. Tu futuro yo te lo agradecerá. Respira hondo y enfócate en el ahora.' },
@@ -192,4 +211,10 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
         description: 'Una pausa activa de 5 minutos que puedes hacer en tu escritorio para liberar tensión.',
         duration: 5
     }
+];
+
+// NEW CONSTANTS
+export const DOPAMINE_ACTIVITIES = [
+    'Completé una tarea', 'Hice ejercicio', 'Recibí luz solar', 'Medité / Respiré', 
+    'Contacto social', 'Pequeña victoria', 'Acto de amabilidad', 'Aprendí algo nuevo', 'Otro'
 ];

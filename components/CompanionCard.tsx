@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData } from '../types';
+import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -92,9 +92,10 @@ interface CompanionCardProps {
     onboardingData: OnboardingData;
     kaiMemory: string;
     isSubscribed: boolean;
+    dopamineHits: IDopamineHit[];
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -186,6 +187,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         const wellnessSummary = lastWeekWellness.length > 0
             ? `Ha completado ${lastWeekWellness.length} ejercicio(s) de bienestar esta semana. El más reciente: ${lastWeekWellness[0]?.exerciseName}.`
             : "No ha registrado ejercicios de bienestar esta semana.";
+        const dopamineThisWeek = dopamineHits.filter(h => new Date(h.date) >= oneWeekAgo);
+        const dopamineSummary = dopamineThisWeek.length > 0 
+            ? `Ha registrado ${dopamineThisWeek.length} fuentes de dopamina saludable esta semana. La más reciente: ${dopamineThisWeek[0]?.activity}.`
+            : "No ha registrado fuentes de dopamina saludable esta semana.";
         const goalsSummary = goals.length > 0 
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
@@ -199,6 +204,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             - Resumen de antojos (última semana): ${cravingsSummary}
             - Última entrada del diario: ${journalSummary}
             - Resumen de bienestar (última semana): ${wellnessSummary}
+            - Resumen de dopamina saludable (última semana): ${dopamineSummary}
 
             CONVERSACIÓN ACTUAL (últimos 5 turnos):
             ${conversation.slice(-5).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}

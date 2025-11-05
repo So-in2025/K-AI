@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
-import { ICraving, IConversationTurn, IWellnessActivity, IGoal, OnboardingData } from '../types';
+import { ICraving, IConversationTurn, IWellnessActivity, IGoal, OnboardingData, IDopamineHit } from '../types';
 
 interface KaiViewProps {
     daysSober: number;
@@ -14,6 +15,7 @@ interface KaiViewProps {
     // FIX: Add missing properties to accept them from App.tsx and pass them down to CompanionCard.
     kaiMemory: string;
     isSubscribed: boolean;
+    dopamineHits: IDopamineHit[];
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {

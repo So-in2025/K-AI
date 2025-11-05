@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IWellnessActivity, UserFocus } from '../types';
+import { ICraving, IWellnessActivity, UserFocus, IDopamineHit } from '../types';
 
 // Using a simple markdown parser to convert **bold** and lists
 const parseMarkdown = (text: string) => {
@@ -34,9 +35,10 @@ interface WeeklyAnalysisCardProps {
     daysSober: number;
     userFocus: UserFocus[];
     isLocked: boolean;
+    dopamineHits: IDopamineHit[];
 }
 
-export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus, isLocked }) => {
+export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus, isLocked, dopamineHits }) => {
     const [analysis, setAnalysis] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -59,6 +61,7 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const cravingsThisWeek = cravings.filter(c => new Date(c.date) >= oneWeekAgo);
         const wellnessThisWeek = wellnessLog.filter(w => new Date(w.date) >= oneWeekAgo);
+        const dopamineThisWeek = dopamineHits.filter(h => new Date(h.date) >= oneWeekAgo);
 
         const cravingsSummary = cravingsThisWeek.map(c => 
             `Día: ${new Date(c.date).toLocaleDateString()}, Intensidad: ${c.intensity}, Detonantes: ${c.triggers.join(', ')}`
@@ -67,6 +70,10 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
         const wellnessSummary = wellnessThisWeek.length > 0
             ? `${wellnessThisWeek.length} actividades, incluyendo ${wellnessThisWeek.map(w => w.exerciseName).join(', ')}`
             : "Ninguna actividad registrada.";
+
+        const dopamineSummary = dopamineThisWeek.length > 0
+            ? `Registró ${dopamineThisWeek.length} fuentes de dopamina saludable, como '${dopamineThisWeek[0]?.activity}'.`
+            : "No registró fuentes de dopamina saludable.";
         
         const focusText = userFocus.map(f => {
             if (f === 'addiction') return 'recuperación de la adicción';
@@ -84,16 +91,17 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
             - Antojos registrados esta semana: ${cravingsThisWeek.length}
             - Detalles de antojos: ${cravingsSummary || "Ninguno"}
             - Ejercicios de bienestar completados: ${wellnessSummary}
+            - Dopamina saludable: ${dopamineSummary}
             - Extracto del diario reciente: "${journalEntry.substring(0, 250)}..."
 
             TU RESPUESTA DEBE SEGUIR ESTA ESTRUCTURA (usa markdown con **negritas** y listas con -):
 
-            1. **Celebración y Fortaleza**: Empieza reconociendo un logro o una fortaleza de la semana. Por ejemplo, "Felicidades por alcanzar ${daysSober} días..." o "He notado tu constancia con los ejercicios de bienestar...".
-            2. **El Patrón Principal**: Identifica el patrón más significativo de la semana. Sé específico. Por ejemplo, "El patrón principal que observo esta semana es que el **estrés** parece ser un detonante clave, especialmente en las tardes." o "Tu diario refleja una sensación de **soledad**, que podría estar influyendo en tu estado de ánimo."
-            3. **Conexión Profunda**: Conecta dos áreas diferentes de datos si es posible. Por ejemplo, "Es interesante ver que en tu diario mencionas sentirte 'agotado' en los mismos días que registraste antojos intensos. Esto sugiere que el cansancio reduce tus defensas." Si no hay conexión clara, omite este punto.
+            1. **Celebración y Fortaleza**: Empieza reconociendo un logro o una fortaleza de la semana. Por ejemplo, "Felicidades por alcanzar ${daysSober} días..." o "He notado tu constancia con el registro de dopamina saludable...".
+            2. **El Patrón Principal**: Identifica el patrón más significativo de la semana. Sé específico. Por ejemplo, "El patrón principal que observo esta semana es que el **estrés** parece ser un detonante clave, especialmente en las tardes."
+            3. **Conexión Holística (Oráculo Nutricional)**: Busca una conexión entre el diario (especialmente menciones de comida como 'azúcar', 'chatarra', 'hinchado') y los patrones de antojos o estado de ánimo. Por ejemplo, "Es interesante ver que en tu diario mencionas sentirte 'agotado' y comer 'dulces' en los mismos días que registraste antojos intensos. Esto sugiere una conexión entre tu nutrición y tus defensas emocionales." Si no hay conexión clara, omite este punto.
             4. **Sugerencia para la Próxima Semana**: Ofrece UNA sugerencia clara y accionable. Por ejemplo, "Para la próxima semana, te sugiero enfocarte en una pequeña pausa de 5 minutos con una 'Respiración Cuadrada' para anticiparte a ese momento de estrés."
 
-            Sé conciso, empático y directo. Tu objetivo es proporcionar claridad y una dirección, no abrumar. No uses un saludo inicial como "Hola". Empieza directamente con el análisis. Si no hay suficientes datos para un análisis profundo, informa al usuario amablemente que más datos ayudarán a generar mejores insights.
+            Sé conciso, empático y directo. Tu objetivo es proporcionar claridad y una dirección, no abrumar. No uses un saludo inicial como "Hola". Empieza directamente con el análisis.
         `;
 
         try {

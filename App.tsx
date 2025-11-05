@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IFreedomVaultConfig } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -28,6 +28,9 @@ const GARDEN_GROWTH_POINTS_KEY = 'gardenGrowthPoints';
 const THOUGHT_LAB_STORAGE_KEY = 'thoughtLabEntries';
 const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
 const KAI_MEMORY_KEY = 'kaiMemory';
+const DOPAMINE_DIET_KEY = 'dopamineDiet';
+const HABIT_LOOPS_KEY = 'habitLoops';
+const FREEDOM_VAULT_KEY = 'freedomVault';
 
 
 // Helper to encode audio data for Gemini Live API
@@ -108,11 +111,16 @@ const App: React.FC = () => {
   const [wellnessLog, setWellnessLog] = useState<IWellnessActivity[]>([]);
   const [reminders, setReminders] = useState<IReminder[]>([]);
   
-  // NEW FEATURES STATE
+  // PREVIOUS FEATURES STATE
   const [gardenGrowthPoints, setGardenGrowthPoints] = useState<number>(0);
   const [thoughtLabEntries, setThoughtLabEntries] = useState<IThoughtLabEntry[]>([]);
   const [trustCircleConfig, setTrustCircleConfig] = useState<ITrustCircleConfig | null>(null);
   const [kaiMemory, setKaiMemory] = useState<string>('');
+
+  // NEWEST FEATURES STATE
+  const [dopamineHits, setDopamineHits] = useState<IDopamineHit[]>([]);
+  const [habitLoops, setHabitLoops] = useState<IHabitLoop[]>([]);
+  const [freedomVaultConfig, setFreedomVaultConfig] = useState<IFreedomVaultConfig | null>(null);
 
 
   // Guardian Mode State with Reducer
@@ -277,7 +285,7 @@ const App: React.FC = () => {
         if (storedReminders) setReminders(JSON.parse(storedReminders));
     } catch (error) { console.error("Failed to parse reminders from localStorage", error); }
 
-    // Load new feature data
+    // Load feature data
     const storedPoints = localStorage.getItem(GARDEN_GROWTH_POINTS_KEY);
     if (storedPoints) setGardenGrowthPoints(parseInt(storedPoints, 10));
 
@@ -293,6 +301,21 @@ const App: React.FC = () => {
     
     const storedMemory = localStorage.getItem(KAI_MEMORY_KEY);
     if(storedMemory) setKaiMemory(storedMemory);
+
+    try {
+        const storedDopamineHits = localStorage.getItem(DOPAMINE_DIET_KEY);
+        if (storedDopamineHits) setDopamineHits(JSON.parse(storedDopamineHits));
+    } catch(e) { console.error("Failed to parse dopamine hits", e); }
+    
+    try {
+        const storedHabitLoops = localStorage.getItem(HABIT_LOOPS_KEY);
+        if (storedHabitLoops) setHabitLoops(JSON.parse(storedHabitLoops));
+    } catch(e) { console.error("Failed to parse habit loops", e); }
+    
+    try {
+        const storedFreedomVault = localStorage.getItem(FREEDOM_VAULT_KEY);
+        if (storedFreedomVault) setFreedomVaultConfig(JSON.parse(storedFreedomVault));
+    } catch(e) { console.error("Failed to parse freedom vault config", e); }
 
 
   }, [calculateDaysSober]);
@@ -509,6 +532,26 @@ const App: React.FC = () => {
     localStorage.setItem(TRUST_CIRCLE_STORAGE_KEY, JSON.stringify(config));
   };
 
+  // NEWEST FEATURES HANDLERS
+  const handleLogDopamineHit = (hit: IDopamineHit) => {
+    const updatedHits = [hit, ...dopamineHits.slice(0, 19)]; // Keep last 20
+    setDopamineHits(updatedHits);
+    localStorage.setItem(DOPAMINE_DIET_KEY, JSON.stringify(updatedHits));
+    updateGardenGrowth(1); // Small reward for logging
+  };
+
+  const handleAddHabitLoop = (loop: IHabitLoop) => {
+    const updatedLoops = [loop, ...habitLoops];
+    setHabitLoops(updatedLoops);
+    localStorage.setItem(HABIT_LOOPS_KEY, JSON.stringify(updatedLoops));
+    updateGardenGrowth(5); // Significant points for this deep work
+  };
+  
+  const handleUpdateFreedomVaultConfig = (config: IFreedomVaultConfig) => {
+    setFreedomVaultConfig(config);
+    localStorage.setItem(FREEDOM_VAULT_KEY, JSON.stringify(config));
+  };
+
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
     if (!apiKey) return;
@@ -691,6 +734,7 @@ const App: React.FC = () => {
                   onboardingData={onboardingData}
                   kaiMemory={kaiMemory}
                   isSubscribed={isSubscribed}
+                  dopamineHits={dopamineHits}
                 />;
       case 'tools':
         return <ToolsView
@@ -707,6 +751,8 @@ const App: React.FC = () => {
                   onDeleteReminder={handleDeleteReminder}
                   thoughtLabEntries={thoughtLabEntries}
                   onAddThoughtLabEntry={handleAddThoughtLabEntry}
+                  habitLoops={habitLoops}
+                  onAddHabitLoop={handleAddHabitLoop}
                   isSubscribed={isSubscribed}
                 />;
       case 'progress':
@@ -720,6 +766,10 @@ const App: React.FC = () => {
                   gardenGrowthPoints={gardenGrowthPoints}
                   trustCircleConfig={trustCircleConfig}
                   onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
+                  dopamineHits={dopamineHits}
+                  onLogDopamineHit={handleLogDopamineHit}
+                  freedomVaultConfig={freedomVaultConfig}
+                  onUpdateFreedomVaultConfig={handleUpdateFreedomVaultConfig}
                 />;
       default:
         return <HomeView 

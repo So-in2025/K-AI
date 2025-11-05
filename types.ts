@@ -115,7 +115,6 @@ export interface OnboardingData {
     mainChallenge: string;
 }
 
-// NEW TYPES FOR NEW FEATURES
 export interface IThoughtLabEntry {
     id: string;
     date: string; // ISO string
@@ -130,4 +129,27 @@ export interface ITrustCircleConfig {
     contactEmail: string;
     sendWeeklyReport: boolean;
     sendCravingAlerts: boolean;
+}
+
+// NEWEST TYPES FOR NEWEST FEATURES
+export interface IDopamineHit {
+    id: string;
+    date: string; // ISO string
+    activity: string;
+}
+
+export interface IHabitLoop {
+    id: string;
+    date: string; // ISO string
+    cue: string;      // The trigger
+    craving: string;  // The underlying need
+    oldRoutine: string;
+    newRoutine: string;
+    reward: string;
+}
+
+export interface IFreedomVaultConfig {
+    weeklySpending: number;
+    goalAmount: number;
+    goalDescription: string;
 }

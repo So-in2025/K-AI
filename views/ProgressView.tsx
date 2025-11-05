@@ -3,10 +3,12 @@ import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
 import { ResourcesCard } from '../components/ResourcesCard';
-import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig } from '../types';
+import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IFreedomVaultConfig, IDopamineHit } from '../types';
 import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
+import { FreedomVaultCard } from '../components/FreedomVaultCard';
+import { DopamineDietCard } from '../components/DopamineDietCard';
 
 interface ProgressViewProps {
     cravings: ICraving[];
@@ -18,6 +20,10 @@ interface ProgressViewProps {
     gardenGrowthPoints: number;
     trustCircleConfig: ITrustCircleConfig | null;
     onUpdateTrustCircleConfig: (config: ITrustCircleConfig) => void;
+    dopamineHits: IDopamineHit[];
+    onLogDopamineHit: (hit: IDopamineHit) => void;
+    freedomVaultConfig: IFreedomVaultConfig | null;
+    onUpdateFreedomVaultConfig: (config: IFreedomVaultConfig) => void;
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
@@ -33,6 +39,11 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 
                 <div className="lg:col-span-2 space-y-6">
                     <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
+                    <FreedomVaultCard 
+                        config={props.freedomVaultConfig}
+                        onUpdateConfig={props.onUpdateFreedomVaultConfig}
+                        daysSober={props.daysSober}
+                    />
                      <WeeklyAnalysisCard 
                         cravings={props.cravings}
                         journalEntry={props.journalEntry}
@@ -40,10 +51,15 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                         daysSober={props.daysSober}
                         userFocus={onboardingData.focuses}
                         isLocked={!isSubscribed}
+                        dopamineHits={props.dopamineHits} // Pass new data
                     />
                 </div>
 
                 <div className="space-y-6">
+                    <DopamineDietCard
+                        hits={props.dopamineHits}
+                        onLogHit={props.onLogDopamineHit}
+                    />
                     <TrustCircleCard
                         config={props.trustCircleConfig}
                         onUpdateConfig={props.onUpdateTrustCircleConfig}

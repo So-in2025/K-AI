@@ -6,7 +6,8 @@ import { JournalCard } from '../components/JournalCard';
 import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard';
 import { RemindersCard } from '../components/RemindersCard';
 import { ThoughtLabCard } from '../components/ThoughtLabCard';
-import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry } from '../types';
+import { HabitLoopCard } from '../components/HabitLoopCard';
+import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop } from '../types';
 
 
 interface ToolsViewProps {
@@ -23,6 +24,8 @@ interface ToolsViewProps {
     onDeleteReminder: (id: string) => void;
     thoughtLabEntries: IThoughtLabEntry[];
     onAddThoughtLabEntry: (entry: IThoughtLabEntry) => void;
+    habitLoops: IHabitLoop[];
+    onAddHabitLoop: (loop: IHabitLoop) => void;
     isSubscribed: boolean;
 }
 
@@ -35,6 +38,11 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                     <ThoughtLabCard 
                         entries={props.thoughtLabEntries}
                         onAddEntry={props.onAddThoughtLabEntry}
+                        isLocked={!props.isSubscribed}
+                    />
+                    <HabitLoopCard
+                        loops={props.habitLoops}
+                        onAddLoop={props.onAddHabitLoop}
                         isLocked={!props.isSubscribed}
                     />
                     <AffirmationGeneratorCard />

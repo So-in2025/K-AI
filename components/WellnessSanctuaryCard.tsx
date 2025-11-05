@@ -14,7 +14,7 @@ interface WellnessSanctuaryCardProps {
     onLogActivity: (activity: IWellnessActivity) => void;
 }
 
-type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement';
+type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual';
 
 export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity }) => {
     const [view, setView] = useState<View>('menu');
@@ -31,19 +31,15 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const cardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Scroll inteligente: se activa cuando se expande una sección
         if (view !== 'menu' && cardRef.current) {
-            // Se usa un timeout para esperar a que el DOM se actualice con la nueva altura del contenido
             setTimeout(() => {
                 if (!cardRef.current) return;
                 const cardRect = cardRef.current.getBoundingClientRect();
-                // Si la parte inferior de la tarjeta está cerca del borde de la ventana, hacemos scroll
                 const isNearBottom = cardRect.bottom > window.innerHeight - 150; 
-
                 if (isNearBottom) {
                     cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }
-            }, 100); // Un pequeño delay es suficiente para que React renderice
+            }, 100);
         }
     }, [view]);
 
@@ -107,7 +103,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }, 100);
 
         ttsService.speakSequence(selectedMeditation.script).then(() => {
-            if (isActive) { // Check if it wasn't stopped manually
+            if (isActive) {
                 resetState(true, { date: new Date().toISOString(), exerciseName: selectedMeditation.name, durationMinutes: Math.round(totalDuration / 60000) || 1 });
             }
         });
@@ -127,14 +123,42 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 <LungsIcon />
                 <h2 className="text-xl font-bold text-slate-100">Santuario de Bienestar</h2>
             </div>
-            <p className="text-slate-400 mb-4 text-sm">Elige una práctica para calmar la mente y fortalecer tu resiliencia.</p>
-            <div className="flex flex-col md:flex-row gap-2">
-                <button onClick={() => setView('breathing')} className="flex-1 bg-teal-900/50 text-teal-300 font-semibold py-3 px-4 rounded-lg hover:bg-teal-900 transition-colors">Respiración</button>
-                <button onClick={() => setView('meditation')} className="flex-1 bg-indigo-900/50 text-indigo-300 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-900 transition-colors">Meditación</button>
-                <button onClick={() => setView('movement')} className="flex-1 bg-lime-900/50 text-lime-300 font-semibold py-3 px-4 rounded-lg hover:bg-lime-900 transition-colors">Movimiento</button>
+            <p className="text-slate-400 mb-4 text-sm">Elige una práctica para calmar la mente, mover el cuerpo y preparar tu descanso.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <button onClick={() => setView('breathing')} className="bg-teal-900/50 text-teal-300 font-semibold py-3 px-4 rounded-lg hover:bg-teal-900 transition-colors">Respiración</button>
+                <button onClick={() => setView('meditation')} className="bg-indigo-900/50 text-indigo-300 font-semibold py-3 px-4 rounded-lg hover:bg-indigo-900 transition-colors">Meditación</button>
+                <button onClick={() => setView('movement')} className="bg-lime-900/50 text-lime-300 font-semibold py-3 px-4 rounded-lg hover:bg-lime-900 transition-colors">Movimiento</button>
+                <button onClick={() => setView('rest_ritual')} className="bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-lg hover:bg-slate-600 transition-colors">Ritual de Descanso</button>
             </div>
         </>
     );
+
+    const renderRestRitual = () => {
+        const ritualSteps = [
+            { name: "Estiramiento Suave", description: "Libera la tensión del día con 5 minutos de estiramiento en silla.", action: () => { setSelectedVideo(MOVEMENT_VIDEOS.find(v => v.id === 'chair-yoga')!); setView('active_movement'); } },
+            { name: "Meditación de Autocompasión", description: "Calma tu mente y cultiva la amabilidad hacia ti mismo.", action: () => { setSelectedMeditation(GUIDED_MEDITATIONS.find(m => m.id === 'self-compassion')!); startMeditation(); } },
+            { name: "Reflexión de Gratitud", description: "Escribe una cosa por la que te sientas agradecido hoy en tu diario (próximamente).", action: () => {} },
+        ];
+        return (
+             <>
+                <button onClick={() => setView('menu')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+                <h3 className="font-bold text-slate-100 text-lg mb-2">Ritual de Descanso</h3>
+                <p className="text-slate-400 mb-4 text-sm">Sigue estos pasos para preparar tu cuerpo y mente para un sueño reparador.</p>
+                <div className="space-y-3">
+                    {ritualSteps.map((step, index) => (
+                        <div key={step.name} className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 bg-slate-700 h-8 w-8 rounded-full flex items-center justify-center font-bold text-teal-400">{index + 1}</div>
+                            <div>
+                                <h4 className="font-semibold text-slate-200">{step.name}</h4>
+                                <p className="text-xs text-slate-400">{step.description}</p>
+                                <button onClick={step.action} className="text-sm text-teal-400 hover:underline mt-1" disabled={step.name.includes('próximamente')}>Comenzar</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </>
+        )
+    };
 
     const renderBreathingSelection = () => (
         <>
@@ -259,6 +283,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             case 'breathing': return renderBreathingSelection();
             case 'meditation': return renderMeditationSelection();
             case 'movement': return renderMovementSelection();
+            case 'rest_ritual': return renderRestRitual();
             default: return renderMenu();
         }
     }
