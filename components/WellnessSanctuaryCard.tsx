@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS, SHAMANIC_DRUM_VIDEO_ID } from '../constants';
+import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -35,7 +35,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     // Shamanic Journey State
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
     const journeyTimeoutRef = useRef<number | null>(null);
-    const youtubePlayerRef = useRef<any>(null); // To hold the YouTube player instance
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const drumIntervalRef = useRef<number | null>(null);
+
 
     // Neuro Quest State
     const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
@@ -65,18 +67,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
         if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
+        if (drumIntervalRef.current) {
+            clearInterval(drumIntervalRef.current);
+            drumIntervalRef.current = null;
+        }
+
         setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         
-        if (youtubePlayerRef.current) {
-            try {
-              youtubePlayerRef.current.destroy();
-            } catch (e) {
-              console.error("Error destroying YouTube player:", e);
-            }
-            youtubePlayerRef.current = null;
-        }
-
         if (completed && activity) {
             onLogActivity(activity);
         } else {
@@ -158,33 +156,35 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
     
     const startShamanicJourney = () => {
-      // Load the YouTube IFrame API script
-      if (!(window as any).YT) {
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
-      } else {
-         (window as any).onYouTubeIframeAPIReady();
-      }
+        if (drumIntervalRef.current) return;
 
-      (window as any).onYouTubeIframeAPIReady = () => {
-        if (youtubePlayerRef.current) return;
-        youtubePlayerRef.current = new (window as any).YT.Player('youtube-player', {
-          height: '1',
-          width: '1',
-          videoId: SHAMANIC_DRUM_VIDEO_ID,
-          playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playsinline': 1 },
-          events: { 'onReady': onPlayerReady }
-        });
-      };
-      
-      const onPlayerReady = (event: any) => {
-        event.target.unMute();
-        event.target.setVolume(100);
-        event.target.playVideo();
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const audioCtx = audioContextRef.current;
+        audioCtx.resume(); // Ensure context is active
+
+        const playDrum = () => {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            // Drum sound characteristics
+            oscillator.frequency.setValueAtTime(120, audioCtx.currentTime); 
+            oscillator.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
+
+            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        };
+
+        drumIntervalRef.current = window.setInterval(playDrum, 400); // ~150 BPM
         setJourneyStep('intention');
-      };
     };
 
 
@@ -295,12 +295,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
             if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
-            if (youtubePlayerRef.current) {
-                try {
-                    youtubePlayerRef.current.destroy();
-                } catch(e) {}
-                youtubePlayerRef.current = null;
-            }
+            if (drumIntervalRef.current) clearInterval(drumIntervalRef.current);
         };
     }, []);
 
@@ -474,15 +469,12 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             return: 'Regresando al Presente...',
             integration: 'Integrando la Experiencia.'
         };
-        const showVideo = journeyStep !== 'idle' && journeyStep !== 'integration';
         
         return (
              <div className="text-center">
                  <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
                  <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3>
                  
-                 <div id="youtube-player" className="absolute w-1 h-1 -top-96 -left-96"></div>
-
                  {journeyStep === 'idle' ? (
                      <>
                         <TtsInfoButton explanation="Esta es una práctica de inmersión profunda. Usa un ritmo de tambor constante para guiar tu cerebro a un estado de meditación Theta, ideal para la introspección. Te guiaré para establecer una intención, respirar y usar un mantra antes de dejarte con el sonido." />
