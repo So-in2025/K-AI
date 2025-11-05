@@ -229,10 +229,10 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'estiramiento-espalda',
-        youtubeId: '3-p_IT2d5jE', // Video: "ESTIRAMIENTOS para ALIVIAR el DOLOR DE ESPALDA y cuello en 10 MINUTOS" by FisioOnline
-        name: 'Estiramiento Nocturno (10 min)',
+        youtubeId: 'ACYs94n6i30', // Video: "Estiramientos de Espalda y Cuello - Para Aliviar Dolor y Tensión" by FisioOnline
+        name: 'Estiramiento Nocturno (15 min)',
         description: 'Rutina terapéutica de FisioOnline para liberar la tensión del día, ideal para el Ritual de Descanso.',
-        duration: 10
+        duration: 15
     },
     {
         id: 'yoga-ansiedad',
@@ -243,7 +243,7 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     }
 ];
 
-export const SHAMANIC_DRUM_URL = 'https://aistudiocdn.com/kia-app/shamanic_drum.mp3';
+export const SHAMANIC_DRUM_VIDEO_ID = '_qg0f-4v5_o'; // Video: "Tambor Chamánico 15 minutos de Trance."
 
 export const NEURO_QUESTS: INeuroQuest[] = [
     // Rituales de Dopamina

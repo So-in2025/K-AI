@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS, SHAMANIC_DRUM_URL } from '../constants';
+import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS, SHAMANIC_DRUM_VIDEO_ID } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -35,7 +35,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     // Shamanic Journey State
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
-    const drumAudioRef = useRef<HTMLAudioElement>(null);
+    const journeyTimeoutRef = useRef<number | null>(null);
 
     // Neuro Quest State
     const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
@@ -64,6 +64,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setIsActive(false);
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
+        if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
         setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         
@@ -77,10 +78,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setSelectedMeditation(null);
         setSelectedVideo(null);
         setJourneyStep('idle');
-        if (drumAudioRef.current) {
-            drumAudioRef.current.pause();
-            drumAudioRef.current.currentTime = 0;
-        }
         setView('menu');
     };
 
@@ -169,10 +166,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 { text: "Inhala profundo... exhala lento.", pause: 1000 }
             ]).then(() => {
                 if(journeyStep === 'breathing') {
-                    if (drumAudioRef.current) {
-                        drumAudioRef.current.volume = 0.8;
-                        drumAudioRef.current.play();
-                    }
                     setJourneyStep('mantra');
                 }
             });
@@ -192,12 +185,11 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 { text: "Observa sin juicio lo que surja. Estás en un espacio seguro.", pause: 1000 }
             ]).then(() => {
                 if(journeyStep === 'journey') {
-                    setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
+                    journeyTimeoutRef.current = window.setTimeout(() => setJourneyStep('return'), 60000); // 1 minute journey
                 }
             });
         }
         if(journeyStep === 'return') {
-            if (drumAudioRef.current) drumAudioRef.current.pause();
             ttsService.speakSequence([
                 { text: "Poco a poco, regresa a la conciencia de tu cuerpo.", pause: 3000 },
                 { text: "Siente tus manos, tus pies. El viaje ha terminado.", pause: 1000 }
@@ -261,7 +253,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             ttsService.stop();
             if (intervalRef.current) clearInterval(intervalRef.current);
             if (stepTimeoutRef.current) clearTimeout(stepTimeoutRef.current);
-            if (drumAudioRef.current) drumAudioRef.current.pause();
+            if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
         };
     }, []);
 
@@ -435,6 +427,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             return: 'Regresando al Presente...',
             integration: 'Integrando la Experiencia.'
         };
+        const showVideo = journeyStep === 'breathing' || journeyStep === 'mantra' || journeyStep === 'journey';
         return (
              <div className="text-center">
                  <button onClick={() => resetState()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
@@ -447,7 +440,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     </>
                  ) : (
                      <div className="p-4 bg-slate-900/50 rounded-lg">
-                         <div className="flex justify-center items-center my-4 h-32">
+                         <div className="flex justify-center items-center my-4 h-32 relative">
+                             {showVideo && (
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${SHAMANIC_DRUM_VIDEO_ID}?autoplay=1&loop=1&controls=0`}
+                                    className="absolute top-0 left-0 w-full h-full opacity-0 pointer-events-none"
+                                    allow="autoplay"
+                                ></iframe>
+                            )}
                              <div className="relative w-32 h-32">
                                  <div className="absolute inset-0 bg-purple-500 rounded-full animate-pulse opacity-75"></div>
                                  <div className="absolute inset-2 bg-purple-700 rounded-full animate-pulse animation-delay-300"></div>
@@ -462,7 +462,6 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                          )}
                      </div>
                  )}
-                 <audio ref={drumAudioRef} src={SHAMANIC_DRUM_URL} loop />
              </div>
         );
     };
