@@ -333,7 +333,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     }
 
     return (
-        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl flex flex-col min-h-[calc(100vh-22rem)]">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl flex flex-col h-full">
             <style>{`
                 .kai-container { perspective: 800px; }
                 .kai-orb { width: 120px; height: 120px; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out; }
@@ -381,7 +381,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 @keyframes shake-gesture { 0%, 100% { transform: rotateY(0); } 25% { transform: rotateY(-15deg); } 75% { transform: rotateY(15deg); } }
             `}</style>
             
-            <div className="flex flex-col items-center justify-center pt-2" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+            <div className="p-4 flex flex-col items-center justify-center" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                 <div className="kai-container">
                     <div ref={avatarRef} className={orbClasses}>
                         <div className="kai-body"></div>
@@ -394,7 +394,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 <h2 className="text-xl font-bold text-slate-100 mt-2">Kai</h2>
             </div>
             
-            <div className="flex flex-col w-full flex-grow min-h-0">
+            <div className="px-4 pb-4 flex flex-col w-full flex-grow min-h-0">
                 <div className="flex-grow bg-slate-900 rounded-lg p-4 overflow-y-auto mb-4 border border-slate-700/50">
                     {conversation.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-slate-400 text-center p-4">

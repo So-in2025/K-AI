@@ -18,9 +18,9 @@ interface KaiViewProps {
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {
     return (
-       <>
+       // This container will now manage the chat layout, taking up the full available height.
+       <div className="h-full flex flex-col">
             <CompanionCard {...props} />
-            <div className="h-24" />
-       </>
+       </div>
     );
 };
