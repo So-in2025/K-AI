@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
 import { TherapySessionModal } from '../components/TherapySessionModal';
@@ -23,7 +24,7 @@ interface KaiViewProps {
 export const KaiView: React.FC<KaiViewProps> = (props) => {
     return (
        // This container manages the chat layout, ensuring it takes up the full available height below the header.
-       <div className="h-[calc(100vh-160px)] flex flex-col">
+       <div className="h-[calc(100vh-200px)] flex flex-col">
             <CompanionCard 
                 conversation={props.conversation}
                 onNewTurn={props.onNewTurn}

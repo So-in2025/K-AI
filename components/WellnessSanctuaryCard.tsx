@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
@@ -200,7 +201,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 case 'grounding': vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate([100, 50, 100]), 1250); await ttsService.speakSequence([{ text: "Bienvenido. Cierra los ojos. Siente el peso de tu cuerpo.", pause: 4000 }, { text: "Tu intención es tu mapa. ¿Qué sabiduría buscas?", pause: 5000 }]); if (activePracticeRef.current) setJourneyStep('descent'); break;
                 case 'descent': fade(drone.gainNode, 0.1, 5); fade(wind.gainNode, 0.05, 10); fade(drum.gainNode, 0.4, 5); fade(chant.gainNode, 0.15, 10); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(50), 333); await ttsService.speak("El tambor ha comenzado. Este es el latido de la Tierra, guiándote. Los cantos ancestrales te envuelven.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('deepening'); }, 120000); break;
                 case 'deepening': vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(1000), 4000); await ttsService.speak("Continúa descendiendo... Más allá del pensamiento...", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('vision'); }, 180000); break;
-                case 'vision': fade(drum.gainNode, 0.25, 10); fade(chant.gainNode, 0.1, 10); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(1500), 5000); await ttsService.speak("Estás en el corazón del viaje. Permanece abierto. Recibe tu regalo.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 120000); break;
+                case 'vision': fade(drum.gainNode, 0.25, 10); fade(chant.gainNode, 0.1, 10); fade(rainstick.gainNode, 0.1, 8); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(1500), 5000); await ttsService.speak("Estás en el corazón del viaje. Permanece abierto. Recibe tu regalo.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 120000); break;
                 case 'return': if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate([20, 80, 20]), 510); fade(drum.gainNode, 0, 10); fade(chant.gainNode, 0, 15); fade(rainstick.gainNode, 0.2, 5); await ttsService.speak("El tambor se desvanece. Escucha la lluvia purificadora. Es el llamado para volver.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 120000); break;
                 case 'integration': fade(rainstick.gainNode, 0, 5); fade(wind.gainNode, 0, 10); fade(drone.gainNode, 0, 10); await ttsService.speakSequence([{ text: "Estás de vuelta. Siente tu cuerpo. Respira.", pause: 5000 }, { text: "El viaje ha terminado, pero la integración comienza. Agradece.", pause: 6000 }]); if (activePracticeRef.current) setJourneyStep('finished'); break;
                 case 'finished': completePractice({ date: new Date().toISOString(), exerciseName: 'Viaje de Sonido Chamánico Profundo', durationMinutes: 10, category: 'Shamanic Journey' }); break;
@@ -274,7 +275,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const renderActiveMeditation = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3> <p className="text-slate-400 mb-4">Escucha la guía de Kai...</p> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
     const renderActiveMovement = () => ( <> <button onClick={() => { setSelectedVideo(null); setView('tabs'); activePracticeRef.current = null; }} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button> <h3 className="font-bold text-slate-100 text-lg mb-2">{selectedVideo?.name}</h3> <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden"><iframe className="w-full h-full" src={`https://www.youtube.com/embed/${selectedVideo?.youtubeId}?autoplay=1`} title={selectedVideo?.name} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe></div> <button onClick={() => completePractice({ date: new Date().toISOString(), exerciseName: selectedVideo!.name, durationMinutes: selectedVideo!.duration, category: 'Movement' })} className="w-full mt-4 bg-lime-600 text-white font-semibold py-3 px-5 rounded-lg">He completado esta rutina</button> </> );
     const renderActiveQuest = () => ( <div className="p-3 bg-slate-700/50 rounded-lg"> <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest?.name}</h3> <p className="text-sm text-slate-300 mb-3 text-center">{activeQuest?.script.find(s=>s.step===questStep)?.text}</p> {questStep === 'reflection' && <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión..." className="w-full h-24 p-2 bg-slate-700 rounded-lg"/>} <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={() => completeDopamineHit({ id: crypto.randomUUID(), date: new Date().toISOString(), activity: activeQuest!.activityLogName, category: activeQuest!.category })} disabled={questStep !== 'reflection' || questTextInput.trim().length < 10} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-slate-500">Completar</button> </div> </div> );
-    const renderShamanicJourney = () => { const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; return ( <div className="text-center"> <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3> <div className="p-4 bg-slate-900/50 rounded-lg"> <div className={`relative w-32 h-32 mx-auto my-4 journey-${journeyStep}`}><div className="visual-bg"></div><div className="visual-core"></div></div> <p className="text-purple-300 font-semibold min-h-[24px]">{stepText[journeyStep]}</p> {journeyStep !== 'finished' ? <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> } </div> </div> ); };
+    const renderShamanicJourney = () => { const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo Visión...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; return ( <div className="text-center"> <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3> <div className="p-4 bg-slate-900/50 rounded-lg"> <div className={`journey-visual journey-${journeyStep}`}><div className="heart"></div><div className="energy-ring"></div><div className="particle p1"></div><div className="particle p2"></div><div className="particle p3"></div></div> <p className="text-purple-300 font-semibold min-h-[24px] transition-opacity duration-500">{stepText[journeyStep]}</p> {journeyStep !== 'finished' ? <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> } </div> </div> ); };
     const renderMentalDump = () => { const currentPrompt = mentalDumpPrompts[mentalDumpStep]; return ( <> <h3 className="font-bold text-slate-100 text-lg mb-2">Vaciado Mental Guiado</h3> <div className="bg-slate-700/50 p-4 rounded-lg"> <p className="font-semibold text-teal-300">{currentPrompt.title}</p> <p className="text-sm text-slate-300 mb-3">{currentPrompt.instruction}</p> <textarea key={mentalDumpStep} placeholder={currentPrompt.placeholder} className="w-full h-28 p-3 bg-slate-700 rounded-lg" autoFocus/> <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={handleNextDumpStep} className="flex-1 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">{mentalDumpStep < 2 ? 'Siguiente' : 'Finalizar'}</button> </div> </div> </> ); };
 
     return (
@@ -284,15 +285,47 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 @keyframes exhale { from { transform: scale(1.15); } to { transform: scale(1); } }
                 .animate-inhale, .animate-exhale, .animate-hold { animation-duration: ${currentStepInfo.duration}ms; }
                 .animate-inhale { animation-name: inhale; } .animate-exhale { animation-name: exhale; }
-                .visual-bg, .visual-core { position: absolute; top:0;left:0;right:0;bottom:0; border-radius: 50%; transition: all 1.5s ease-in-out; }
-                .journey-grounding .visual-bg { background: radial-gradient(circle, #384269, #1e293b); animation: pulse 4s infinite; }
-                .journey-descent .visual-bg, .journey-return .visual-bg { background: radial-gradient(circle, #4c1d95, #2e1065); animation: pulse 2s infinite; }
-                .journey-deepening .visual-bg { background: radial-gradient(circle, #1e1b4b, #171717); animation: swirl 10s linear infinite; }
-                .journey-vision .visual-bg { background: radial-gradient(circle, #86198f, #4a044e); animation: pulse 1s infinite; }
-                .journey-integration .visual-bg, .journey-finished .visual-bg { background: radial-gradient(circle, #384269, #1e293b); animation: pulse 5s infinite; }
-                @keyframes pulse { 50% { opacity: 0.8; } } @keyframes swirl { to { transform: rotate(360deg); } }
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; } .aspect-h-9 { height: 0; }
                 .aspect-w-16 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+                .journey-visual { position: relative; width: 140px; height: 140px; margin: 1rem auto; display: flex; align-items: center; justify-content: center; }
+                .heart, .energy-ring, .particle { position: absolute; transition: all 2s ease-in-out; }
+                .heart { width: 40px; height: 40px; background: radial-gradient(circle, #f0abfc, #a855f7); border-radius: 50%; box-shadow: 0 0 20px #e9d5ff; }
+                .energy-ring { width: 100px; height: 100px; border: 2px solid #a855f7; border-radius: 50%; opacity: 0.5; }
+                .particle { width: 4px; height: 4px; background: #e9d5ff; border-radius: 50%; }
+
+                /* Animations */
+                @keyframes pulse { 50% { transform: scale(1.1); box-shadow: 0 0 30px #e9d5ff; } }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                @keyframes burst { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1.5); opacity: 1; } }
+                @keyframes flow-in { 0% { transform: translate(0,0) scale(1.2); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0.1); opacity: 0; } }
+                @keyframes flow-out { 0% { transform: translate(0,0) scale(0.1); opacity: 0; } 100% { transform: translate(var(--tx), var(--ty)) scale(1.2); opacity: 1; } }
+
+                /* Grounding */
+                .journey-grounding .heart { animation: pulse 4s infinite ease-in-out; }
+                .journey-grounding .energy-ring { animation: pulse 4s infinite ease-in-out reverse; }
+                
+                /* Descent & Deepening */
+                .journey-descent .heart, .journey-deepening .heart { animation: pulse 2s infinite; }
+                .journey-descent .energy-ring, .journey-deepening .energy-ring { animation: spin 10s linear infinite; }
+                .journey-descent .particle, .journey-deepening .particle { animation: flow-in 3s infinite; }
+                .journey-deepening .heart { background: radial-gradient(circle, #d8b4fe, #7e22ce); }
+                .journey-deepening .energy-ring { border-width: 3px; }
+
+                /* Vision */
+                .journey-vision .heart { background: radial-gradient(circle, #ffffff, #f0abfc); box-shadow: 0 0 40px #fff; animation: pulse 1s infinite; }
+                .journey-vision .energy-ring { animation: burst 3s infinite alternate; border-color: #f0abfc; opacity: 1; }
+                .journey-vision .particle { animation: flow-out 3s infinite; }
+
+                /* Return & Integration */
+                .journey-return .heart, .journey-integration .heart { animation: pulse 5s infinite; }
+                .journey-return .particle { animation: flow-in 4s infinite reverse; }
+                .journey-integration .energy-ring { opacity: 0.2; }
+                
+                /* Particle positions */
+                .p1 { --tx: 70px; --ty: 0px; animation-delay: 0s; }
+                .p2 { --tx: -35px; --ty: 60px; animation-delay: 1s; }
+                .p3 { --tx: -35px; --ty: -60px; animation-delay: 2s; }
              `}</style>
             
             {view === 'tabs' ? (
