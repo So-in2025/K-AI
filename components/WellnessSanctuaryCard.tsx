@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
@@ -106,12 +107,14 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
         
         if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
-        if (audioElementsRef.current.rattleInterval) clearInterval(audioElementsRef.current.rattleInterval);
-        if (audioElementsRef.current.wind) audioElementsRef.current.wind.stop();
-        if (audioElementsRef.current.drone) audioElementsRef.current.drone.stop();
-
+        
+        // Stop all audio nodes
+        if (audioElementsRef.current.nodes) {
+            audioElementsRef.current.nodes.forEach((node: any) => node.stop(0));
+        }
+        
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close();
+            audioContextRef.current.close().catch(console.error);
             audioContextRef.current = null;
         }
         audioElementsRef.current = {};
@@ -229,17 +232,31 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioContextRef.current = audioCtx;
         audioCtx.resume();
+        const allNodes: any[] = [];
 
-        // --- Sound Generators ---
+        const fade = (gainNode: GainNode, targetVolume: number, duration: number) => {
+            if (!audioCtx) return;
+            gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration);
+        };
+
+        // FIX: The createFn callback is called with the gainNode, so its type must reflect that. This resolves multiple errors related to argument mismatch.
+        const createSoundSource = (createFn: (gainNode: GainNode) => any) => {
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0;
+            gainNode.connect(audioCtx.destination);
+            const source = createFn(gainNode);
+            return { gainNode, source };
+        };
+
         const playDrum = () => {
-            if (!audioCtx || audioCtx.state === 'closed') return;
+             if (!audioCtx || audioCtx.state === 'closed') return;
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            gainNode.connect(audioElementsRef.current.drum.gainNode);
             oscillator.frequency.setValueAtTime(120, audioCtx.currentTime);
             oscillator.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
-            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + 0.5);
@@ -247,41 +264,89 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         
         const playRainstick = () => {
             if (!audioCtx || audioCtx.state === 'closed') return;
-            const bufferSize = audioCtx.sampleRate * 2; // 2 seconds of sound
+            const bufferSize = audioCtx.sampleRate * 2.5;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const output = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
-                output[i] = (Math.random() * 2 - 1) * 0.1 * Math.pow(1 - i/bufferSize, 2);
+                output[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/bufferSize, 2);
             }
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
-            source.connect(audioCtx.destination);
+            source.connect(audioElementsRef.current.rainstick.gainNode);
             source.start();
         };
 
-        const createDrone = () => {
-            if (!audioCtx || audioCtx.state === 'closed') return null;
+        const createDrone = (gainNode: GainNode, baseFreq: number) => {
+            if (!audioCtx) return null;
             const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
             oscillator.type = 'sine';
-            oscillator.frequency.value = 50; // Low hum
+            oscillator.frequency.value = baseFreq;
             const lfo = audioCtx.createOscillator();
-            lfo.frequency.value = 0.1; // Very slow oscillation
+            lfo.frequency.value = 0.1;
             const lfoGain = audioCtx.createGain();
             lfoGain.gain.value = 5;
             lfo.connect(lfoGain);
             lfoGain.connect(oscillator.frequency);
-            
-            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
             oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
             lfo.start();
             oscillator.start();
+            allNodes.push(lfo, oscillator);
             return oscillator;
         };
+        
+        const createWind = (gainNode: GainNode) => {
+            if (!audioCtx) return null;
+            const bufferSize = audioCtx.sampleRate * 5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = buffer;
+            whiteNoise.loop = true;
+            const bandpass = audioCtx.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.value = 1000;
+            bandpass.Q.value = 0.5;
+            whiteNoise.connect(bandpass);
+            bandpass.connect(gainNode);
+            whiteNoise.start();
+            allNodes.push(whiteNoise);
+            return whiteNoise;
+        };
 
-        audioElementsRef.current = { playDrum, playRainstick };
-        audioElementsRef.current.drone = createDrone();
+        const createChant = (gainNode: GainNode) => {
+            if (!audioCtx) return;
+            const freqs = [60, 62, 65];
+            freqs.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.value = freq;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 200;
+                filter.Q.value = 5;
+                osc.connect(filter);
+                filter.connect(gainNode);
+                osc.start();
+                allNodes.push(osc);
+            });
+        };
+
+        audioElementsRef.current = {
+            // FIX: The createSoundSource callback now expects an argument, so we provide a placeholder.
+            drum: createSoundSource((_) => null),
+            // FIX: The createSoundSource callback now expects an argument, so we provide a placeholder.
+            rainstick: createSoundSource((_) => null),
+            drone: createSoundSource((g) => createDrone(g, 50)),
+            wind: createSoundSource((g) => createWind(g)),
+            chant: createSoundSource((g) => createChant(g)),
+            playDrum,
+            playRainstick,
+            fade,
+            nodes: allNodes,
+        };
         
         setJourneyStep('grounding');
     };
@@ -289,67 +354,70 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     useEffect(() => {
         const runJourneyStep = async () => {
-            if (!isActiveRef.current || journeyStep === 'idle') return;
+            if (!isActiveRef.current || journeyStep === 'idle' || !audioElementsRef.current.fade) return;
 
-            const clearTimeouts = () => {
-                if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current);
-            };
+            const { fade, drum, rainstick, drone, chant, wind, playDrum, playRainstick } = audioElementsRef.current;
+            const clearTimeouts = () => { if (journeyTimeoutRef.current) clearTimeout(journeyTimeoutRef.current); };
 
             switch (journeyStep) {
                 case 'grounding':
                     await ttsService.speakSequence([
-                        { text: "Bienvenido a este viaje interior. Usa auriculares. Cierra los ojos y encuentra una postura cómoda.", pause: 4000 },
-                        { text: "Respira profundamente tres veces. Con cada exhalación, siente cómo tu cuerpo se ancla a la tierra.", pause: 5000 },
-                        { text: "Ahora, establece una intención. ¿Qué sabiduría buscas? ¿Qué necesitas soltar?", pause: 4000 }
+                        { text: "Bienvenido a un viaje chamánico profundo. Asegúrate de estar en un espacio tranquilo y usa auriculares.", pause: 4000 },
+                        { text: "Cierra los ojos. Siente el peso de tu cuerpo. Tu intención para este viaje es tu mapa. ¿Qué sabiduría buscas? ¿Qué necesitas soltar?", pause: 6000 },
+                        { text: "La respiración es tu ancla. Inhala profundamente... y exhala, soltando todo.", pause: 5000 }
                     ]);
                     if (isActiveRef.current) setJourneyStep('descent');
                     break;
 
                 case 'descent':
-                    audioElementsRef.current.drumInterval = setInterval(audioElementsRef.current.playDrum, 333); // 180 BPM
-                    await ttsService.speak("El ritmo del tambor te guiará. Siente su vibración. Con cada latido, desciendes más profundo en tu mundo interior.", 0.9);
-                     clearTimeouts();
-                    journeyTimeoutRef.current = window.setTimeout(() => {
-                        if (isActiveRef.current) setJourneyStep('deepening');
-                    }, 15000);
+                    fade(drone.gainNode, 0.1, 5);
+                    fade(wind.gainNode, 0.05, 10);
+                    fade(drum.gainNode, 0.4, 5);
+                    fade(chant.gainNode, 0.15, 10);
+                    audioElementsRef.current.drumInterval = setInterval(playDrum, 333); // 180 BPM
+                    await ttsService.speak("El tambor ha comenzado. Este es el latido del corazón de la Tierra, guiándote hacia abajo, a través de las capas de tu conciencia. Siente cómo los cantos ancestrales te envuelven, protegiéndote mientras cruzas el umbral.", 0.9);
+                    clearTimeouts();
+                    journeyTimeoutRef.current = window.setTimeout(() => { if (isActiveRef.current) setJourneyStep('deepening'); }, 90000); // 1.5 min
                     break;
                 
                 case 'deepening':
-                    await ttsService.speak("Estás en el corazón del viaje. No hay nada que hacer, solo ser. Observa las imágenes, los sentimientos, los recuerdos. Estás a salvo.", 0.9);
+                     await ttsService.speak("Continúa descendiendo... Más allá del pensamiento... Hacia el espacio de la visión...", 0.9);
                     clearTimeouts();
-                    journeyTimeoutRef.current = window.setTimeout(() => {
-                        if (isActiveRef.current) setJourneyStep('vision');
-                    }, 45000); // 45 seconds of deep journey
+                    journeyTimeoutRef.current = window.setTimeout(() => { if (isActiveRef.current) setJourneyStep('vision'); }, 180000); // 3 min
                     break;
                 
                  case 'vision':
-                    await ttsService.speak("En este silencio, tu intención resuena. Permite que cualquier mensaje o claridad emerja. Recíbelo sin juicio.", 0.9);
-                     clearTimeouts();
-                    journeyTimeoutRef.current = window.setTimeout(() => {
-                        if (isActiveRef.current) setJourneyStep('return');
-                    }, 30000);
+                    fade(drum.gainNode, 0.25, 10); // Soften drums
+                    fade(chant.gainNode, 0.1, 10);
+                    await ttsService.speak("Estás en el corazón del viaje. Aquí, en este silencio sagrado, permanece abierto. No busques, solo recibe. ¿Qué mensaje, imagen o sentimiento emerge para ti? Este es tu regalo.", 0.9);
+                    clearTimeouts();
+                    journeyTimeoutRef.current = window.setTimeout(() => { if (isActiveRef.current) setJourneyStep('return'); }, 120000); // 2 min
                     break;
 
                 case 'return':
                     if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
-                    audioElementsRef.current.playRainstick();
-                    await ttsService.speak("Escucha el sonido de la lluvia. Es el llamado para volver. Lentamente, comienza tu ascenso de regreso al presente.", 0.9);
+                    fade(drum.gainNode, 0, 10);
+                    fade(chant.gainNode, 0, 15);
+                    fade(rainstick.gainNode, 0.2, 5);
+                    playRainstick();
+                    await ttsService.speak("El tambor se desvanece. Escucha el sonido de la lluvia purificadora. Es el llamado para volver. Trayendo contigo el regalo de tu visión. Siente cómo asciendes, capa por capa, de regreso a tu cuerpo.", 0.9);
                     clearTimeouts();
-                    journeyTimeoutRef.current = window.setTimeout(() => {
-                         if (isActiveRef.current) setJourneyStep('integration');
-                    }, 15000);
+                    journeyTimeoutRef.current = window.setTimeout(() => { if (isActiveRef.current) setJourneyStep('integration'); }, 90000); // 1.5 min
                     break;
 
                 case 'integration':
-                     await ttsService.speakSequence([
-                        { text: "Siente tu cuerpo de nuevo. Mueve suavemente tus dedos. El viaje ha concluido, pero la sabiduría permanece.", pause: 4000 },
-                        { text: "Toma un momento para agradecerte por este espacio. Abre los ojos cuando estés listo.", pause: 3000 }
+                    fade(rainstick.gainNode, 0, 5);
+                    fade(wind.gainNode, 0, 10);
+                    await ttsService.speakSequence([
+                        { text: "Estás de vuelta. Siente el peso de tu cuerpo. La quietud. Respira profundamente.", pause: 5000 },
+                        { text: "El viaje ha terminado, pero la integración apenas comienza. ¿Qué te ha traído de vuelta? Deja que esa sabiduría se asiente en tus huesos. Agradece a tus guías y a ti mismo.", pause: 6000 },
+                        { text: "Cuando estés listo, abre suavemente los ojos.", pause: 4000 }
                     ]);
                     if (isActiveRef.current) setJourneyStep('finished');
                     break;
 
                 case 'finished':
-                     completePractice({ date: new Date().toISOString(), exerciseName: 'Viaje de Sonido Chamánico', durationMinutes: 4 });
+                    completePractice({ date: new Date().toISOString(), exerciseName: 'Viaje de Sonido Chamánico Profundo', durationMinutes: 10 });
                     break;
             }
         };
@@ -641,7 +709,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                  {journeyStep === 'idle' ? (
                      <>
                         <TtsInfoButton explanation="Esta es una práctica de inmersión profunda. Usa un ritmo de tambor constante para guiar tu cerebro a un estado de meditación Theta, ideal para la introspección. Te guiaré para establecer una intención, respirar y usar un mantra antes de dejarte con el sonido." />
-                        <p className="text-slate-400 mb-4 text-sm">Prepara un espacio tranquilo y usa auriculares para una mejor experiencia. Este viaje dura aproximadamente 4 minutos.</p>
+                        <p className="text-slate-400 mb-4 text-sm">Prepara un espacio tranquilo y usa auriculares. Este viaje dura aproximadamente 10 minutos y es una experiencia de inmersión profunda.</p>
                         <button onClick={startShamanicJourney} className="w-full bg-purple-600 text-white font-semibold py-3 px-5 rounded-lg">Comenzar Viaje</button>
                     </>
                  ) : (
