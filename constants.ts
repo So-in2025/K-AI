@@ -223,7 +223,7 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     // Movimiento
     {
         id: 'mov-yoga-suave',
-        youtubeId: 'bKwt_6DvTA0',
+        youtubeId: 'bKwt_6DvTA0', // Funciona
         name: 'Yoga Suave para Empezar Desde Cero',
         description: 'Una clase de 24 minutos ideal para principiantes. Ritmo pausado y guiado para crear un espacio seguro y terapéutico.',
         duration: 24,
@@ -231,24 +231,24 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'mov-yoga-ansiedad',
-        youtubeId: '6s4gjLhPgwk',
+        youtubeId: 'H3_IZ8_K_2M', // Reemplazado
         name: 'Yoga para Calmar la Ansiedad',
-        description: 'Práctica de 20 minutos de Elena Malova para calmar la mente y liberar tensión a través de posturas suaves y grounding.',
-        duration: 20,
+        description: 'Práctica de 25 minutos de Xuan Lan Yoga para calmar la mente y liberar tensión a través de posturas suaves y grounding.',
+        duration: 25,
         category: 'movement'
     },
     {
         id: 'mov-yoga-energia',
-        youtubeId: '_F-bJ8jLgqA',
+        youtubeId: 'gZ-p9gXy-pQ', // Reemplazado
         name: 'Yoga Energizante de Mañana',
-        description: 'Rutina de 15 minutos de Elena Malova para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
+        description: 'Rutina de 15 minutos de Patry Jordan para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
         duration: 15,
         category: 'movement'
     },
     // Ritual de Descanso
     {
         id: 'des-estiramiento-cama',
-        youtubeId: 'i2WsfawlmTY',
+        youtubeId: 'i2WsfawlmTY', // Funciona
         name: 'Yoga en la Cama Antes de Dormir',
         description: 'Rutina de 11 minutos con una voz excepcionalmente calmada, 100% realizable en la cama para liberar tensión.',
         duration: 11,
@@ -256,18 +256,18 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'des-meditacion-dormir',
-        youtubeId: 'aW9_B6IytcI',
-        name: 'Meditación para un Sueño Profundo',
-        description: 'Meditación de 20 minutos de "Dormir y Relajarse" para calmar la mente y prepararte para un descanso reparador.',
-        duration: 20,
+        youtubeId: 'wz_p_2_G4jE', // Reemplazado
+        name: 'Meditación Guiada para un Sueño Profundo',
+        description: 'Meditación de 27 minutos de Calm para calmar la mente y prepararte para un descanso reparador y profundo.',
+        duration: 27,
         category: 'rest'
     },
     {
         id: 'des-yoga-caderas',
-        youtubeId: 'W-5i0qgS0-s',
+        youtubeId: 'XlY6scd2pYI', // Reemplazado
         name: 'Yoga Restaurativo para Soltar Caderas',
-        description: 'Sesión de Yin Yoga de 15 minutos con posturas pasivas y mantenidas para una relajación física y emocional profunda.',
-        duration: 15,
+        description: 'Sesión de Yin Yoga de 20 minutos de Xuan Lan Yoga con posturas pasivas para una relajación física y emocional profunda.',
+        duration: 20,
         category: 'rest'
     }
 ];

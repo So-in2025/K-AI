@@ -273,26 +273,14 @@ const App: React.FC = () => {
     now.setHours(0, 0, 0, 0);
     const diffTime = Math.abs(now.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    setDaysSober(diffDays);
-    // Add growth points for each day of progress
-    const pointsToAdd = diffDays - gardenGrowthPoints;
-    if (pointsToAdd > 0) {
-        updateGardenGrowth(pointsToAdd);
-    }
-  }, [updateGardenGrowth, gardenGrowthPoints]);
+    return diffDays;
+  }, []);
 
   useEffect(() => {
     try {
       const storedCravings = localStorage.getItem(CRAVINGS_STORAGE_KEY);
       if (storedCravings) setCravings(JSON.parse(storedCravings));
     } catch (error) { console.error("Failed to parse cravings from localStorage", error); }
-
-    const storedDate = localStorage.getItem(PROGRESS_STORAGE_KEY);
-    if (storedDate) {
-      const date = new Date(storedDate);
-      setStartDate(date);
-      calculateDaysSober(date);
-    }
 
     const savedEntry = localStorage.getItem(JOURNAL_STORAGE_KEY);
     if (savedEntry) setJournalEntry(savedEntry);
@@ -308,8 +296,27 @@ const App: React.FC = () => {
     } catch (error) { console.error("Failed to parse reminders from localStorage", error); }
 
     // Load feature data
+    let loadedPoints = 0;
     const storedPoints = localStorage.getItem(GARDEN_GROWTH_POINTS_KEY);
-    if (storedPoints) setGardenGrowthPoints(parseInt(storedPoints, 10));
+    if (storedPoints) {
+        loadedPoints = parseInt(storedPoints, 10);
+        setGardenGrowthPoints(loadedPoints);
+    }
+
+    const storedDate = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (storedDate) {
+      const date = new Date(storedDate);
+      setStartDate(date);
+      const currentSoberDays = calculateDaysSober(date);
+      setDaysSober(currentSoberDays);
+      
+      // Safeguard against garden reset
+      if (currentSoberDays > loadedPoints) {
+        setGardenGrowthPoints(currentSoberDays);
+        localStorage.setItem(GARDEN_GROWTH_POINTS_KEY, String(currentSoberDays));
+      }
+    }
+
 
     try {
         const storedEntries = localStorage.getItem(THOUGHT_LAB_STORAGE_KEY);
@@ -511,7 +518,8 @@ const App: React.FC = () => {
     
     const summary = `[ACCIÓN DEL USUARIO] Acabo de completar un ejercicio de ${activity.durationMinutes} minuto(s) de ${activity.exerciseName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
-    ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
+    // This TTS is now handled inside WellnessSanctuaryCard to avoid double messages
+    // ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
     updateGardenGrowth(3); // Add points for wellness activity
     updateLastInteraction();
   };
@@ -554,7 +562,7 @@ const App: React.FC = () => {
   const handleUpdateTrustCircleConfig = (config: ITrustCircleConfig) => {
     setTrustCircleConfig(config);
     localStorage.setItem(TRUST_CIRCLE_STORAGE_KEY, JSON.stringify(config));
-    const summary = `[CÍRCULO DE CONFIANZA] He configurado o actualizado mi Círculo de Confianza. Mi contacto es ${config.contactName}.`;
+    const summary = `[CÍRCULO DE CONFIANZA] He configurado mi Círculo de Confianza. Mi contacto es ${config.contactName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
   };
 
