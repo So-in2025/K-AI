@@ -145,6 +145,29 @@ class TtsService {
     });
   }
 
+  public speakSimple(text: string) {
+    this.isReadyPromise.then(() => {
+      if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
+        return;
+      }
+      this.stop(); // Stop any ongoing speech (from sequences, etc.)
+      const utterance = new SpeechSynthesisUtterance(text);
+      const selectedVoice = this.voices.find(v => v.name === this.settings.voiceName);
+      utterance.voice = selectedVoice || this.voice;
+      if (utterance.voice) {
+        utterance.lang = utterance.voice.lang;
+      }
+      utterance.rate = this.settings.rate;
+      utterance.pitch = this.settings.pitch;
+      
+      utterance.onerror = (event) => {
+        console.error("TTS Simple Speak Error:", event.error, "for text:", `"${text}"`);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
   public speakSequence(script: { text: string; pause: number }[]): Promise<void> {
       return new Promise(async (resolve) => {
         await this.isReadyPromise;
