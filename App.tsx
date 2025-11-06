@@ -992,7 +992,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col h-screen">
+    <div className="bg-slate-900 min-h-screen text-slate-200">
       <Header 
         onSettingsClick={() => setIsSettingsModalOpen(true)} 
         onboardingData={onboardingData} 
@@ -1000,7 +1000,7 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow w-full overflow-y-auto">
+      <main className="w-full">
         <div className="max-w-screen-2xl mx-auto p-4 md:p-6 pb-24">
           {onboardingData.focuses.includes('addiction') && <SOSCard />}
           <div className="mt-6">
