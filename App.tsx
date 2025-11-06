@@ -991,7 +991,7 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto">
+      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto overflow-y-auto pb-24">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
         <div className="mt-6">
           {renderView()}
