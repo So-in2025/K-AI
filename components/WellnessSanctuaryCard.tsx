@@ -25,7 +25,7 @@ interface WellnessSanctuaryCardProps {
 type SanctuaryTab = 'breathing' | 'meditation' | 'movement' | 'rest' | 'neuro' | 'journey';
 type View = 'tabs' | 'active_breathing' | 'active_meditation' | 'active_movement' | 'active_quest' | 'active_journey' | 'active_dump';
 type JourneyStep = 'idle' | 'grounding' | 'descent' | 'deepening' | 'vision' | 'return' | 'integration' | 'finished';
-type JourneyType = 'shamanic' | 'solfeggio' | 'binaural';
+type JourneyType = 'shamanic' | 'solfeggio' | 'binaural' | 'trauma-release' | 'manifestation' | 'nature-connect';
 type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
 
 const mentalDumpPrompts = [
@@ -65,7 +65,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const cleanup = (isCompleted: boolean = false) => {
         // Stop sounds with a fade
         if (audioContextRef.current && audioContextRef.current.state === 'running') {
-            const { drum, solfeggio, drone, binaural, noise, fade } = audioElementsRef.current;
+            const { drum, solfeggio, drone, binaural, noise, shimmer, focus, fade } = audioElementsRef.current;
             const fadeDuration = 0.5; // half a second to fade out
             if (fade) {
                 if (drum?.gainNode) fade(drum.gainNode, 0, fadeDuration);
@@ -73,6 +73,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 if (drone?.gainNode) fade(drone.gainNode, 0, fadeDuration);
                 if (binaural?.gainNode) fade(binaural.gainNode, 0, fadeDuration);
                 if (noise?.gainNode) fade(noise.gainNode, 0, fadeDuration);
+                if (shimmer?.gainNode) fade(shimmer.gainNode, 0, fadeDuration);
+                if (focus?.gainNode) fade(focus.gainNode, 0, fadeDuration);
             }
             
             setTimeout(() => {
@@ -234,6 +236,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         const createDrone = (gainNode: GainNode, freq: number) => createOscillator(gainNode, freq, 'sine');
         const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); allNodes.push(pannerL, pannerR); };
         const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); allNodes.push(osc); };
+        const createFilteredNoise = (gainNode: GainNode, type: BiquadFilterType, frequency: number) => { if (!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency; noise.connect(filter); filter.connect(gainNode); noise.start(); allNodes.push(noise, filter); };
 
         let sounds: { [key: string]: any } = { nodes: allNodes, fade };
         if (journeyType === 'shamanic') {
@@ -245,6 +248,17 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         } else if (journeyType === 'binaural') {
              sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0); // Theta wave
              sounds.noise = createSoundSource(g => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; noise.connect(g); noise.start(); allNodes.push(noise); }, 0);
+        } else if (journeyType === 'trauma-release') {
+            sounds.drone = createSoundSource(g => createDrone(g, 98), 0);
+            sounds.binaural = createSoundSource(g => createBinaural(g, 100, 10), 0);
+            sounds.shimmer = createSoundSource(g => createOscillator(g, 392, 'sine'), 0);
+        } else if (journeyType === 'manifestation') {
+            sounds.drone = createSoundSource(g => createDrone(g, 261), 0);
+            sounds.focus = createSoundSource(g => createOscillator(g, 417, 'sine'), 0);
+            sounds.binaural = createSoundSource(g => createBinaural(g, 150, 15), 0);
+        } else if (journeyType === 'nature-connect') {
+            sounds.drone = createSoundSource(g => createDrone(g, 87), 0);
+            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 400), 0);
         }
         audioElementsRef.current = sounds;
 
@@ -259,6 +273,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0.4, 5);
                     if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0.3, 5); fade(audioElementsRef.current.drone.gainNode, 0.1, 10); }
                     if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0.5, 5); fade(audioElementsRef.current.noise.gainNode, 0.05, 10); }
+                    if (journeyType === 'trauma-release') { fade(audioElementsRef.current.drone.gainNode, 0.2, 10); fade(audioElementsRef.current.binaural.gainNode, 0.4, 5); fade(audioElementsRef.current.shimmer.gainNode, 0.05, 15); }
+                    if (journeyType === 'manifestation') { fade(audioElementsRef.current.drone.gainNode, 0.2, 10); fade(audioElementsRef.current.focus.gainNode, 0.15, 12); fade(audioElementsRef.current.binaural.gainNode, 0.3, 5); }
+                    if (journeyType === 'nature-connect') { fade(audioElementsRef.current.drone.gainNode, 0.3, 10); fade(audioElementsRef.current.noise.gainNode, 0.1, 8); }
                     await ttsService.speakSequence([{ text: "Comenzamos. Cierra los ojos. Concéntrate en tu respiración.", pause: 4000 }]);
                     if (activePracticeRef.current) setJourneyStep('descent');
                     break;
@@ -278,6 +295,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0, 10);
                     if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0, 10); fade(audioElementsRef.current.drone.gainNode, 0, 15); }
                     if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0, 10); fade(audioElementsRef.current.noise.gainNode, 0, 15); }
+                    if (journeyType === 'trauma-release') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.binaural.gainNode, 0, 10); fade(audioElementsRef.current.shimmer.gainNode, 0, 12); }
+                    if (journeyType === 'manifestation') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.focus.gainNode, 0, 12); fade(audioElementsRef.current.binaural.gainNode, 0, 10); }
+                    if (journeyType === 'nature-connect') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.noise.gainNode, 0, 10); }
                     await ttsService.speak("Es hora de volver. Lentamente, trae tu conciencia de vuelta a tu cuerpo.", 0.9);
                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 60000);
                     break;
@@ -290,6 +310,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     if (journeyType === 'shamanic') name = 'Viaje de Sonido Chamánico';
                     if (journeyType === 'solfeggio') name = 'Viaje de Frecuencias Solfeggio';
                     if (journeyType === 'binaural') name = 'Viaje de Sonido Binaural';
+                    if (journeyType === 'trauma-release') name = 'Viaje de Liberación Emocional';
+                    if (journeyType === 'manifestation') name = 'Viaje de Visualización y Manifestación';
+                    if (journeyType === 'nature-connect') name = 'Viaje de Conexión con la Naturaleza';
                     completePractice({ date: new Date().toISOString(), exerciseName: name, durationMinutes: 12, category: 'Shamanic Journey' });
                     break;
             }
@@ -399,6 +422,22 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         <div className="flex-grow"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
                          {!isSubscribed && <LockIcon />}
                     </button>
+                    
+                    <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <div className="flex-grow"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
+                        {!isSubscribed && <LockIcon />}
+                    </button>
+
+                    <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <div className="flex-grow"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
+                        {!isSubscribed && <LockIcon />}
+                    </button>
+
+                    <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <div className="flex-grow"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
+                        {!isSubscribed && <LockIcon />}
+                    </button>
+
 
                     <div className="mt-3 p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
                         <TtsInfoButton 
