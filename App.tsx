@@ -992,7 +992,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="bg-slate-900 min-h-screen text-slate-200">
+    <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col h-screen">
       <Header 
         onSettingsClick={() => setIsSettingsModalOpen(true)} 
         onboardingData={onboardingData} 
@@ -1000,7 +1000,7 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="max-w-screen-2xl mx-auto p-4 md:p-6 pb-24">
+      <main className="flex-grow overflow-y-auto max-w-screen-2xl w-full mx-auto p-4 md:p-6">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
         <div className="mt-6">
           {renderView()}
@@ -1012,9 +1012,6 @@ const App: React.FC = () => {
       {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
       {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
 
-      <footer className="text-center p-4 text-slate-500 text-sm hidden">
-        <p>Cada momento es una elección. Estás eligiendo bien.</p>
-      </footer>
     </div>
   );
 };

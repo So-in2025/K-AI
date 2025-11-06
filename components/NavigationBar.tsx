@@ -51,7 +51,7 @@ const NavItem: React.FC<{
 
 export const NavigationBar: React.FC<NavigationBarProps> = ({ activeView, setActiveView }) => {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-800/80 backdrop-blur-sm border-t border-slate-700 z-20">
+        <nav className="bg-slate-800/80 backdrop-blur-sm border-t border-slate-700 z-20 flex-shrink-0">
             <div className="max-w-screen-2xl mx-auto px-4 md:px-6 h-20 grid grid-cols-4 gap-4">
                 <NavItem 
                     icon={<HomeIcon isActive={activeView === 'home'} />} 
