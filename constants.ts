@@ -231,18 +231,18 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'mov-yoga-ansiedad',
-        youtubeId: 'sWqG2bU3yqg',
-        name: 'Yoga para la Ansiedad y el Estrés',
-        description: 'Práctica de 23 minutos de Xuan Lan Yoga para calmar la mente y liberar tensión a través de posturas suaves.',
-        duration: 23,
+        youtubeId: '6s4gjLhPgwk',
+        name: 'Yoga para Calmar la Ansiedad',
+        description: 'Práctica de 20 minutos de Elena Malova para calmar la mente y liberar tensión a través de posturas suaves y grounding.',
+        duration: 20,
         category: 'movement'
     },
     {
         id: 'mov-yoga-energia',
-        youtubeId: 'k5q-_42p0A8',
-        name: 'Yoga de Mañana para Empezar con Energía',
-        description: 'Rutina de 16 minutos para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
-        duration: 16,
+        youtubeId: '_F-bJ8jLgqA',
+        name: 'Yoga Energizante de Mañana',
+        description: 'Rutina de 15 minutos de Elena Malova para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
+        duration: 15,
         category: 'movement'
     },
     // Ritual de Descanso
@@ -256,18 +256,18 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'des-meditacion-dormir',
-        youtubeId: '2k8q9pljp3g',
-        name: 'Meditación para Dormir Profundamente',
-        description: 'Meditación de 22 minutos con relajación muscular progresiva para calmar cuerpo y mente antes de dormir.',
-        duration: 22,
+        youtubeId: 'aW9_B6IytcI',
+        name: 'Meditación para un Sueño Profundo',
+        description: 'Meditación de 20 minutos de "Dormir y Relajarse" para calmar la mente y prepararte para un descanso reparador.',
+        duration: 20,
         category: 'rest'
     },
     {
         id: 'des-yoga-caderas',
-        youtubeId: 'H2V2g2JpggE',
-        name: 'Yin Yoga para Soltar Caderas',
-        description: 'Sesión de Yin Yoga de 17 minutos con posturas pasivas y mantenidas para una relajación física y emocional profunda.',
-        duration: 17,
+        youtubeId: 'W-5i0qgS0-s',
+        name: 'Yoga Restaurativo para Soltar Caderas',
+        description: 'Sesión de Yin Yoga de 15 minutos con posturas pasivas y mantenidas para una relajación física y emocional profunda.',
+        duration: 15,
         category: 'rest'
     }
 ];

@@ -512,7 +512,7 @@ const App: React.FC = () => {
     const summary = `[ACCIÓN DEL USUARIO] Acabo de completar un ejercicio de ${activity.durationMinutes} minuto(s) de ${activity.exerciseName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
     ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
-    updateGardenGrowth(2); // Add points for wellness activity
+    updateGardenGrowth(3); // Add points for wellness activity
     updateLastInteraction();
   };
   
@@ -547,11 +547,15 @@ const App: React.FC = () => {
     setThoughtLabEntries(updatedEntries);
     localStorage.setItem(THOUGHT_LAB_STORAGE_KEY, JSON.stringify(updatedEntries));
     updateGardenGrowth(5); // Add significant points for this deep work
+    const summary = `[LABORATORIO DE PENSAMIENTOS] He analizado un pensamiento automático sobre "${entry.situation.substring(0, 50)}..." y he encontrado una alternativa.`;
+    handleNewConversationTurn({ role: 'user', text: summary });
   };
   
   const handleUpdateTrustCircleConfig = (config: ITrustCircleConfig) => {
     setTrustCircleConfig(config);
     localStorage.setItem(TRUST_CIRCLE_STORAGE_KEY, JSON.stringify(config));
+    const summary = `[CÍRCULO DE CONFIANZA] He configurado o actualizado mi Círculo de Confianza. Mi contacto es ${config.contactName}.`;
+    handleNewConversationTurn({ role: 'user', text: summary });
   };
 
   // NEWEST FEATURES HANDLERS
@@ -559,7 +563,7 @@ const App: React.FC = () => {
     const updatedHits = [hit, ...dopamineHits.slice(0, 19)]; // Keep last 20
     setDopamineHits(updatedHits);
     localStorage.setItem(DOPAMINE_DIET_KEY, JSON.stringify(updatedHits));
-    updateGardenGrowth(1); // Small reward for logging
+    updateGardenGrowth(5); // Increased reward for logging
     ttsService.speak(`Misión completada: ${hit.activity}. ¡Excelente trabajo!`);
   };
 
@@ -568,11 +572,15 @@ const App: React.FC = () => {
     setHabitLoops(updatedLoops);
     localStorage.setItem(HABIT_LOOPS_KEY, JSON.stringify(updatedLoops));
     updateGardenGrowth(5); // Significant points for this deep work
+    const summary = `[ARQUITECTO DE HÁBITOS] Acabo de analizar un hábito sobre "${loop.oldRoutine}" y he diseñado una nueva rutina.`;
+    handleNewConversationTurn({ role: 'user', text: summary });
   };
   
   const handleUpdateFreedomVaultConfig = (config: IFreedomVaultConfig) => {
     setFreedomVaultConfig(config);
     localStorage.setItem(FREEDOM_VAULT_KEY, JSON.stringify(config));
+    const summary = `[BÓVEDA DE LA LIBERTAD] He configurado mi meta: "${config.goalDescription}", que cuesta ${config.goalAmount}.`;
+    handleNewConversationTurn({ role: 'user', text: summary });
   };
 
   // Guardian Mode Handlers
