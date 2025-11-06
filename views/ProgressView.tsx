@@ -8,7 +8,7 @@ import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
 import { FreedomVaultCard } from '../components/FreedomVaultCard';
-import { DopamineRecalibrationSummaryCard } from '../components/DopamineRecalibrationSummaryCard';
+import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
 
 
 interface ProgressViewProps {
@@ -24,6 +24,8 @@ interface ProgressViewProps {
     dopamineHits: IDopamineHit[];
     freedomVaultConfig: IFreedomVaultConfig | null;
     onUpdateFreedomVaultConfig: (config: IFreedomVaultConfig) => void;
+    depositedAmount: number;
+    onDepositToVault: (amount: number) => void;
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
@@ -39,11 +41,13 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 
                 <div className="lg:col-span-2 space-y-6">
                     <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
-                    <DopamineRecalibrationSummaryCard dopamineHits={props.dopamineHits} />
+                    <WellnessSummaryCard wellnessLog={props.wellnessLog} dopamineHits={props.dopamineHits} />
                     <FreedomVaultCard 
                         config={props.freedomVaultConfig}
                         onUpdateConfig={props.onUpdateFreedomVaultConfig}
                         daysSober={props.daysSober}
+                        depositedAmount={props.depositedAmount}
+                        onDeposit={props.onDepositToVault}
                     />
                      <WeeklyAnalysisCard 
                         cravings={props.cravings}
@@ -52,7 +56,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                         daysSober={props.daysSober}
                         userFocus={onboardingData.focuses}
                         isLocked={!isSubscribed}
-                        dopamineHits={props.dopamineHits} // Pass new data
+                        dopamineHits={props.dopamineHits}
                     />
                 </div>
 

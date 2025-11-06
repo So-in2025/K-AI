@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -11,6 +12,7 @@ const SparklesIcon = () => (
 export const AffirmationGeneratorCard: React.FC = () => {
     const [userInput, setUserInput] = useState('');
     const [affirmation, setAffirmation] = useState('');
+    const [explanation, setExplanation] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -22,13 +24,30 @@ export const AffirmationGeneratorCard: React.FC = () => {
         
         setIsLoading(true);
         setAffirmation('');
+        setExplanation('');
         setError('');
 
-        const prompt = `Actúa como un coach de recuperación empático. Basado en el siguiente sentimiento o situación de un usuario: "${userInput}", crea una afirmación positiva, corta y poderosa en primera persona (empezando con 'Yo...'). La afirmación debe ser inspiradora, dar fuerza y estar en español. No incluyas comillas ni explicaciones adicionales, solo la frase.`;
+        const prompt = `
+            Actúa como un coach de TCC. Un usuario se siente: "${userInput}".
+            Tu tarea tiene dos partes, separadas por "||":
+            1. Crea una afirmación positiva, corta y poderosa en primera persona (empezando con 'Yo...') para contrarrestar ese sentimiento.
+            2. Escribe una explicación muy breve (10-15 palabras) de por qué esta afirmación es útil.
+
+            Ejemplo de formato: Yo soy más fuerte que mis dudas.||Esta afirmación te devuelve el poder y te recuerda tu resiliencia.
+
+            RESPUESTA:
+        `;
 
         try {
             const response = await getGeminiResponse(prompt);
-            setAffirmation(response);
+            const parts = response.split('||');
+            if (parts.length === 2) {
+                setAffirmation(parts[0].trim());
+                setExplanation(parts[1].trim());
+            } else {
+                setAffirmation(response.trim());
+                setExplanation('');
+            }
         } catch (err) {
             setError('No se pudo generar la afirmación. Inténtalo de nuevo.');
             console.error(err);
@@ -75,6 +94,7 @@ export const AffirmationGeneratorCard: React.FC = () => {
             {affirmation && !isLoading && (
                 <div className="mt-4 bg-teal-900/50 border-l-4 border-teal-500 p-4 rounded-r-lg">
                     <p className="text-lg font-medium text-teal-300 italic">"{affirmation}"</p>
+                    {explanation && <p className="text-xs text-slate-400 mt-2">Kai sugiere esto porque: {explanation}</p>}
                 </div>
             )}
         </div>

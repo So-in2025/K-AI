@@ -31,6 +31,8 @@ const KAI_MEMORY_KEY = 'kaiMemory';
 const DOPAMINE_DIET_KEY = 'dopamineDiet';
 const HABIT_LOOPS_KEY = 'habitLoops';
 const FREEDOM_VAULT_KEY = 'freedomVault';
+const FREEDOM_VAULT_DEPOSITS_KEY = 'freedomVaultDeposits';
+const GUARDIAN_CONFIG_KEY = 'guardianConfig';
 
 
 // Helper to encode audio data for Gemini Live API
@@ -122,15 +124,17 @@ const App: React.FC = () => {
   const [dopamineHits, setDopamineHits] = useState<IDopamineHit[]>([]);
   const [habitLoops, setHabitLoops] = useState<IHabitLoop[]>([]);
   const [freedomVaultConfig, setFreedomVaultConfig] = useState<IFreedomVaultConfig | null>(null);
-
+  const [depositedAmount, setDepositedAmount] = useState(0);
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
+  const [guardianTriggerWords, setGuardianTriggerWords] = useState<string[]>([]);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const triggerWordTimeoutRef = useRef<number | null>(null);
 
   // Derived state for premium access
   const hasPremiumAccess = isSubscribed || isDevMode;
@@ -345,6 +349,16 @@ const App: React.FC = () => {
         const storedFreedomVault = localStorage.getItem(FREEDOM_VAULT_KEY);
         if (storedFreedomVault) setFreedomVaultConfig(JSON.parse(storedFreedomVault));
     } catch(e) { console.error("Failed to parse freedom vault config", e); }
+    
+    try {
+        const storedDeposits = localStorage.getItem(FREEDOM_VAULT_DEPOSITS_KEY);
+        if(storedDeposits) setDepositedAmount(JSON.parse(storedDeposits));
+    } catch(e) { console.error("Failed to parse freedom vault deposits", e); }
+    
+    try {
+        const storedGuardianConfig = localStorage.getItem(GUARDIAN_CONFIG_KEY);
+        if(storedGuardianConfig) setGuardianTriggerWords(JSON.parse(storedGuardianConfig));
+    } catch(e) { console.error("Failed to parse guardian config", e); }
 
 
   }, [calculateDaysSober]);
@@ -518,9 +532,7 @@ const App: React.FC = () => {
     
     const summary = `[ACCIÓN DEL USUARIO] Acabo de completar un ejercicio de ${activity.durationMinutes} minuto(s) de ${activity.exerciseName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
-    // This TTS is now handled inside WellnessSanctuaryCard to avoid double messages
-    // ttsService.speak("Excelente trabajo. Has completado tu ejercicio. Cada práctica es un paso hacia tu bienestar.");
-    updateGardenGrowth(3); // Add points for wellness activity
+    updateGardenGrowth(3);
     updateLastInteraction();
   };
   
@@ -554,41 +566,56 @@ const App: React.FC = () => {
     const updatedEntries = [entry, ...thoughtLabEntries];
     setThoughtLabEntries(updatedEntries);
     localStorage.setItem(THOUGHT_LAB_STORAGE_KEY, JSON.stringify(updatedEntries));
-    updateGardenGrowth(5); // Add significant points for this deep work
-    const summary = `[LABORATORIO DE PENSAMIENTOS] He analizado un pensamiento automático sobre "${entry.situation.substring(0, 50)}..." y he encontrado una alternativa.`;
+    updateGardenGrowth(5); 
+    const summary = `[LABORATORIO DE PENSAMIENTOS] He analizado un pensamiento sobre "${entry.situation.substring(0, 50)}..." y he encontrado una alternativa: "${entry.alternativeThought.substring(0, 50)}...".`;
     handleNewConversationTurn({ role: 'user', text: summary });
   };
   
   const handleUpdateTrustCircleConfig = (config: ITrustCircleConfig) => {
     setTrustCircleConfig(config);
     localStorage.setItem(TRUST_CIRCLE_STORAGE_KEY, JSON.stringify(config));
-    const summary = `[CÍRCULO DE CONFIANZA] He configurado mi Círculo de Confianza. Mi contacto es ${config.contactName}.`;
+    const summary = `[CÍRCULO DE CONFIANZA] He configurado mi Círculo de Confianza. Mi contacto de apoyo es ${config.contactName}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
   };
 
-  // NEWEST FEATURES HANDLERS
   const handleLogDopamineHit = (hit: IDopamineHit) => {
     const updatedHits = [hit, ...dopamineHits.slice(0, 19)]; // Keep last 20
     setDopamineHits(updatedHits);
     localStorage.setItem(DOPAMINE_DIET_KEY, JSON.stringify(updatedHits));
-    updateGardenGrowth(5); // Increased reward for logging
-    ttsService.speak(`Misión completada: ${hit.activity}. ¡Excelente trabajo!`);
+    updateGardenGrowth(5);
+    ttsService.speak(`Ritual completado: ${hit.activity}. ¡Excelente trabajo!`);
   };
 
   const handleAddHabitLoop = (loop: IHabitLoop) => {
     const updatedLoops = [loop, ...habitLoops];
     setHabitLoops(updatedLoops);
     localStorage.setItem(HABIT_LOOPS_KEY, JSON.stringify(updatedLoops));
-    updateGardenGrowth(5); // Significant points for this deep work
-    const summary = `[ARQUITECTO DE HÁBITOS] Acabo de analizar un hábito sobre "${loop.oldRoutine}" y he diseñado una nueva rutina.`;
+    updateGardenGrowth(5);
+    const summary = `[ARQUITECTO DE HÁBITOS] Acabo de rediseñar un hábito. Ante la señal de "${loop.cue}", en lugar de "${loop.oldRoutine}", mi nueva rutina será "${loop.newRoutine}".`;
     handleNewConversationTurn({ role: 'user', text: summary });
   };
   
   const handleUpdateFreedomVaultConfig = (config: IFreedomVaultConfig) => {
     setFreedomVaultConfig(config);
     localStorage.setItem(FREEDOM_VAULT_KEY, JSON.stringify(config));
-    const summary = `[BÓVEDA DE LA LIBERTAD] He configurado mi meta: "${config.goalDescription}", que cuesta ${config.goalAmount}.`;
+    const summary = `[BÓVEDA DE LA LIBERTAD] He configurado mi meta: "${config.goalDescription}", que cuesta ${config.goalAmount}. Cada semana ahorraba ${config.weeklySpending}.`;
     handleNewConversationTurn({ role: 'user', text: summary });
+  };
+  
+  const handleDepositToVault = (amount: number) => {
+    const newAmount = depositedAmount + amount;
+    setDepositedAmount(newAmount);
+    localStorage.setItem(FREEDOM_VAULT_DEPOSITS_KEY, JSON.stringify(newAmount));
+    const summary = `[BÓVEDA DE LA LIBERTAD] Acabo de depositar ${amount.toFixed(2)} en mi bóveda. ¡Cada paso cuenta!`;
+    handleNewConversationTurn({ role: 'user', text: summary });
+    updateGardenGrowth(2);
+  };
+  
+  const handleUpdateGuardianConfig = (words: string[]) => {
+      setGuardianTriggerWords(words);
+      localStorage.setItem(GUARDIAN_CONFIG_KEY, JSON.stringify(words));
+      const summary = `[MODO GUARDIÁN] He actualizado mis palabras clave de alerta.`;
+      handleNewConversationTurn({ role: 'user', text: summary });
   };
 
   // Guardian Mode Handlers
@@ -637,6 +664,19 @@ const App: React.FC = () => {
             if (message.serverContent?.inputTranscription) {
               const text = message.serverContent.inputTranscription.text;
               dispatchGuardian({ type: 'APPEND_TRANSCRIPT', payload: text });
+              
+              if(hasPremiumAccess && guardianTriggerWords.length > 0) {
+                 const lowerCaseText = text.toLowerCase();
+                 const foundTrigger = guardianTriggerWords.some(word => lowerCaseText.includes(word.toLowerCase()));
+                 if (foundTrigger && !triggerWordTimeoutRef.current) {
+                     console.log("Trigger word detected!");
+                     navigator.vibrate([100, 50, 100]); // Haptic alert
+                     // Throttle alerts to once every 10 seconds
+                     triggerWordTimeoutRef.current = window.setTimeout(() => {
+                         triggerWordTimeoutRef.current = null;
+                     }, 10000);
+                 }
+              }
             }
           },
           onerror: (e: ErrorEvent) => {
@@ -646,6 +686,10 @@ const App: React.FC = () => {
           },
           onclose: () => {
             console.log('Guardian mode connection closed.');
+            if (triggerWordTimeoutRef.current) {
+                clearTimeout(triggerWordTimeoutRef.current);
+                triggerWordTimeoutRef.current = null;
+            }
           }
         }
       });
@@ -717,10 +761,11 @@ const App: React.FC = () => {
 
     try {
         const response = await getGeminiResponse(prompt);
-        // Clean potential markdown code block
         const cleanedResponse = response.replace(/```json\n|```/g, '').trim();
         const parsedAnalysis: IGuardianAnalysis = JSON.parse(cleanedResponse);
         dispatchGuardian({ type: 'SET_ANALYSIS', payload: parsedAnalysis });
+        const summary = `[MODO GUARDIÁN] Acabo de usar el Modo Guardián. Kai analizó la situación. El detonante principal fue: "${parsedAnalysis.trigger}".`;
+        handleNewConversationTurn({ role: 'user', text: summary });
     } catch(error) {
         console.error("Error parsing guardian analysis:", error);
         const errorAnalysis: IGuardianAnalysis = {
@@ -762,6 +807,9 @@ const App: React.FC = () => {
                   onStopGuardian={handleStopGuardian}
                   dopamineHits={dopamineHits}
                   onLogDopamineHit={handleLogDopamineHit}
+                  guardianTriggerWords={guardianTriggerWords}
+                  onUpdateGuardianConfig={handleUpdateGuardianConfig}
+                  isSubscribed={hasPremiumAccess}
                 />;
       case 'kai':
         return <KaiView 
@@ -811,6 +859,8 @@ const App: React.FC = () => {
                   dopamineHits={dopamineHits}
                   freedomVaultConfig={freedomVaultConfig}
                   onUpdateFreedomVaultConfig={handleUpdateFreedomVaultConfig}
+                  depositedAmount={depositedAmount}
+                  onDepositToVault={handleDepositToVault}
                 />;
       default:
         return <HomeView 
@@ -825,6 +875,9 @@ const App: React.FC = () => {
                   onStopGuardian={handleStopGuardian}
                   dopamineHits={dopamineHits}
                   onLogDopamineHit={handleLogDopamineHit}
+                  guardianTriggerWords={guardianTriggerWords}
+                  onUpdateGuardianConfig={handleUpdateGuardianConfig}
+                  isSubscribed={hasPremiumAccess}
                 />;
     }
   }

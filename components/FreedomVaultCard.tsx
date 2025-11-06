@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { IFreedomVaultConfig } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
 
@@ -12,36 +13,52 @@ interface FreedomVaultCardProps {
     config: IFreedomVaultConfig | null;
     onUpdateConfig: (config: IFreedomVaultConfig) => void;
     daysSober: number;
+    depositedAmount: number;
+    onDeposit: (amount: number) => void;
 }
 
-export const FreedomVaultCard: React.FC<FreedomVaultCardProps> = ({ config, onUpdateConfig, daysSober }) => {
+export const FreedomVaultCard: React.FC<FreedomVaultCardProps> = ({ config, onUpdateConfig, daysSober, depositedAmount, onDeposit }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentConfig, setCurrentConfig] = useState<IFreedomVaultConfig>(
-        config || { weeklySpending: 0, goalAmount: 1000, goalDescription: '' }
+        config || { weeklySpending: 0, goalAmount: 1000, goalDescription: '', lastDepositDate: undefined }
     );
+    const [showDepositConfirmation, setShowDepositConfirmation] = useState(false);
+
+    useEffect(() => {
+        if(config) {
+            setCurrentConfig(config);
+        }
+    }, [config]);
 
     const handleSave = () => {
         onUpdateConfig(currentConfig);
         setIsEditing(false);
     };
 
-    const moneyRecovered = useMemo(() => {
+    const dailySaving = useMemo(() => {
         if (!config || config.weeklySpending <= 0) return 0;
-        const dailySpending = config.weeklySpending / 7;
-        return dailySpending * daysSober;
-    }, [config, daysSober]);
+        return config.weeklySpending / 7;
+    }, [config]);
+
+    const isDepositAvailable = useMemo(() => {
+        if (!config || !dailySaving) return false;
+        const today = new Date().toISOString().split('T')[0];
+        return config.lastDepositDate !== today;
+    }, [config, dailySaving]);
+    
+    const handleDeposit = () => {
+        if (!isDepositAvailable) return;
+        onDeposit(dailySaving);
+        onUpdateConfig({ ...currentConfig, lastDepositDate: new Date().toISOString().split('T')[0] });
+        setShowDepositConfirmation(true);
+        setTimeout(() => setShowDepositConfirmation(false), 3000);
+    };
     
     const progressPercentage = useMemo(() => {
         if (!config || config.goalAmount <= 0) return 0;
-        return Math.min(100, (moneyRecovered / config.goalAmount) * 100);
-    }, [moneyRecovered, config]);
+        return Math.min(100, (depositedAmount / config.goalAmount) * 100);
+    }, [depositedAmount, config]);
     
-    const equivalentCoffees = useMemo(() => {
-        // Assuming an average coffee price of 3 units of local currency
-        const coffeePrice = 3; 
-        if (moneyRecovered <= 0) return 0;
-        return Math.floor(moneyRecovered / coffeePrice);
-    }, [moneyRecovered]);
 
     if (!isEditing && !config) {
         return (
@@ -88,23 +105,29 @@ export const FreedomVaultCard: React.FC<FreedomVaultCardProps> = ({ config, onUp
             ) : (
                 <div className="space-y-3">
                     <p className="text-center">
-                        <span className="text-3xl font-bold text-green-400">${moneyRecovered.toFixed(2)}</span>
-                        <span className="text-sm text-slate-400 block">Dinero Recuperado</span>
+                        <span className="text-3xl font-bold text-green-400">${depositedAmount.toFixed(2)}</span>
+                        <span className="text-sm text-slate-400 block">Fondos en tu Bóveda</span>
                     </p>
-                    {equivalentCoffees > 0 && (
-                        <p className="text-center text-xs text-green-300/70">
-                            Equivalente a {equivalentCoffees} café{equivalentCoffees > 1 ? 's' : ''} que has invertido en ti.
-                        </p>
-                    )}
+                    
                     {config && config.goalAmount > 0 && (
                         <div>
                             <p className="text-sm font-semibold text-center text-slate-200">Meta: {config.goalDescription}</p>
                             <div className="w-full bg-slate-700 rounded-full h-2.5 mt-2">
                                 <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
                             </div>
-                            <p className="text-xs text-center text-slate-400 mt-1">{progressPercentage.toFixed(1)}% completado</p>
+                            <p className="text-xs text-center text-slate-400 mt-1">{progressPercentage.toFixed(1)}% completado (${(config.goalAmount - depositedAmount).toFixed(2)} restantes)</p>
                         </div>
                     )}
+
+                    <button 
+                        onClick={handleDeposit}
+                        disabled={!isDepositAvailable}
+                        className="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-slate-500 disabled:cursor-not-allowed"
+                    >
+                        {isDepositAvailable ? `Depositar mis ahorros de hoy ($${dailySaving.toFixed(2)})` : `Ahorros de hoy ya depositados`}
+                    </button>
+                    {showDepositConfirmation && <p className="text-xs text-center text-green-400">¡Depósito exitoso!</p>}
+
                     <button onClick={() => setIsEditing(true)} className="w-full text-xs text-slate-400 hover:underline pt-2">Editar configuración</button>
                 </div>
             )}

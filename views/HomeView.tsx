@@ -24,6 +24,9 @@ interface HomeViewProps {
     onStopGuardian: () => void;
     dopamineHits: IDopamineHit[];
     onLogDopamineHit: (hit: IDopamineHit) => void;
+    guardianTriggerWords: string[];
+    onUpdateGuardianConfig: (words: string[]) => void;
+    isSubscribed: boolean;
 }
 
 export const HomeView: React.FC<HomeViewProps> = (props) => {
@@ -46,6 +49,9 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                         error={props.guardianState.error}
                         onStart={props.onStartGuardian}
                         onStop={props.onStopGuardian}
+                        triggerWords={props.guardianTriggerWords}
+                        onUpdateConfig={props.onUpdateGuardianConfig}
+                        isSubscribed={props.isSubscribed}
                      />
                 )}
                 <DailyQuoteCard />

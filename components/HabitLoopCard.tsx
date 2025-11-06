@@ -1,17 +1,18 @@
+
 import React, { useState } from 'react';
 import { IHabitLoop } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const LoopIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M5 9a7 7 0 107-7" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 20v-5h-5M19 15a7 7 0 10-7 7" />
     </svg>
 );
 
 const LockIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
     </svg>
 );
@@ -36,7 +37,7 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
     };
 
     const handleNext = async () => {
-        if (step === 2) { // Moving to Craving analysis
+        if (step === 2) { 
             setIsLoading(true);
             const prompt = `
                 Actúa como un coach de TCC. Un usuario está analizando un hábito. La señal que lo activa es: "${currentLoop.cue}". La rutina que sigue es: "${currentLoop.oldRoutine}".
@@ -45,7 +46,22 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
                 Responde solo con la pregunta.
             `;
             const cravingQuestion = await getGeminiResponse(prompt);
-            setCurrentLoop(prev => ({ ...prev, craving: cravingQuestion })); // Store question for display
+            setCurrentLoop(prev => ({ ...prev, craving: cravingQuestion })); 
+            setIsLoading(false);
+        }
+         if (step === 4) { // Moving to final summary
+            setIsLoading(true);
+            const prompt = `
+                Un usuario ha rediseñado un bucle de hábito.
+                - Señal: "${currentLoop.cue}"
+                - Rutina Antigua: "${currentLoop.oldRoutine}"
+                - Nueva Rutina: "${currentLoop.newRoutine}"
+                - Recompensa buscada: "${currentLoop.reward}"
+                Escribe un breve párrafo de resumen y ánimo (2-3 frases) que valide su trabajo.
+                Ejemplo: "Excelente trabajo de introspección. Has identificado que [Señal] te llevaba a [Rutina Antigua] para buscar [Recompensa]. Al reemplazarlo con [Nueva Rutina], estás atendiendo esa misma necesidad de una forma que te fortalece. Cada vez que elijas la nueva rutina, estarás reforzando este nuevo camino."
+            `;
+            const summary = await getGeminiResponse(prompt);
+            setCurrentLoop(prev => ({...prev, kaiSummary: summary}));
             setIsLoading(false);
         }
         setStep(prev => prev + 1);
@@ -59,7 +75,8 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
             oldRoutine: currentLoop.oldRoutine || '',
             craving: currentLoop.craving || '',
             newRoutine: currentLoop.newRoutine || '',
-            reward: currentLoop.reward || ''
+            reward: currentLoop.reward || '',
+            kaiSummary: currentLoop.kaiSummary || ''
         };
         onAddLoop(finalLoop);
         resetState();
@@ -94,6 +111,13 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
                     <label className="text-sm font-semibold">Diseña tu Nueva Rutina</label>
                     <p className="text-xs text-slate-400 mb-2">¿Qué acción constructiva puedes hacer en su lugar para obtener una recompensa similar?</p>
                     <input placeholder="Ej: Llamar a un amigo, salir a caminar 5 min..." value={currentLoop.newRoutine || ''} onChange={e => setCurrentLoop(p => ({...p, newRoutine: e.target.value}))} className="w-full p-2 bg-slate-700 rounded-md" />
+                </div>
+            );
+            case 5: return (
+                 <div>
+                     <label className="text-sm font-semibold">Resumen de Kai</label>
+                     <p className="text-xs text-slate-400 mb-2">Este es tu nuevo plan de acción:</p>
+                     <p className="text-teal-300 italic whitespace-pre-wrap">{isLoading ? "Generando resumen..." : currentLoop.kaiSummary}</p>
                 </div>
             );
         }
@@ -135,7 +159,7 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
                     {renderStepContent()}
                     <div className="flex justify-between mt-4">
                         <button onClick={resetState} className="text-sm text-slate-400">Cancelar</button>
-                        {step < 4 ? (
+                        {step < 5 ? (
                              <button onClick={handleNext} disabled={isLoading} className="bg-teal-600 font-semibold text-white px-4 py-1 rounded-lg disabled:bg-slate-500">
                                 {isLoading ? "..." : "Siguiente"}
                             </button>

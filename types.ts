@@ -52,6 +52,7 @@ export interface IWellnessActivity {
   date: string; // ISO string
   exerciseName: string;
   durationMinutes: number;
+  category?: 'Breathing' | 'Meditation' | 'Movement' | 'Neuro-Ritual' | 'Shamanic Journey';
 }
 
 export interface IExercise {
@@ -124,6 +125,7 @@ export interface IThoughtLabEntry {
     automaticThought: string;
     kaiAnalysis: string;
     alternativeThought: string;
+    kaiSummary?: string;
 }
 
 export interface ITrustCircleConfig {
@@ -149,12 +151,14 @@ export interface IHabitLoop {
     oldRoutine: string;
     newRoutine: string;
     reward: string;
+    kaiSummary?: string;
 }
 
 export interface IFreedomVaultConfig {
     weeklySpending: number;
     goalAmount: number;
     goalDescription: string;
+    lastDepositDate?: string; // ISO String
 }
 
 export interface INeuroQuest { // RENAMED

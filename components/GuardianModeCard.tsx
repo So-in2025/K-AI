@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GuardianAnalysisResult, IGuardianAnalysis } from '../types';
 import { UpgradeCard } from './UpgradeCard';
@@ -38,13 +39,18 @@ interface GuardianModeCardProps {
     error: string | null;
     onStart: () => void;
     onStop: () => void;
+    triggerWords: string[];
+    onUpdateConfig: (words: string[]) => void;
+    isSubscribed: boolean;
 }
 
 const GUARDIAN_CONSENT_KEY = 'guardianConsentGiven';
 
-export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop }) => {
+export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed }) => {
     const [showConsent, setShowConsent] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);
+    const [isEditingConfig, setIsEditingConfig] = useState(false);
+    const [localTriggers, setLocalTriggers] = useState(triggerWords.join(', '));
 
     useEffect(() => {
         if (analysis) {
@@ -66,8 +72,39 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
         setShowConsent(false);
         onStart();
     };
+
+    const handleSaveConfig = () => {
+        const words = localTriggers.split(',').map(w => w.trim()).filter(Boolean);
+        onUpdateConfig(words);
+        setIsEditingConfig(false);
+    }
     
+    const renderConfig = () => (
+        <>
+            <h3 className="text-md font-semibold text-slate-200 mb-2">Configuración de Alertas</h3>
+            <p className="text-slate-400 mb-4 text-sm">
+                {isSubscribed 
+                    ? "Añade palabras o frases clave (separadas por comas). Si Kai las detecta mientras el modo está activo, tu teléfono vibrará sutilmente como un recordatorio."
+                    : "Activa KIA Plus para configurar alertas de vibración con palabras clave."
+                }
+            </p>
+            <textarea 
+                value={localTriggers}
+                onChange={(e) => setLocalTriggers(e.target.value)}
+                placeholder="Ej: solo una, juan, cerveza..."
+                className="w-full h-20 p-2 bg-slate-700 rounded-md disabled:bg-slate-600"
+                disabled={!isSubscribed}
+            />
+            <div className="flex gap-2 mt-3">
+                <button onClick={() => setIsEditingConfig(false)} className="flex-1 bg-slate-600 font-semibold py-2 rounded-lg">Cancelar</button>
+                <button onClick={handleSaveConfig} disabled={!isSubscribed} className="flex-1 bg-teal-600 font-semibold text-white py-2 rounded-lg disabled:bg-slate-500">Guardar</button>
+            </div>
+        </>
+    );
+
     const renderContent = () => {
+        if (isEditingConfig) return renderConfig();
+
         if (showAnalysis && analysis) {
             if ('isLocked' in analysis && analysis.isLocked) {
                  return (
@@ -165,6 +202,12 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                             className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-3 px-5 rounded-lg hover:bg-teal-600/30 transition-colors"
                         >
                             Activar Modo Guardián
+                        </button>
+                         <button
+                            onClick={() => setIsEditingConfig(true)}
+                            className="w-full text-xs text-center text-slate-400 hover:underline mt-3"
+                        >
+                            Configurar Alertas
                         </button>
                     </>
                 );

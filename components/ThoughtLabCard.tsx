@@ -1,16 +1,17 @@
+
 import React, { useState } from 'react';
 import { IThoughtLabEntry } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const BeakerIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a4 4 0 00-5.656 0M11 6a3 3 0 013 3v1m-3-4a3 3 0 00-3 3v1m6 0a3 3 0 013 3v1M6 12a3 3 0 013-3h0a3 3 0 013 3v1m-6 0a3 3 0 003 3h0a3 3 0 003-3v-1m-3 4v6m3-6v6" />
     </svg>
 );
 
 const LockIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
     </svg>
 );
@@ -47,6 +48,20 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEn
             setCurrentEntry(prev => ({ ...prev, kaiAnalysis: analysis }));
             setIsLoading(false);
         }
+        if (step === 4) { // Moving to summary
+            setIsLoading(true);
+            const prompt = `
+                Un usuario acaba de completar un ejercicio de TCC.
+                - Situación: "${currentEntry.situation}"
+                - Pensamiento Automático: "${currentEntry.automaticThought}"
+                - Pensamiento Alternativo: "${currentEntry.alternativeThought}"
+                Escribe un breve párrafo de resumen y ánimo (2-3 frases) que valide su trabajo.
+                Ejemplo: "Has hecho un trabajo increíble. Has identificado que [Situación] te lleva a pensar [Pensamiento Automático] y lo has transformado conscientemente en [Pensamiento Alternativo]. Este es un paso poderoso para re-cablear tu cerebro hacia una perspectiva más compasiva."
+            `;
+            const summary = await getGeminiResponse(prompt);
+            setCurrentEntry(prev => ({...prev, kaiSummary: summary}));
+            setIsLoading(false);
+        }
         setStep(prev => prev + 1);
     };
 
@@ -57,7 +72,8 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEn
             situation: currentEntry.situation || '',
             automaticThought: currentEntry.automaticThought || '',
             kaiAnalysis: currentEntry.kaiAnalysis || '',
-            alternativeThought: currentEntry.alternativeThought || ''
+            alternativeThought: currentEntry.alternativeThought || '',
+            kaiSummary: currentEntry.kaiSummary || '',
         };
         onAddEntry(finalEntry);
         resetState();
@@ -91,6 +107,13 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEn
                     <label className="text-sm font-semibold text-slate-300">Crea un pensamiento alternativo</label>
                     <p className="text-xs text-slate-400 mb-2">Basado en tu reflexión, escribe una forma más equilibrada y compasiva de ver la situación.</p>
                     <textarea value={currentEntry.alternativeThought || ''} onChange={e => setCurrentEntry(p => ({...p, alternativeThought: e.target.value}))} className="w-full p-2 bg-slate-700 rounded-md h-24" />
+                </div>
+            );
+            case 5: return (
+                 <div>
+                     <label className="text-sm font-semibold text-slate-300">Resumen de Kai</label>
+                     <p className="text-xs text-slate-400 mb-2">Este es el resumen de tu trabajo:</p>
+                     <p className="text-teal-300 italic whitespace-pre-wrap">{isLoading ? "Generando resumen..." : currentEntry.kaiSummary}</p>
                 </div>
             );
         }
@@ -138,7 +161,7 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEn
                     {renderStepContent()}
                     <div className="flex justify-between mt-4">
                         <button onClick={resetState} className="text-sm text-slate-400">Cancelar</button>
-                        {step < 4 ? (
+                        {step < 5 ? (
                              <button onClick={handleNext} disabled={isLoading} className="bg-teal-600 font-semibold text-white px-4 py-1 rounded-lg disabled:bg-slate-500">
                                 {isLoading ? "..." : "Siguiente"}
                             </button>

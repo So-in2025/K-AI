@@ -1,3 +1,4 @@
+
 import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest } from './types';
 
 // STORAGE KEYS
@@ -231,17 +232,17 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'mov-yoga-ansiedad',
-        youtubeId: 'H3_IZ8_K_2M', // Reemplazado
+        youtubeId: 'sTANio_2E0Q', // REEMPLAZADO
         name: 'Yoga para Calmar la Ansiedad',
-        description: 'Práctica de 25 minutos de Xuan Lan Yoga para calmar la mente y liberar tensión a través de posturas suaves y grounding.',
-        duration: 25,
+        description: 'Práctica de 20 minutos de MalovaElena para calmar la mente y liberar tensión a través de posturas suaves y grounding.',
+        duration: 20,
         category: 'movement'
     },
     {
         id: 'mov-yoga-energia',
-        youtubeId: 'gZ-p9gXy-pQ', // Reemplazado
+        youtubeId: 'tYda5l9jHn0', // REEMPLAZADO
         name: 'Yoga Energizante de Mañana',
-        description: 'Rutina de 15 minutos de Patry Jordan para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
+        description: 'Rutina de 15 minutos de Susi Diaz para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
         duration: 15,
         category: 'movement'
     },
@@ -256,17 +257,17 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'des-meditacion-dormir',
-        youtubeId: 'wz_p_2_G4jE', // Reemplazado
+        youtubeId: 'aEZs_m3G2_E', // REEMPLAZADO
         name: 'Meditación Guiada para un Sueño Profundo',
-        description: 'Meditación de 27 minutos de Calm para calmar la mente y prepararte para un descanso reparador y profundo.',
-        duration: 27,
+        description: 'Meditación de 20 minutos de Eres Cambio para calmar la mente y prepararte para un descanso reparador y profundo.',
+        duration: 20,
         category: 'rest'
     },
     {
         id: 'des-yoga-caderas',
-        youtubeId: 'XlY6scd2pYI', // Reemplazado
+        youtubeId: 'Z6aCkaWv-4I', // REEMPLAZADO
         name: 'Yoga Restaurativo para Soltar Caderas',
-        description: 'Sesión de Yin Yoga de 20 minutos de Xuan Lan Yoga con posturas pasivas para una relajación física y emocional profunda.',
+        description: 'Sesión de Yin Yoga de 20 minutos de German Plus con posturas pasivas para una relajación física y emocional profunda.',
         duration: 20,
         category: 'rest'
     }
