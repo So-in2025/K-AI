@@ -100,68 +100,72 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const intervalRef = useRef<number | null>(null);
     const timeoutRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const audioElementsRef = useRef<{ [key: string]: any }>({});
-    const vibrationIntervalRef = useRef<number | null>(null);
+    const audioElementsRef = useRef<Record<string, any>>({});
     const journeyTimerIntervalRef = useRef<number | null>(null);
     const practiceCompletedRef = useRef(false);
     const activePracticeRef = useRef<string | null>(null);
 
-    const cleanup = (isCompleted: boolean = false) => {
-        // Stop sounds with a fade
-        if (audioContextRef.current && audioContextRef.current.state === 'running') {
-            const { drum, solfeggio, drone, binaural, noise, shimmer, focus, fade } = audioElementsRef.current;
-            const fadeDuration = 0.5; // half a second to fade out
-            if (fade) {
-                if (drum?.gainNode) fade(drum.gainNode, 0, fadeDuration);
-                if (solfeggio?.gainNode) fade(solfeggio.gainNode, 0, fadeDuration);
-                if (drone?.gainNode) fade(drone.gainNode, 0, fadeDuration);
-                if (binaural?.gainNode) fade(binaural.gainNode, 0, fadeDuration);
-                if (noise?.gainNode) fade(noise.gainNode, 0, fadeDuration);
-                if (shimmer?.gainNode) fade(shimmer.gainNode, 0, fadeDuration);
-                if (focus?.gainNode) fade(focus.gainNode, 0, fadeDuration);
-            }
-            
-            setTimeout(() => {
-                if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                    audioContextRef.current.close().catch(console.error);
-                }
-            }, fadeDuration * 1000 + 100);
-        } else if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close().catch(console.error);
-        }
-        
-        // Clear intervals immediately
+     const cleanup = (isCompleted: boolean = false) => {
+        // Clear all intervals and timeouts
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
-        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
         if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
-        
+        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+        if (audioElementsRef.current.rattleInterval) clearInterval(audioElementsRef.current.rattleInterval);
+
+
+        intervalRef.current = null;
+        timeoutRef.current = null;
+        journeyTimerIntervalRef.current = null;
+
+        // Stop TTS
         ttsService.stop();
-        if(navigator.vibrate) navigator.vibrate(0);
-        
-        if (activePracticeRef.current && !isCompleted && !practiceCompletedRef.current) {
-             ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
+
+        // Stop audio context gracefully
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+            const fadeDuration = 1.0; // 1 second fade
+            const now = audioContextRef.current.currentTime;
+
+            for (const key in audioElementsRef.current) {
+                const sound = audioElementsRef.current[key];
+                if (sound && sound.gainNode && sound.gainNode.gain) {
+                    sound.gainNode.gain.cancelScheduledValues(now);
+                    sound.gainNode.gain.linearRampToValueAtTime(0, now + fadeDuration);
+                }
+            }
+
+            // Close the context after the fade-out is complete
+            setTimeout(() => {
+                if (audioContextRef.current?.state !== 'closed') {
+                    audioContextRef.current?.close().catch(console.error);
+                    audioContextRef.current = null;
+                }
+            }, fadeDuration * 1000 + 100);
         }
 
-        // Reset states
+        // Send a message if the practice was not completed
+        if (activePracticeRef.current && !isCompleted && !practiceCompletedRef.current) {
+            ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
+        }
+
+        // Reset all states
+        setView('tabs');
         setJourneyStep('idle');
         setJourneyType(null);
         setJourneyTimeLeft(0);
-        setView('tabs');
-        setSelectedExercise(null); setSelectedMeditation(null); setSelectedVideo(null);
-        setActiveQuest(null); setProgress(0);
+        setSelectedExercise(null);
+        setSelectedMeditation(null);
+        setSelectedVideo(null);
+        setActiveQuest(null);
+        setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
-        setQuestTextInput(''); setQuestStep('intention'); setMentalDumpStep(0);
+        setQuestTextInput('');
+        setQuestStep('intention');
+        setMentalDumpStep(0);
         
-        // Reset refs
-        intervalRef.current = null; 
-        timeoutRef.current = null; 
-        audioContextRef.current = null;
-        audioElementsRef.current = {}; 
-        vibrationIntervalRef.current = null;
-        journeyTimerIntervalRef.current = null;
-        practiceCompletedRef.current = false; 
+        // Reset all refs
+        audioElementsRef.current = {};
+        practiceCompletedRef.current = false;
         activePracticeRef.current = null;
     };
     
@@ -248,37 +252,42 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const startShamanicJourney = (type: JourneyType) => {
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioContextRef.current = audioCtx;
-        
-        const allNodes: any[] = [];
-        const fade = (gainNode: GainNode, targetVolume: number, duration: number) => { if (!audioCtx || audioCtx.state === 'closed') return; gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration); };
-        const createSoundSource = (createFn: (gainNode: GainNode) => any, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); allNodes.push(gainNode); createFn(gainNode); return { gainNode }; };
-        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.drum) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); allNodes.push(osc, gain); };
-        const createDrone = (gainNode: GainNode, freq: number) => createOscillator(gainNode, freq, 'sine');
-        const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); allNodes.push(pannerL, pannerR); };
-        const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); allNodes.push(osc); };
-        const createFilteredNoise = (gainNode: GainNode, type: BiquadFilterType, frequency: number) => { if (!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency; noise.connect(filter); filter.connect(gainNode); noise.start(); allNodes.push(noise, filter); };
-    
-        let sounds: { [key: string]: any } = { nodes: allNodes, fade };
+
+        // --- Sound Creation Helpers ---
+        const fade = (gainNode: GainNode, targetVolume: number, duration: number) => { if (!audioCtx || audioCtx.state === 'closed' || !gainNode) return; gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration); };
+        const createSoundSource = (createFn: (gainNode: GainNode) => void, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); createFn(gainNode); return { gainNode }; };
+        const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); return osc; };
+        const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); };
+        const createFilteredNoise = (node: AudioNode, type: BiquadFilterType, frequency: number, Q: number) => { if (!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency; filter.Q.value = Q; noise.connect(filter); filter.connect(node); noise.start(); };
+
+        // --- Sound Effects Library ---
+        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.drum) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); };
+        const playRattle = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.rattle) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; const gain = audioCtx.createGain(); noise.connect(gain); gain.connect(audioElementsRef.current.rattle.gainNode); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); noise.start(audioCtx.currentTime); noise.stop(audioCtx.currentTime + 0.1); };
+
+        let sounds: Record<string, any> = { fade };
         if (type === 'shamanic') {
-             sounds.drum = createSoundSource(() => {}, 0);
-             sounds.drumInterval = setInterval(playDrum, 333);
+            sounds.chantDrone = createSoundSource(g => { createOscillator(g, 70, 'sawtooth'); }, 0);
+            sounds.rattle = createSoundSource(() => {}, 0);
+            sounds.drum = createSoundSource(() => {}, 0);
+            sounds.rattleInterval = setInterval(playRattle, 120);
+            sounds.drumInterval = setInterval(playDrum, 250); // 4 beats per second
         } else if (type === 'solfeggio') {
-             sounds.solfeggio = createSoundSource(g => createOscillator(g, 528, 'sine'), 0);
-             sounds.drone = createSoundSource(g => createDrone(g, 60), 0);
+            sounds.solfeggio = createSoundSource(g => createOscillator(g, 528, 'sine'), 0);
+            sounds.drone = createSoundSource(g => createOscillator(g, 60, 'sine'), 0);
         } else if (type === 'binaural') {
-             sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0);
-             sounds.noise = createSoundSource(g => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; noise.connect(g); noise.start(); allNodes.push(noise); }, 0);
+            sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0);
+            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 500, 1), 0);
         } else if (type === 'trauma-release') {
-            sounds.drone = createSoundSource(g => createDrone(g, 98), 0);
+            sounds.drone = createSoundSource(g => createOscillator(g, 98, 'sine'), 0);
             sounds.binaural = createSoundSource(g => createBinaural(g, 100, 10), 0);
             sounds.shimmer = createSoundSource(g => createOscillator(g, 392, 'sine'), 0);
         } else if (type === 'manifestation') {
-            sounds.drone = createSoundSource(g => createDrone(g, 261), 0);
+            sounds.drone = createSoundSource(g => createOscillator(g, 261, 'sine'), 0);
             sounds.focus = createSoundSource(g => createOscillator(g, 417, 'sine'), 0);
             sounds.binaural = createSoundSource(g => createBinaural(g, 150, 15), 0);
         } else if (type === 'nature-connect') {
-            sounds.drone = createSoundSource(g => createDrone(g, 87), 0);
-            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 400), 0);
+            sounds.drone = createSoundSource(g => createOscillator(g, 87, 'sine'), 0);
+            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 400, 1), 0);
         }
         audioElementsRef.current = sounds;
         
@@ -288,42 +297,33 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
         const totalDurationSeconds = 12 * 60;
         setJourneyTimeLeft(totalDurationSeconds);
-
         if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
-        journeyTimerIntervalRef.current = window.setInterval(() => {
-            setJourneyTimeLeft(prev => {
-                if (prev <= 1) {
-                    if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        journeyTimerIntervalRef.current = window.setInterval(() => setJourneyTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
 
         setJourneyStep('grounding');
     };
 
     useEffect(() => {
-        if (view !== 'active_journey' || journeyStep === 'idle' || !journeyType) return;
+        if (view !== 'active_journey' || journeyStep === 'idle' || !journeyType || !audioContextRef.current) return;
         
         const runJourneyStep = async () => {
-            if (!activePracticeRef.current || !audioElementsRef.current.fade) return;
-            const { fade } = audioElementsRef.current;
-            if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
-            if (navigator.vibrate) navigator.vibrate(0);
+            if (!activePracticeRef.current) return;
+            const { fade, chantDrone, rattle, drum, solfeggio, drone, binaural, noise, shimmer, focus } = audioElementsRef.current;
+            if (!fade) return;
 
             switch (journeyStep) {
                 case 'grounding':
-                    if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0.4, 5);
-                    if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0.3, 5); fade(audioElementsRef.current.drone.gainNode, 0.1, 10); }
-                    if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0.5, 5); fade(audioElementsRef.current.noise.gainNode, 0.05, 10); }
-                    if (journeyType === 'trauma-release') { fade(audioElementsRef.current.drone.gainNode, 0.2, 10); fade(audioElementsRef.current.binaural.gainNode, 0.4, 5); fade(audioElementsRef.current.shimmer.gainNode, 0.05, 15); }
-                    if (journeyType === 'manifestation') { fade(audioElementsRef.current.drone.gainNode, 0.2, 10); fade(audioElementsRef.current.focus.gainNode, 0.15, 12); fade(audioElementsRef.current.binaural.gainNode, 0.3, 5); }
-                    if (journeyType === 'nature-connect') { fade(audioElementsRef.current.drone.gainNode, 0.3, 10); fade(audioElementsRef.current.noise.gainNode, 0.1, 8); }
+                    if (journeyType === 'shamanic') { fade(chantDrone.gainNode, 0.1, 10); fade(rattle.gainNode, 0.3, 5); }
+                    if (journeyType === 'solfeggio') { fade(solfeggio.gainNode, 0.3, 5); fade(drone.gainNode, 0.1, 10); }
+                    if (journeyType === 'binaural') { fade(binaural.gainNode, 0.5, 5); fade(noise.gainNode, 0.05, 10); }
+                    if (journeyType === 'trauma-release') { fade(drone.gainNode, 0.2, 10); fade(binaural.gainNode, 0.4, 5); fade(shimmer.gainNode, 0.05, 15); }
+                    if (journeyType === 'manifestation') { fade(drone.gainNode, 0.2, 10); fade(focus.gainNode, 0.15, 12); fade(binaural.gainNode, 0.3, 5); }
+                    if (journeyType === 'nature-connect') { fade(drone.gainNode, 0.3, 10); fade(noise.gainNode, 0.1, 8); }
                     await ttsService.speakSequence([{ text: "Comenzamos. Cierra los ojos. Concéntrate en tu respiración.", pause: 4000 }]);
                     if (activePracticeRef.current) setJourneyStep('descent');
                     break;
                 case 'descent':
+                    if (journeyType === 'shamanic') fade(drum.gainNode, 0.5, 10);
                     await ttsService.speak("Permite que el sonido te guíe hacia adentro.", 0.9);
                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('deepening'); }, 120000);
                     break;
@@ -333,30 +333,31 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                      break;
                 case 'vision':
                      await ttsService.speak("Permanece abierto. Observa sin juicio.", 0.9);
-                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 180000);
+                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 300000);
                      break;
                 case 'return':
-                    if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0, 10);
-                    if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0, 10); fade(audioElementsRef.current.drone.gainNode, 0, 15); }
-                    if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0, 10); fade(audioElementsRef.current.noise.gainNode, 0, 15); }
-                    if (journeyType === 'trauma-release') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.binaural.gainNode, 0, 10); fade(audioElementsRef.current.shimmer.gainNode, 0, 12); }
-                    if (journeyType === 'manifestation') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.focus.gainNode, 0, 12); fade(audioElementsRef.current.binaural.gainNode, 0, 10); }
-                    if (journeyType === 'nature-connect') { fade(audioElementsRef.current.drone.gainNode, 0, 15); fade(audioElementsRef.current.noise.gainNode, 0, 10); }
-                    await ttsService.speak("Es hora de volver. Lentamente, trae tu conciencia de vuelta a tu cuerpo.", 0.9);
-                    timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 60000);
+                    if (journeyType === 'shamanic') {
+                        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+                        audioElementsRef.current.drumInterval = setInterval(() => { if (audioContextRef.current) audioElementsRef.current.playDrum() }, 150);
+                        fade(rattle.gainNode, 0, 5);
+                    }
+                    await ttsService.speak("Es hora de volver. El ritmo te llama. Lentamente, trae tu conciencia de vuelta a tu cuerpo.", 0.9);
+                    timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 30000);
                     break;
                 case 'integration':
+                    // Fade out all sounds
+                    Object.values(audioElementsRef.current).forEach(sound => sound?.gainNode && fade(sound.gainNode, 0, 15));
                     await ttsService.speakSequence([{ text: "Respira hondo. Siente el espacio que te rodea.", pause: 5000 }, { text: "El viaje ha terminado. Agradece la experiencia.", pause: 6000 }]);
                     if (activePracticeRef.current) setJourneyStep('finished');
                     break;
                 case 'finished':
                     let name = 'Viaje Sonoro';
                     if (journeyType === 'shamanic') name = 'Viaje de Sonido Chamánico';
-                    if (journeyType === 'solfeggio') name = 'Viaje de Frecuencias Solfeggio';
-                    if (journeyType === 'binaural') name = 'Viaje de Sonido Binaural';
-                    if (journeyType === 'trauma-release') name = 'Viaje de Liberación Emocional';
-                    if (journeyType === 'manifestation') name = 'Viaje de Visualización y Manifestación';
-                    if (journeyType === 'nature-connect') name = 'Viaje de Conexión con la Naturaleza';
+                    else if (journeyType === 'solfeggio') name = 'Viaje de Frecuencias Solfeggio';
+                    else if (journeyType === 'binaural') name = 'Viaje de Sonido Binaural';
+                    else if (journeyType === 'trauma-release') name = 'Viaje de Liberación Emocional';
+                    else if (journeyType === 'manifestation') name = 'Viaje de Visualización y Manifestación';
+                    else if (journeyType === 'nature-connect') name = 'Viaje de Conexión con la Naturaleza';
                     completePractice({ date: new Date().toISOString(), exerciseName: name, durationMinutes: 12, category: 'Shamanic Journey' });
                     break;
             }
@@ -554,54 +555,56 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             )}
             
             {activeTab === 'journey' && (
-                <div className="space-y-3">
-                     <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
                         <TtsInfoButton 
                             explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
                             className="!text-slate-400 hover:!text-teal-400"
                         />
                         <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
                     </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
+                        </div>
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
+                                {!isSubscribed && <LockIcon />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
+                                {!isSubscribed && <LockIcon />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
+                                {!isSubscribed && <LockIcon />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
+                                {!isSubscribed && <LockIcon />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
+                                {!isSubscribed && <LockIcon />}
+                            </button>
+                        </div>
                     </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
-                            {!isSubscribed && <LockIcon />}
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
-                            {!isSubscribed && <LockIcon />}
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
-                            {!isSubscribed && <LockIcon />}
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
-                            {!isSubscribed && <LockIcon />}
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
-                        <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                            <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
-                            {!isSubscribed && <LockIcon />}
-                        </button>
-                    </div>
-                </div>
+                </>
             )}
         </div>
     );
