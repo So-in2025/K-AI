@@ -421,7 +421,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                             <div key={ex.id} className="relative">
                                 <TtsInfoButton 
                                     explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[ex.id]}
-                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                                 />
                                 <button 
                                     onClick={() => !isLocked && startBreathingExercise(ex)} 
@@ -452,7 +452,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                              <div key={med.id} className="relative">
                                 <TtsInfoButton 
                                     explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[med.id]}
-                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                                 />
                                 <button 
                                     onClick={() => !isLocked && startMeditation(med)}
@@ -481,7 +481,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         <div key={vid.id} className="relative">
                             <TtsInfoButton 
                                 explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
-                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                             />
                             <button onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
                                 <div className="pr-8">
@@ -504,7 +504,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         <div key={vid.id} className="relative">
                             <TtsInfoButton 
                                 explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
-                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                             />
                             <button onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
                                 <div className="pr-8">
@@ -517,7 +517,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     <div className="relative">
                         <TtsInfoButton 
                             explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['mental-dump']}
-                            className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                            className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                         />
                         <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
                             <div className="pr-8">
@@ -539,7 +539,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         <div key={q.id} className="relative">
                              <TtsInfoButton 
                                 explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[q.id]}
-                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                             />
                             <button onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
                                 <div className="pr-8">
@@ -555,47 +555,47 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             {activeTab === 'journey' && (
                 <>
                     <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <p className="pr-6"><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
                         <TtsInfoButton 
                             explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
                             className="!text-slate-400 hover:!text-teal-400"
                         />
+                        <p className="pr-6"><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
                     </div>
                     <div className="space-y-3">
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
                         </div>
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
                                 <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
                                 {!isSubscribed && <LockIcon />}
                             </button>
                         </div>
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
                                 <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
                                 {!isSubscribed && <LockIcon />}
                             </button>
                         </div>
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
                                 <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
                                 {!isSubscribed && <LockIcon />}
                             </button>
                         </div>
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
                                 <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
                                 {!isSubscribed && <LockIcon />}
                             </button>
                         </div>
                         <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
                             <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
                                 <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
                                 {!isSubscribed && <LockIcon />}

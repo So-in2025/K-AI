@@ -993,7 +993,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="bg-slate-900 h-full text-slate-200 flex flex-col">
+    <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
       {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
       <Header 
@@ -1003,9 +1003,9 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow flex flex-col p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24 min-h-0">
+      <main className="flex-grow overflow-y-auto p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
-        <div className="mt-6 flex-grow flex flex-col min-h-0">
+        <div className="mt-6">
           {renderView()}
         </div>
       </main>
