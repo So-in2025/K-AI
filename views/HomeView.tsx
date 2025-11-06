@@ -70,6 +70,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                     <WellnessSanctuaryCard 
                         onLogActivity={props.onLogWellnessActivity}
                         onLogDopamineHit={props.onLogDopamineHit}
+                        isSubscribed={props.isSubscribed}
                     />
                 </div>
             </div>

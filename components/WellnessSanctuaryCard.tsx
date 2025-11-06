@@ -13,16 +13,19 @@ const BodyIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/20
 const MoonIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
 const SparklesIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-14l2-2 2 2m-4 5l2 2 2-2m-3 9l2 2 2-2" /></svg>);
 const FeatherIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12V3m0 9a3 3 0 013 3v0a3 3 0 01-3 3m0-6h11.586l-4.293 4.293a1 1 0 001.414 1.414l6-6a1 1 0 000-1.414l-6-6a1 1 0 00-1.414 1.414L16.586 9H5z" /></svg>);
+const LockIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>);
 
 
 interface WellnessSanctuaryCardProps {
     onLogActivity: (activity: IWellnessActivity) => void;
     onLogDopamineHit: (hit: IDopamineHit) => void;
+    isSubscribed: boolean;
 }
 
 type SanctuaryTab = 'breathing' | 'meditation' | 'movement' | 'rest' | 'neuro' | 'journey';
 type View = 'tabs' | 'active_breathing' | 'active_meditation' | 'active_movement' | 'active_quest' | 'active_journey' | 'active_dump';
 type JourneyStep = 'idle' | 'grounding' | 'descent' | 'deepening' | 'vision' | 'return' | 'integration' | 'finished';
+type JourneyType = 'shamanic' | 'solfeggio' | 'binaural';
 type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
 
 const mentalDumpPrompts = [
@@ -32,7 +35,7 @@ const mentalDumpPrompts = [
 ];
 
 
-export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit }) => {
+export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit, isSubscribed }) => {
     const [activeTab, setActiveTab] = useState<SanctuaryTab>('breathing');
     const [view, setView] = useState<View>('tabs');
     const [selectedExercise, setSelectedExercise] = useState<IExercise | null>(null);
@@ -43,6 +46,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const [currentStepInfo, setCurrentStepInfo] = useState({ name: '', duration: 0, animationClass: '' });
     
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
+    const [journeyType, setJourneyType] = useState<JourneyType | null>(null);
     const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
     const [questStep, setQuestStep] = useState<QuestStep>('intention');
     const [questTextInput, setQuestTextInput] = useState('');
@@ -58,6 +62,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const cleanup = (isCompleted: boolean = false) => {
         setJourneyStep('idle');
+        setJourneyType(null);
         
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -69,7 +74,10 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
         if (audioElementsRef.current.nodes) {
             audioElementsRef.current.nodes.forEach((node: any) => {
-                try { node.stop(0); } catch(e) { /* ignore */ }
+                try { 
+                    if (node.stop) node.stop(0);
+                    if(node.disconnect) node.disconnect();
+                } catch(e) { /* ignore */ }
             });
         }
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
@@ -171,48 +179,88 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }
     }
     
-    const startShamanicJourney = () => {
+    const startShamanicJourney = (type: JourneyType) => {
+        setJourneyType(type);
         setView('active_journey');
-        activePracticeRef.current = 'Viaje de Sonido Chamánico Profundo';
+        activePracticeRef.current = `Viaje Sonoro (${type})`;
         setJourneyStep('grounding');
     };
 
     useEffect(() => {
-        if (view !== 'active_journey' || journeyStep === 'idle') return;
+        if (view !== 'active_journey' || journeyStep === 'idle' || !journeyType) return;
 
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioContextRef.current = audioCtx;
         const allNodes: any[] = [];
         
         const fade = (gainNode: GainNode, targetVolume: number, duration: number) => { if (!audioCtx || audioCtx.state === 'closed') return; gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration); };
-        const createSoundSource = (createFn: (gainNode: GainNode) => any, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); createFn(gainNode); return { gainNode }; };
-        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed') return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); };
-        const playRainstick = (gainNode: GainNode) => { if (!audioCtx || audioCtx.state === 'closed') return; const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 4, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1)*Math.pow(1-i/data.length,2); const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(gainNode); source.start(); allNodes.push(source); };
-        const createDrone = (gainNode: GainNode) => createOscillator(gainNode, 50, 'sine', 0.1, 5);
-        const createWind = (gainNode: GainNode) => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*5, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 0.5; noise.connect(filter); filter.connect(gainNode); noise.start(); allNodes.push(noise, filter); };
-        const createChant = (gainNode: GainNode) => [60, 62, 65].forEach(f => createOscillator(gainNode, f, 'sawtooth'));
-        const createOscillator = (gainNode: GainNode, freq: number, type: OscillatorType, lfoFreq?: number, lfoGain?: number) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; if (lfoFreq && lfoGain) { const lfo = audioCtx.createOscillator(); lfo.frequency.value = lfoFreq; const lfoG = audioCtx.createGain(); lfoG.gain.value = lfoGain; lfo.connect(lfoG); lfoG.connect(osc.frequency); lfo.start(); allNodes.push(lfo, lfoG); } osc.connect(gainNode); osc.start(); allNodes.push(osc); };
+        const createSoundSource = (createFn: (gainNode: GainNode) => any, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); allNodes.push(gainNode); createFn(gainNode); return { gainNode }; };
+        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.drum) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); allNodes.push(osc, gain); };
+        const createDrone = (gainNode: GainNode, freq: number) => createOscillator(gainNode, freq, 'sine');
+        const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); allNodes.push(pannerL, pannerR); };
+        const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); allNodes.push(osc); };
 
-        audioElementsRef.current = { drum: createSoundSource(() => {}), rainstick: createSoundSource(playRainstick), drone: createSoundSource(createDrone), wind: createSoundSource(createWind), chant: createSoundSource(createChant), fade, nodes: allNodes, drumInterval: setInterval(playDrum, 333) };
+        let sounds: { [key: string]: any } = { nodes: allNodes, fade };
+        if (journeyType === 'shamanic') {
+             sounds.drum = createSoundSource(() => {}, 0);
+             sounds.drumInterval = setInterval(playDrum, 333);
+        } else if (journeyType === 'solfeggio') {
+             sounds.solfeggio = createSoundSource(g => createOscillator(g, 528, 'sine'), 0);
+             sounds.drone = createSoundSource(g => createDrone(g, 60), 0);
+        } else if (journeyType === 'binaural') {
+             sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0); // Theta wave
+             sounds.noise = createSoundSource(g => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; noise.connect(g); noise.start(); allNodes.push(noise); }, 0);
+        }
+        audioElementsRef.current = sounds;
 
         const runJourneyStep = async () => {
             if (!activePracticeRef.current) return;
-            const { fade, drum, rainstick, drone, chant, wind } = audioElementsRef.current;
+            const { fade } = audioElementsRef.current;
             if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
             if (navigator.vibrate) navigator.vibrate(0);
 
             switch (journeyStep) {
-                case 'grounding': vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate([100, 50, 100]), 1250); await ttsService.speakSequence([{ text: "Bienvenido. Cierra los ojos. Siente el peso de tu cuerpo.", pause: 4000 }, { text: "Tu intención es tu mapa. ¿Qué sabiduría buscas?", pause: 5000 }]); if (activePracticeRef.current) setJourneyStep('descent'); break;
-                case 'descent': fade(drone.gainNode, 0.1, 5); fade(wind.gainNode, 0.05, 10); fade(drum.gainNode, 0.4, 5); fade(chant.gainNode, 0.15, 10); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(50), 333); await ttsService.speak("El tambor ha comenzado. Este es el latido de la Tierra, guiándote. Los cantos ancestrales te envuelven.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('deepening'); }, 120000); break;
-                case 'deepening': vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(1000), 4000); await ttsService.speak("Continúa descendiendo... Más allá del pensamiento...", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('vision'); }, 180000); break;
-                case 'vision': fade(drum.gainNode, 0.25, 10); fade(chant.gainNode, 0.1, 10); fade(rainstick.gainNode, 0.1, 8); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate(1500), 5000); await ttsService.speak("Estás en el corazón del viaje. Permanece abierto. Recibe tu regalo.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 120000); break;
-                case 'return': if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval); vibrationIntervalRef.current = window.setInterval(() => navigator.vibrate([20, 80, 20]), 510); fade(drum.gainNode, 0, 10); fade(chant.gainNode, 0, 15); fade(rainstick.gainNode, 0.2, 5); await ttsService.speak("El tambor se desvanece. Escucha la lluvia purificadora. Es el llamado para volver.", 0.9); timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 120000); break;
-                case 'integration': fade(rainstick.gainNode, 0, 5); fade(wind.gainNode, 0, 10); fade(drone.gainNode, 0, 10); await ttsService.speakSequence([{ text: "Estás de vuelta. Siente tu cuerpo. Respira.", pause: 5000 }, { text: "El viaje ha terminado, pero la integración comienza. Agradece.", pause: 6000 }]); if (activePracticeRef.current) setJourneyStep('finished'); break;
-                case 'finished': completePractice({ date: new Date().toISOString(), exerciseName: 'Viaje de Sonido Chamánico Profundo', durationMinutes: 10, category: 'Shamanic Journey' }); break;
+                case 'grounding':
+                    if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0.4, 5);
+                    if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0.3, 5); fade(audioElementsRef.current.drone.gainNode, 0.1, 10); }
+                    if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0.5, 5); fade(audioElementsRef.current.noise.gainNode, 0.05, 10); }
+                    await ttsService.speakSequence([{ text: "Comenzamos. Cierra los ojos. Concéntrate en tu respiración.", pause: 4000 }]);
+                    if (activePracticeRef.current) setJourneyStep('descent');
+                    break;
+                case 'descent':
+                    await ttsService.speak("Permite que el sonido te guíe hacia adentro.", 0.9);
+                    timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('deepening'); }, 120000);
+                    break;
+                case 'deepening':
+                     await ttsService.speak("Más profundo...", 0.9);
+                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('vision'); }, 180000);
+                     break;
+                case 'vision':
+                     await ttsService.speak("Permanece abierto. Observa sin juicio.", 0.9);
+                     timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 180000);
+                     break;
+                case 'return':
+                    if (journeyType === 'shamanic') fade(audioElementsRef.current.drum.gainNode, 0, 10);
+                    if (journeyType === 'solfeggio') { fade(audioElementsRef.current.solfeggio.gainNode, 0, 10); fade(audioElementsRef.current.drone.gainNode, 0, 15); }
+                    if (journeyType === 'binaural') { fade(audioElementsRef.current.binaural.gainNode, 0, 10); fade(audioElementsRef.current.noise.gainNode, 0, 15); }
+                    await ttsService.speak("Es hora de volver. Lentamente, trae tu conciencia de vuelta a tu cuerpo.", 0.9);
+                    timeoutRef.current = window.setTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 60000);
+                    break;
+                case 'integration':
+                    await ttsService.speakSequence([{ text: "Respira hondo. Siente el espacio que te rodea.", pause: 5000 }, { text: "El viaje ha terminado. Agradece la experiencia.", pause: 6000 }]);
+                    if (activePracticeRef.current) setJourneyStep('finished');
+                    break;
+                case 'finished':
+                    let name = 'Viaje Sonoro';
+                    if (journeyType === 'shamanic') name = 'Viaje de Sonido Chamánico';
+                    if (journeyType === 'solfeggio') name = 'Viaje de Frecuencias Solfeggio';
+                    if (journeyType === 'binaural') name = 'Viaje de Sonido Binaural';
+                    completePractice({ date: new Date().toISOString(), exerciseName: name, durationMinutes: 12, category: 'Shamanic Journey' });
+                    break;
             }
         };
         runJourneyStep();
-    }, [journeyStep, view]);
+    }, [journeyStep, journeyType, view]);
 
     const handleStartQuest = async (quest: INeuroQuest) => {
         setView('active_quest'); activePracticeRef.current = quest.name; setActiveQuest(quest); setQuestStep('intention');
@@ -260,26 +308,70 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderTabContent = () => (
         <div className="mt-4 space-y-3">
+            {activeTab === 'breathing' && (
+                <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                    <TtsInfoButton explanation="La respiración consciente es la forma más rápida de regular tu sistema nervioso. Al controlar tu respiración, activas el nervio vago y pasas de un estado de 'lucha o huida' a uno de 'descanso y digestión', reduciendo el cortisol y la ansiedad." className="!text-slate-400 hover:!text-teal-400" />
+                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas técnicas calman tu sistema nervioso para reducir el estrés y la ansiedad de forma inmediata.</p>
+                </div>
+            )}
             {activeTab === 'breathing' && BREATHING_EXERCISES.map(ex => <button key={ex.id} onClick={() => startBreathingExercise(ex)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{ex.name}</h4><p className="text-xs text-slate-400">{ex.description}</p></button>)}
+
+            {activeTab === 'meditation' && (
+                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                    <TtsInfoButton explanation="La meditación es un entrenamiento para tu cerebro. Prácticas como el escaneo corporal fortalecen la corteza prefrontal, mejorando tu enfoque y control emocional, y reducen la actividad en la 'Red Neuronal por Defecto', lo que disminuye la rumiación y los pensamientos ansiosos." className="!text-slate-400 hover:!text-teal-400" />
+                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Entrena tu mente para enfocarse en el presente, reduciendo el ruido mental y fomentando la claridad.</p>
+                </div>
+            )}
             {activeTab === 'meditation' && GUIDED_MEDITATIONS.map(med => <button key={med.id} onClick={() => startMeditation(med)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{med.name}</h4><p className="text-xs text-slate-400">{med.description}</p></button>)}
+            
+            {activeTab === 'movement' && (
+                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                    <TtsInfoButton explanation="El movimiento consciente, como el yoga suave, libera endorfinas, los analgésicos naturales de tu cuerpo, y reduce las hormonas del estrés. Además, mejora la interocepción, que es tu capacidad de sentir las señales internas de tu cuerpo, fortaleciendo la conexión mente-cuerpo." className="!text-slate-400 hover:!text-teal-400" />
+                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Libera endorfinas y reduce las hormonas del estrés a través de prácticas corporales conscientes.</p>
+                </div>
+            )}
             {activeTab === 'movement' && MOVEMENT_VIDEOS.filter(v=>v.category === 'movement').map(vid => <button key={vid.id} onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{vid.name}</h4><p className="text-xs text-slate-400">{vid.description}</p></button>)}
+
             {activeTab === 'rest' && (
                 <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton explanation="El descanso activo, como el Yoga Nidra o el vaciado mental, es crucial para la recuperación neuronal. Facilita la consolidación de la memoria y permite que tu sistema nervioso parasimpático se active, lo que es esencial para la reparación celular y la reducción de la inflamación sistémica." className="!text-slate-400 hover:!text-teal-400" />
+                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Prepara tu mente y cuerpo para una recuperación profunda, calmando el sistema nervioso antes de dormir.</p>
+                    </div>
                     {MOVEMENT_VIDEOS.filter(v=>v.category === 'rest').map(vid => <button key={vid.id} onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{vid.name}</h4><p className="text-xs text-slate-400">{vid.description}</p></button>)}
                     <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Vaciado Mental Guiado</h4><p className="text-xs text-slate-400">Escribe y suelta tus preocupaciones para un descanso reparador.</p></button>
                 </>
             )}
+
+            {activeTab === 'neuro' && (
+                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                    <TtsInfoButton explanation="Los Neuro-Rituales aprovechan la neuroplasticidad de tu cerebro. Al realizar acciones cortas y conscientes, como practicar la gratitud o celebrar un logro, activas intencionadamente las vías de recompensa de dopamina y serotonina. Repetir estos rituales fortalece estas conexiones neuronales, re-cableando tu cerebro para encontrar satisfacción en fuentes saludables y sostenibles." className="!text-slate-400 hover:!text-teal-400" />
+                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Utiliza la neuroplasticidad para re-cablear tu cerebro. Pequeñas acciones conscientes para generar dopamina y serotonina de forma natural.</p>
+                </div>
+            )}
             {activeTab === 'neuro' && NEURO_QUESTS.map(q => <button key={q.id} onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{q.name}</h4><p className="text-xs text-slate-400">{q.description}</p></button>)}
+            
             {activeTab === 'journey' && (
-                <div>
-                    <button onClick={startShamanicJourney} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda para la introspección.</p></button>
+                <div className="space-y-3">
+                    <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></button>
+                    
+                    <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <div className="flex-grow"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
+                        {!isSubscribed && <LockIcon />}
+                    </button>
+                    
+                     <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                        <div className="flex-grow"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
+                         {!isSubscribed && <LockIcon />}
+                    </button>
+
                     <div className="mt-3 p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
                         <TtsInfoButton 
                             explanation="El Viaje Sonoro Chamánico utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor, a una frecuencia específica, induce ondas cerebrales Theta, asociadas con la meditación, la creatividad y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
                             className="!text-slate-400 hover:!text-teal-400"
                         />
                         <p>
-                            <strong className="text-slate-200">¿Cómo funciona?</strong> Esta experiencia utiliza el arrastre rítmico para inducir un estado meditativo profundo a través del sonido, facilitando la introspección.
+                            <strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.
                         </p>
                     </div>
                 </div>
@@ -292,7 +384,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const renderActiveMeditation = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3> <p className="text-slate-400 mb-4">Escucha la guía de Kai...</p> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
     const renderActiveMovement = () => ( <> <button onClick={() => { setSelectedVideo(null); setView('tabs'); activePracticeRef.current = null; }} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button> <h3 className="font-bold text-slate-100 text-lg mb-2">{selectedVideo?.name}</h3> <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden"><iframe className="w-full h-full" src={`https://www.youtube.com/embed/${selectedVideo?.youtubeId}?autoplay=1`} title={selectedVideo?.name} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe></div> <button onClick={() => completePractice({ date: new Date().toISOString(), exerciseName: selectedVideo!.name, durationMinutes: selectedVideo!.duration, category: 'Movement' })} className="w-full mt-4 bg-lime-600 text-white font-semibold py-3 px-5 rounded-lg">He completado esta rutina</button> </> );
     const renderActiveQuest = () => ( <div className="p-3 bg-slate-700/50 rounded-lg"> <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest?.name}</h3> <p className="text-sm text-slate-300 mb-3 text-center">{activeQuest?.script.find(s=>s.step===questStep)?.text}</p> {questStep === 'reflection' && <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión..." className="w-full h-24 p-2 bg-slate-700 rounded-lg"/>} <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={() => completeDopamineHit({ id: crypto.randomUUID(), date: new Date().toISOString(), activity: activeQuest!.activityLogName, category: activeQuest!.category })} disabled={questStep !== 'reflection' || questTextInput.trim().length < 10} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-slate-500">Completar</button> </div> </div> );
-    const renderShamanicJourney = () => { const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo Visión...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; return ( <div className="text-center"> <h3 className="font-bold text-slate-100 text-lg mb-2">Viaje de Sonido Chamánico</h3> <div className="p-4 bg-slate-900/50 rounded-lg"> <div className={`journey-visual journey-${journeyStep}`}><div className="heart"></div><div className="energy-ring"></div><div className="particle p1"></div><div className="particle p2"></div><div className="particle p3"></div></div> <p className="text-purple-300 font-semibold min-h-[24px] transition-opacity duration-500">{stepText[journeyStep]}</p> {journeyStep !== 'finished' ? <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> } </div> </div> ); };
+    const renderShamanicJourney = () => { const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo Visión...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; return ( <div className="text-center"> <h3 className="font-bold text-slate-100 text-lg mb-2 capitalize">Viaje Sonoro {journeyType}</h3> <div className="p-4 bg-slate-900/50 rounded-lg"> <div className={`journey-visual journey-${journeyStep}`}><div className="heart"></div><div className="energy-ring"></div><div className="particle p1"></div><div className="particle p2"></div><div className="particle p3"></div></div> <p className="text-purple-300 font-semibold min-h-[24px] transition-opacity duration-500">{stepText[journeyStep]}</p> {journeyStep !== 'finished' ? <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> } </div> </div> ); };
     const renderMentalDump = () => { const currentPrompt = mentalDumpPrompts[mentalDumpStep]; return ( <> <h3 className="font-bold text-slate-100 text-lg mb-2">Vaciado Mental Guiado</h3> <div className="bg-slate-700/50 p-4 rounded-lg"> <p className="font-semibold text-teal-300">{currentPrompt.title}</p> <p className="text-sm text-slate-300 mb-3">{currentPrompt.instruction}</p> <textarea key={mentalDumpStep} placeholder={currentPrompt.placeholder} className="w-full h-28 p-3 bg-slate-700 rounded-lg" autoFocus/> <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={handleNextDumpStep} className="flex-1 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">{mentalDumpStep < 2 ? 'Siguiente' : 'Finalizar'}</button> </div> </div> </> ); };
 
     return (
