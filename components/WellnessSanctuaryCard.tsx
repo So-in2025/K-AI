@@ -15,6 +15,50 @@ const SparklesIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.or
 const FeatherIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12V3m0 9a3 3 0 013 3v0a3 3 0 01-3 3m0-6h11.586l-4.293 4.293a1 1 0 001.414 1.414l6-6a1 1 0 000-1.414l-6-6a1 1 0 00-1.414 1.414L16.586 9H5z" /></svg>);
 const LockIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>);
 
+const INDIVIDUAL_PRACTICE_EXPLANATIONS: Record<string, string> = {
+    // Breathing
+    'box': "Base Científica: Esta técnica equilibra el sistema nervioso autónomo al activar la respuesta parasimpática ('descanso y digestión'). Al regular el ritmo de CO2 en la sangre, reduce el cortisol y la frecuencia cardíaca, induciendo un estado de calma enfocada.",
+    '478': "Base Científica: La exhalación prolongada (8 segundos) estimula directamente el nervio vago, el principal regulador del sistema parasimpático. Esto actúa como un 'freno' natural para la respuesta de estrés, reduciendo la ansiedad y preparando el cuerpo para el descanso.",
+    'wim-hof': "Base Científica: Induce un estado de 'hipoxia intermitente' controlada, lo que provoca una liberación de adrenalina. Este proceso ha demostrado tener efectos antiinflamatorios, fortalecer la respuesta inmune y aumentar los niveles de energía y endorfinas.",
+    'coherent': "Base Científica: Respirar a un ritmo de ~5.5 veces por minuto maximiza la Variabilidad de la Frecuencia Cardíaca (VFC), un indicador clave de resiliencia al estrés. Sincroniza los ritmos del corazón, los pulmones y el cerebro, creando un estado de 'coherencia' fisiológica óptima.",
+    'tummo-breathwork': "Base Científica: Esta técnica de respiración potente y rítmica estimula el sistema nervioso simpático de forma controlada, activando la termogénesis (producción de calor corporal) y la liberación de endorfinas, lo que resulta en una sensación de vitalidad y poder interior.",
+    'bhramari': "Base Científica: La vibración del zumbido estimula el nervio vago y aumenta la producción de óxido nítrico en los senos paranasales, lo que mejora la circulación y tiene un efecto calmante. El sonido monótono ayuda a desconectar la 'red neuronal por defecto', reduciendo la rumiación de pensamientos.",
+
+    // Meditation
+    'self-compassion': "Base Científica: Gestos de autocuidado, como poner una mano en el corazón, pueden liberar oxitocina, la 'hormona del apego'. Esto reduce la actividad de la amígdala (el centro del miedo del cerebro) y activa áreas de la corteza prefrontal asociadas con la empatía y la regulación emocional.",
+    'body-scan': "Base Científica: Fortalece la 'interocepción', la capacidad de sentir el estado interno del cuerpo. Esta práctica activa la ínsula, una región del cerebro clave para la conciencia corporal y emocional. Ayuda a reconectar mente y cuerpo, reduciendo la disociación y la ansiedad.",
+    'yoga-nidra': "Base Científica: Conocido como NSDR (Non-Sleep Deep Rest), guía al cerebro a través de ondas Alfa (relajación) y Theta (meditación profunda), estados que promueven la reparación celular, la consolidación de la memoria y la liberación de dopamina, restaurando el sistema nervioso de manera más eficiente que el descanso convencional.",
+    'metta': "Base Científica: La práctica regular de la compasión fortalece las redes neuronales en la corteza prefrontal y la ínsula, áreas relacionadas con la empatía y la regulación emocional. Aumenta los sentimientos de conexión social y reduce la respuesta del cerebro a las amenazas sociales.",
+    'rain': "Base Científica: Es una técnica de mindfulness estructurada. Al nombrar (Reconocer) y permitir (Aceptar) una emoción, se pasa de una reacción límbica (amígdala) a una respuesta cortical (corteza prefrontal). Esto interrumpe el secuestro emocional y permite una gestión más consciente del sentimiento.",
+    'deep-focus': "Base Científica: Concentrar la atención en un solo punto (el área entre las cejas) reduce la actividad en la 'Red Neuronal por Defecto' (DMN), la red cerebral responsable de la divagación mental y la rumiación. Esto calma el 'ruido' mental y mejora la capacidad de enfoque sostenido.",
+    
+    // Movement
+    'mov-yoga-suave': "Base Científica: El yoga suave combina estiramiento, respiración y propiocepción (conciencia de la posición del cuerpo). Esto reduce los niveles de cortisol, libera GABA (un neurotransmisor calmante) y mejora la conexión mente-cuerpo, aliviando la tensión física y mental.",
+    'mov-yoga-ansiedad': "Base Científica: Las posturas de yoga, especialmente las de 'grounding' (enraizamiento), aumentan la información sensorial que llega al cerebro, lo que ayuda a calmar un sistema nervioso hiperactivo. El movimiento consciente y la respiración regulan la respuesta de lucha o huida.",
+    'mov-yoga-energia': "Base Científica: Una secuencia de yoga fluida aumenta el flujo sanguíneo y la oxigenación del cerebro y los músculos. La combinación de movimiento y respiración rítmica estimula el sistema nervioso, liberando endorfinas y dopamina, lo que resulta en una sensación de vitalidad y claridad mental.",
+
+    // Rest
+    'des-estiramiento-cama': "Base Científica: Los estiramientos suaves antes de dormir ayudan a liberar la tensión muscular acumulada durante el día. Esto envía señales de seguridad al sistema nervioso, facilitando la transición hacia un estado parasimpático, esencial para un sueño reparador.",
+    'des-meditacion-dormir': "Base Científica: Esta meditación guiada, a menudo un escaneo corporal, aleja el enfoque de los pensamientos ansiosos (rumiación) y lo dirige a las sensaciones corporales. Esto ayuda a reducir la actividad de la 'Red Neuronal por Defecto' y guía al cerebro a ondas Alfa y Theta, propicias para el inicio del sueño.",
+    'des-yoga-caderas': "Base Científica: El Yin Yoga se enfoca en estiramientos pasivos y prolongados que actúan sobre el tejido conectivo (fascia). Se cree que las caderas almacenan tensión emocional; liberarlas físicamente puede facilitar una liberación emocional correspondiente, promoviendo una relajación profunda.",
+    'mental-dump': "Base Científica: Se basa en el 'Efecto Zeigarnik', la tendencia del cerebro a recordar tareas incompletas. Al escribir las preocupaciones, se 'externalizan' y el cerebro las percibe como 'gestionadas' o 'completadas', reduciendo la carga cognitiva y la ansiedad que impiden el sueño.",
+
+    // Neuro-Rituals
+    'gratitude': "Base Científica: Sentir gratitud activa regiones del cerebro como la corteza prefrontal medial, asociada con el valor social y la recompensa. Libera dopamina y serotonina, neurotransmisores clave para el estado de ánimo, re-cableando el cerebro para enfocarse en lo positivo.",
+    'victory': "Base Científica: Reconocer y celebrar conscientemente un logro, por pequeño que sea, fortalece el circuito de recompensa del cerebro. Esto crea un bucle de dopamina positivo, aumentando la motivación y la autoeficacia al asociar el esfuerzo con una recompensa interna.",
+    'savoring': "Base Científica: El 'saboreo' es una práctica de mindfulness que amplifica las señales de placer en el cerebro. Al enfocarse intensamente en una experiencia sensorial, se prolonga la actividad en los circuitos de recompensa, enseñando al cerebro a extraer más satisfacción de las experiencias cotidianas.",
+    'sunlight': "Base Científica: La exposición a la luz solar, especialmente por la mañana, estimula directamente la producción de serotonina en el cerebro, un neurotransmisor crucial para regular el estado de ánimo, el sueño y el apetito. También ayuda a sincronizar el ritmo circadiano.",
+    'positive-memory': "Base Científica: El cerebro no distingue claramente entre una experiencia real y una vívidamente recordada. Revivir una memoria feliz reactiva las mismas redes neuronales y libera los mismos neurotransmisores (como la serotonina) que la experiencia original, mejorando el estado de ánimo instantáneamente.",
+    'self-massage': "Base Científica: El tacto compasivo, incluso de uno mismo, estimula la liberación de oxitocina. Esta hormona reduce los niveles de cortisol (estrés), disminuye la presión arterial y promueve sentimientos de calma, seguridad y conexión.",
+
+    // Shamanic Journeys
+    'journey-shamanic': "Base Científica: Utiliza el 'arrastre rítmico'. El sonido constante del tambor a una frecuencia de 3-4 Hz induce ondas cerebrales Theta, el estado asociado con la meditación profunda, la creatividad y el acceso a la mente subconsciente, facilitando la introspección.",
+    'journey-solfeggio': "Base Científica: Se basa en la teoría de la resonancia. La frecuencia de 528 Hz, conocida como la 'frecuencia del amor', supuestamente resuena con el cuerpo a nivel celular, promoviendo la armonía y la reparación. Aunque es más esotérico, la escucha de tonos puros puede inducir estados de relajación profunda.",
+    'journey-binaural': "Base Científica: Dos tonos ligeramente diferentes en cada oído hacen que el cerebro 'escuche' un tercer tono fantasma (el ritmo binaural). Si la diferencia es de 7 Hz, el cerebro sincroniza sus ondas a 7 Hz (Theta), induciendo un estado meditativo profundo de forma pasiva y eficaz.",
+    'journey-trauma-release': "Base Científica: Combina frecuencias graves (drone de 98 Hz) para enraizamiento y seguridad con ritmos binaurales Alpha/Theta (10 Hz) para una relajación profunda. La adición de un 'shimmer' agudo puede ayudar a 'desbloquear' suavemente la energía emocional estancada, creando un entorno sonoro seguro para el procesamiento.",
+    'journey-manifestation': "Base Científica: Utiliza ritmos binaurales Beta (15 Hz) para un estado de enfoque activo, combinado con frecuencias asociadas con la 'resolución de problemas' (417 Hz). El objetivo es alinear la actividad cerebral con un estado de atención concentrada e intención, propicio para la visualización de metas.",
+    'journey-nature-connect': "Base Científica: Emplea drones de baja frecuencia (87 Hz) y ruido filtrado que imita sonidos de la naturaleza (viento, agua). Estos sonidos reducen la actividad de la amígdala y promueven un estado de 'fascinación suave', que restaura la capacidad de atención y reduce el estrés."
+};
 
 interface WellnessSanctuaryCardProps {
     onLogActivity: (activity: IWellnessActivity) => void;
@@ -375,18 +419,23 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     {BREATHING_EXERCISES.map(ex => {
                         const isLocked = ex.isPremium && !isSubscribed;
                         return (
-                            <button 
-                                key={ex.id} 
-                                onClick={() => !isLocked && startBreathingExercise(ex)} 
-                                disabled={isLocked}
-                                className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                            >
-                                <div className="flex-grow">
-                                    <h4>{ex.name}</h4>
-                                    <p className="text-xs text-slate-400">{ex.description}</p>
-                                </div>
-                                {isLocked && <LockIcon />}
-                            </button>
+                            <div key={ex.id} className="relative">
+                                <TtsInfoButton 
+                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[ex.id]}
+                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                />
+                                <button 
+                                    onClick={() => !isLocked && startBreathingExercise(ex)} 
+                                    disabled={isLocked}
+                                    className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                    <div className="flex-grow pr-8">
+                                        <h4>{ex.name}</h4>
+                                        <p className="text-xs text-slate-400">{ex.description}</p>
+                                    </div>
+                                    {isLocked && <LockIcon />}
+                                </button>
+                            </div>
                         );
                     })}
                 </>
@@ -401,30 +450,50 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     {GUIDED_MEDITATIONS.map(med => {
                         const isLocked = med.isPremium && !isSubscribed;
                         return (
-                             <button 
-                                key={med.id} 
-                                onClick={() => !isLocked && startMeditation(med)}
-                                disabled={isLocked}
-                                className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                            >
-                                <div className="flex-grow">
-                                    <h4>{med.name}</h4>
-                                    <p className="text-xs text-slate-400">{med.description}</p>
-                                </div>
-                                {isLocked && <LockIcon />}
-                            </button>
+                             <div key={med.id} className="relative">
+                                <TtsInfoButton 
+                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[med.id]}
+                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                                />
+                                <button 
+                                    onClick={() => !isLocked && startMeditation(med)}
+                                    disabled={isLocked}
+                                    className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                    <div className="flex-grow pr-8">
+                                        <h4>{med.name}</h4>
+                                        <p className="text-xs text-slate-400">{med.description}</p>
+                                    </div>
+                                    {isLocked && <LockIcon />}
+                                </button>
+                             </div>
                         )
                     })}
                 </>
             )}
             
             {activeTab === 'movement' && (
-                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                    <TtsInfoButton explanation="El movimiento consciente, como el yoga suave, libera endorfinas, los analgésicos naturales de tu cuerpo, y reduce las hormonas del estrés. Además, mejora la interocepción, que es tu capacidad de sentir las señales internas de tu cuerpo, fortaleciendo la conexión mente-cuerpo." className="!text-slate-400 hover:!text-teal-400" />
-                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Libera endorfinas y reduce las hormonas del estrés a través de prácticas corporales conscientes.</p>
-                </div>
+                 <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton explanation="El movimiento consciente, como el yoga suave, libera endorfinas, los analgésicos naturales de tu cuerpo, y reduce las hormonas del estrés. Además, mejora la interocepción, que es tu capacidad de sentir las señales internas de tu cuerpo, fortaleciendo la conexión mente-cuerpo." className="!text-slate-400 hover:!text-teal-400" />
+                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Libera endorfinas y reduce las hormonas del estrés a través de prácticas corporales conscientes.</p>
+                    </div>
+                    {MOVEMENT_VIDEOS.filter(v=>v.category === 'movement').map(vid => (
+                        <div key={vid.id} className="relative">
+                            <TtsInfoButton 
+                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                            />
+                            <button onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                <div className="pr-8">
+                                    <h4>{vid.name}</h4>
+                                    <p className="text-xs text-slate-400">{vid.description}</p>
+                                </div>
+                            </button>
+                        </div>
+                    ))}
+                 </>
             )}
-            {activeTab === 'movement' && MOVEMENT_VIDEOS.filter(v=>v.category === 'movement').map(vid => <button key={vid.id} onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{vid.name}</h4><p className="text-xs text-slate-400">{vid.description}</p></button>)}
 
             {activeTab === 'rest' && (
                 <>
@@ -432,57 +501,107 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         <TtsInfoButton explanation="El descanso activo, como el Yoga Nidra o el vaciado mental, es crucial para la recuperación neuronal. Facilita la consolidación de la memoria y permite que tu sistema nervioso parasimpático se active, lo que es esencial para la reparación celular y la reducción de la inflamación sistémica." className="!text-slate-400 hover:!text-teal-400" />
                         <p><strong className="text-slate-200">¿Cómo funciona?</strong> Prepara tu mente y cuerpo para una recuperación profunda, calmando el sistema nervioso antes de dormir.</p>
                     </div>
-                    {MOVEMENT_VIDEOS.filter(v=>v.category === 'rest').map(vid => <button key={vid.id} onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{vid.name}</h4><p className="text-xs text-slate-400">{vid.description}</p></button>)}
-                    <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Vaciado Mental Guiado</h4><p className="text-xs text-slate-400">Escribe y suelta tus preocupaciones para un descanso reparador.</p></button>
+                    {MOVEMENT_VIDEOS.filter(v=>v.category === 'rest').map(vid => (
+                        <div key={vid.id} className="relative">
+                            <TtsInfoButton 
+                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                            />
+                            <button onClick={() => { setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                <div className="pr-8">
+                                    <h4>{vid.name}</h4>
+                                    <p className="text-xs text-slate-400">{vid.description}</p>
+                                </div>
+                            </button>
+                        </div>
+                    ))}
+                    <div className="relative">
+                        <TtsInfoButton 
+                            explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['mental-dump']}
+                            className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                        />
+                        <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                            <div className="pr-8">
+                                <h4>Vaciado Mental Guiado</h4>
+                                <p className="text-xs text-slate-400">Escribe y suelta tus preocupaciones para un descanso reparador.</p>
+                            </div>
+                        </button>
+                    </div>
                 </>
             )}
 
             {activeTab === 'neuro' && (
-                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                    <TtsInfoButton explanation="Los Neuro-Rituales aprovechan la neuroplasticidad de tu cerebro. Al realizar acciones cortas y conscientes, como practicar la gratitud o celebrar un logro, activas intencionadamente las vías de recompensa de dopamina y serotonina. Repetir estos rituales fortalece estas conexiones neuronales, re-cableando tu cerebro para encontrar satisfacción en fuentes saludables y sostenibles." className="!text-slate-400 hover:!text-teal-400" />
-                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Utiliza la neuroplasticidad para re-cablear tu cerebro. Pequeñas acciones conscientes para generar dopamina y serotonina de forma natural.</p>
-                </div>
+                 <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton explanation="Los Neuro-Rituales aprovechan la neuroplasticidad de tu cerebro. Al realizar acciones cortas y conscientes, como practicar la gratitud o celebrar un logro, activas intencionadamente las vías de recompensa de dopamina y serotonina. Repetir estos rituales fortalece estas conexiones neuronales, re-cableando tu cerebro para encontrar satisfacción en fuentes saludables y sostenibles." className="!text-slate-400 hover:!text-teal-400" />
+                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Utiliza la neuroplasticidad para re-cablear tu cerebro. Pequeñas acciones conscientes para generar dopamina y serotonina de forma natural.</p>
+                    </div>
+                    {NEURO_QUESTS.map(q => (
+                        <div key={q.id} className="relative">
+                             <TtsInfoButton 
+                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[q.id]}
+                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400"
+                            />
+                            <button onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                <div className="pr-8">
+                                    <h4>{q.name}</h4>
+                                    <p className="text-xs text-slate-400">{q.description}</p>
+                                </div>
+                            </button>
+                        </div>
+                    ))}
+                 </>
             )}
-            {activeTab === 'neuro' && NEURO_QUESTS.map(q => <button key={q.id} onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{q.name}</h4><p className="text-xs text-slate-400">{q.description}</p></button>)}
             
             {activeTab === 'journey' && (
                 <div className="space-y-3">
-                    <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></button>
-                    
-                    <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <div className="flex-grow"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
-                        {!isSubscribed && <LockIcon />}
-                    </button>
-                    
-                     <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <div className="flex-grow"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
-                         {!isSubscribed && <LockIcon />}
-                    </button>
-                    
-                    <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <div className="flex-grow"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
-                        {!isSubscribed && <LockIcon />}
-                    </button>
-
-                    <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <div className="flex-grow"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
-                        {!isSubscribed && <LockIcon />}
-                    </button>
-
-                    <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                        <div className="flex-grow"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
-                        {!isSubscribed && <LockIcon />}
-                    </button>
-
-
-                    <div className="mt-3 p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
                         <TtsInfoButton 
-                            explanation="El Viaje Sonoro Chamánico utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor, a una frecuencia específica, induce ondas cerebrales Theta, asociadas con la meditación, la creatividad y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
+                            explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
                             className="!text-slate-400 hover:!text-teal-400"
                         />
                         <p>
                             <strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.
                         </p>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
+                            {!isSubscribed && <LockIcon />}
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
+                            {!isSubscribed && <LockIcon />}
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
+                            {!isSubscribed && <LockIcon />}
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
+                            {!isSubscribed && <LockIcon />}
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400" />
+                        <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
+                            {!isSubscribed && <LockIcon />}
+                        </button>
                     </div>
                 </div>
             )}
