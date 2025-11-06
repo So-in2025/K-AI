@@ -3,11 +3,10 @@ import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
 import { ResourcesCard } from '../components/ResourcesCard';
-import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IFreedomVaultConfig, IDopamineHit } from '../types';
+import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IDopamineHit } from '../types';
 import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
-import { FreedomVaultCard } from '../components/FreedomVaultCard';
 import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
 
 
@@ -22,10 +21,6 @@ interface ProgressViewProps {
     trustCircleConfig: ITrustCircleConfig | null;
     onUpdateTrustCircleConfig: (config: ITrustCircleConfig) => void;
     dopamineHits: IDopamineHit[];
-    freedomVaultConfig: IFreedomVaultConfig | null;
-    onUpdateFreedomVaultConfig: (config: IFreedomVaultConfig) => void;
-    depositedAmount: number;
-    onDepositToVault: (amount: number) => void;
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
@@ -42,13 +37,6 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 <div className="lg:col-span-2 space-y-6">
                     <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
                     <WellnessSummaryCard wellnessLog={props.wellnessLog} dopamineHits={props.dopamineHits} />
-                    <FreedomVaultCard 
-                        config={props.freedomVaultConfig}
-                        onUpdateConfig={props.onUpdateFreedomVaultConfig}
-                        daysSober={props.daysSober}
-                        depositedAmount={props.depositedAmount}
-                        onDeposit={props.onDepositToVault}
-                    />
                      <WeeklyAnalysisCard 
                         cravings={props.cravings}
                         journalEntry={props.journalEntry}

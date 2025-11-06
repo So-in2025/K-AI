@@ -154,11 +154,12 @@ export interface IHabitLoop {
     kaiSummary?: string;
 }
 
+// Fix: Add missing IFreedomVaultConfig interface.
 export interface IFreedomVaultConfig {
     weeklySpending: number;
     goalAmount: number;
     goalDescription: string;
-    lastDepositDate?: string; // ISO String
+    lastDepositDate?: string;
 }
 
 export interface INeuroQuest { // RENAMED

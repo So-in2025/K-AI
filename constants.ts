@@ -17,7 +17,6 @@ export const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
 export const KAI_MEMORY_KEY = 'kaiMemory';
 export const DOPAMINE_DIET_KEY = 'dopamineDiet';
 export const HABIT_LOOPS_KEY = 'habitLoops';
-export const FREEDOM_VAULT_KEY = 'freedomVault';
 export const MOOD_JOURNAL_KEY = 'moodJournalData';
 export const KAI_CONVERSATION_KEY = 'kaiConversationHistory';
 
@@ -234,17 +233,17 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'mov-yoga-ansiedad',
-        youtubeId: '6s4gjLhPgwk', // REEMPLAZADO Y VERIFICADO
+        youtubeId: 'ID_DE_YOUTUBE_A_REEMPLAZAR',
         name: 'Yoga para la Ansiedad y el Estrés',
-        description: 'Práctica de 20 minutos de Elena Malova que comienza en el suelo, facilitando el grounding para calmar la mente y el cuerpo.',
+        description: 'Práctica de 20 minutos que comienza en el suelo, facilitando el grounding para calmar la mente y el cuerpo.',
         duration: 20,
         category: 'movement'
     },
     {
         id: 'mov-yoga-energia',
-        youtubeId: '_F-bJ8jLgqA', // REEMPLAZADO Y VERIFICADO
+        youtubeId: 'ID_DE_YOUTUBE_A_REEMPLAZAR',
         name: 'Yoga para Empezar el Día con Energía',
-        description: 'Rutina fluida de 15 minutos de Elena Malova para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
+        description: 'Rutina fluida de 15 minutos para despertar el cuerpo de forma gentil y consciente, con un tono positivo.',
         duration: 15,
         category: 'movement'
     },
@@ -259,17 +258,17 @@ export const MOVEMENT_VIDEOS: IMovementVideo[] = [
     },
     {
         id: 'des-meditacion-dormir',
-        youtubeId: 'iZ-x0LqBf6s', // REEMPLAZADO Y VERIFICADO
+        youtubeId: 'ID_DE_YOUTUBE_A_REEMPLAZAR',
         name: 'Meditación Guiada para Dormir Profundamente',
-        description: 'Meditación de 20 minutos de "Medita con Pao" con una voz muy suave, guiando un escaneo corporal para calmar la mente.',
+        description: 'Meditación de 20 minutos con una voz muy suave, guiando un escaneo corporal para calmar la mente.',
         duration: 20,
         category: 'rest'
     },
     {
         id: 'des-yoga-caderas',
-        youtubeId: 'W-5i0qgS0-s', // REEMPLAZADO Y VERIFICADO
+        youtubeId: 'ID_DE_YOUTUBE_A_REEMPLAZAR',
         name: 'Yin Yoga para Soltar Caderas y Emociones',
-        description: 'Sesión de Yin Yoga de 15 minutos de Patry Durán con posturas pasivas para una relajación física y emocional profunda.',
+        description: 'Sesión de Yin Yoga de 15 minutos con posturas pasivas para una relajación física y emocional profunda.',
         duration: 15,
         category: 'rest'
     }

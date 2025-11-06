@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IFreedomVaultConfig, IMoodJournal } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -18,12 +18,11 @@ import {
     WELLNESS_LOG_STORAGE_KEY, REMINDERS_STORAGE_KEY, LAST_INTERACTION_KEY,
     ONBOARDING_DATA_STORAGE_KEY, SUBSCRIPTION_STORAGE_KEY, ACTIVATION_CODE_KEY,
     GARDEN_GROWTH_POINTS_KEY, THOUGHT_LAB_STORAGE_KEY, TRUST_CIRCLE_STORAGE_KEY,
-    KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, FREEDOM_VAULT_KEY, MOOD_JOURNAL_KEY,
+    KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, MOOD_JOURNAL_KEY,
     KAI_CONVERSATION_KEY
 } from './constants';
 
 
-const FREEDOM_VAULT_DEPOSITS_KEY = 'freedomVaultDeposits';
 const GUARDIAN_CONFIG_KEY = 'guardianConfig';
 
 
@@ -115,8 +114,6 @@ const App: React.FC = () => {
   // NEWEST FEATURES STATE
   const [dopamineHits, setDopamineHits] = useState<IDopamineHit[]>([]);
   const [habitLoops, setHabitLoops] = useState<IHabitLoop[]>([]);
-  const [freedomVaultConfig, setFreedomVaultConfig] = useState<IFreedomVaultConfig | null>(null);
-  const [depositedAmount, setDepositedAmount] = useState(0);
   const [moodJournal, setMoodJournal] = useState<IMoodJournal | null>(null);
 
   // Guardian Mode State with Reducer
@@ -342,16 +339,6 @@ const App: React.FC = () => {
         const storedHabitLoops = localStorage.getItem(HABIT_LOOPS_KEY);
         if (storedHabitLoops) setHabitLoops(JSON.parse(storedHabitLoops));
     } catch(e) { console.error("Failed to parse habit loops", e); }
-    
-    try {
-        const storedFreedomVault = localStorage.getItem(FREEDOM_VAULT_KEY);
-        if (storedFreedomVault) setFreedomVaultConfig(JSON.parse(storedFreedomVault));
-    } catch(e) { console.error("Failed to parse freedom vault config", e); }
-    
-    try {
-        const storedDeposits = localStorage.getItem(FREEDOM_VAULT_DEPOSITS_KEY);
-        if(storedDeposits) setDepositedAmount(JSON.parse(storedDeposits));
-    } catch(e) { console.error("Failed to parse freedom vault deposits", e); }
     
     try {
         const storedGuardianConfig = localStorage.getItem(GUARDIAN_CONFIG_KEY);
@@ -602,22 +589,6 @@ const App: React.FC = () => {
     handleNewConversationTurn({ role: 'user', text: summary });
   };
   
-  const handleUpdateFreedomVaultConfig = (config: IFreedomVaultConfig) => {
-    setFreedomVaultConfig(config);
-    localStorage.setItem(FREEDOM_VAULT_KEY, JSON.stringify(config));
-    const summary = `[BÓVEDA DE LA LIBERTAD] He configurado mi meta: "${config.goalDescription}", que cuesta ${config.goalAmount}. Cada semana ahorraba ${config.weeklySpending}.`;
-    handleNewConversationTurn({ role: 'user', text: summary });
-  };
-  
-  const handleDepositToVault = (amount: number) => {
-    const newAmount = depositedAmount + amount;
-    setDepositedAmount(newAmount);
-    localStorage.setItem(FREEDOM_VAULT_DEPOSITS_KEY, JSON.stringify(newAmount));
-    const summary = `[BÓVEDA DE LA LIBERTAD] Acabo de depositar ${amount.toFixed(2)} en mi bóveda. ¡Cada paso cuenta!`;
-    handleNewConversationTurn({ role: 'user', text: summary });
-    updateGardenGrowth(2);
-  };
-  
   const handleUpdateGuardianConfig = (words: string[]) => {
       setGuardianTriggerWords(words);
       localStorage.setItem(GUARDIAN_CONFIG_KEY, JSON.stringify(words));
@@ -846,7 +817,6 @@ const App: React.FC = () => {
                   kaiMemory={kaiMemory}
                   isSubscribed={hasPremiumAccess}
                   dopamineHits={dopamineHits}
-                  freedomVaultConfig={freedomVaultConfig}
                   onRequestMemoryUpdate={handleRequestMemoryUpdate}
                 />;
       case 'tools':
@@ -880,10 +850,6 @@ const App: React.FC = () => {
                   trustCircleConfig={trustCircleConfig}
                   onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
                   dopamineHits={dopamineHits}
-                  freedomVaultConfig={freedomVaultConfig}
-                  onUpdateFreedomVaultConfig={handleUpdateFreedomVaultConfig}
-                  depositedAmount={depositedAmount}
-                  onDepositToVault={handleDepositToVault}
                 />;
       default:
         return <HomeView 
