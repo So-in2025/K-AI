@@ -57,6 +57,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const activePracticeRef = useRef<string | null>(null);
 
     const cleanup = (isCompleted: boolean = false) => {
+        setJourneyStep('idle');
+        
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
@@ -66,7 +68,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         
         if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
         if (audioElementsRef.current.nodes) {
-            audioElementsRef.current.nodes.forEach((node: any) => node.stop(0));
+            audioElementsRef.current.nodes.forEach((node: any) => {
+                try { node.stop(0); } catch(e) { /* ignore */ }
+            });
         }
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
             audioContextRef.current.close().catch(console.error);
@@ -78,7 +82,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         
         setView('tabs');
         setSelectedExercise(null); setSelectedMeditation(null); setSelectedVideo(null);
-        setActiveQuest(null); setJourneyStep('idle'); setProgress(0);
+        setActiveQuest(null); setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         setQuestTextInput(''); setQuestStep('intention'); setMentalDumpStep(0);
         
@@ -266,7 +270,20 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 </>
             )}
             {activeTab === 'neuro' && NEURO_QUESTS.map(q => <button key={q.id} onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{q.name}</h4><p className="text-xs text-slate-400">{q.description}</p></button>)}
-            {activeTab === 'journey' && <button onClick={startShamanicJourney} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda para la introspección.</p></button>}
+            {activeTab === 'journey' && (
+                <div>
+                    <button onClick={startShamanicJourney} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda para la introspección.</p></button>
+                    <div className="mt-3 p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton 
+                            explanation="El Viaje Sonoro Chamánico utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor, a una frecuencia específica, induce ondas cerebrales Theta, asociadas con la meditación, la creatividad y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
+                            className="!text-slate-400 hover:!text-teal-400"
+                        />
+                        <p>
+                            <strong className="text-slate-200">¿Cómo funciona?</strong> Esta experiencia utiliza el arrastre rítmico para inducir un estado meditativo profundo a través del sonido, facilitando la introspección.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
     
