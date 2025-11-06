@@ -968,9 +968,9 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24">
+      <main className="flex-grow flex flex-col p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
-        <div className="mt-6">
+        <div className="mt-6 flex-grow flex flex-col">
           {renderView()}
         </div>
       </main>
