@@ -57,7 +57,6 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                     />
                 </div>
             </div>
-            <div className="h-24" />
         </>
     );
 };

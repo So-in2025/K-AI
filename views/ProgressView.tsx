@@ -73,7 +73,6 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                     <ResourcesCard />
                 </div>
             </div>
-            <div className="h-24" />
         </>
     );
 };

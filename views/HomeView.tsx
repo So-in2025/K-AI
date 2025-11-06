@@ -75,7 +75,6 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                     />
                 </div>
             </div>
-            <div className="h-24" />
         </>
     );
 };
