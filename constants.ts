@@ -19,6 +19,11 @@ export const DOPAMINE_DIET_KEY = 'dopamineDiet';
 export const HABIT_LOOPS_KEY = 'habitLoops';
 export const MOOD_JOURNAL_KEY = 'moodJournalData';
 export const KAI_CONVERSATION_KEY = 'kaiConversationHistory';
+export const THERAPY_SESSIONS_KEY = 'kiaTherapySessions';
+
+// Monetization Keys
+export const FEATURE_USAGE_KEY = 'kiaFeatureUsage';
+export const THERAPY_TRIAL_USED_KEY = 'kiaTherapyTrialUsed';
 
 
 export const MESSAGES: Record<MessageCategory, IMessage[]> = {

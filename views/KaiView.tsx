@@ -1,28 +1,48 @@
 
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
-import { ICraving, IConversationTurn, IWellnessActivity, IGoal, OnboardingData, IDopamineHit } from '../types';
+import { TherapySessionModal } from '../components/TherapySessionModal';
+import { IConversationTurn, OnboardingData, ITherapySession, UsageTracker, FeatureID } from '../types';
 
 interface KaiViewProps {
-    daysSober: number;
-    cravings: ICraving[];
-    journalEntry: string;
-    wellnessLog: IWellnessActivity[];
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
-    goals: IGoal[];
     onboardingData: OnboardingData;
     kaiMemory: string;
     isSubscribed: boolean;
-    dopamineHits: IDopamineHit[];
     onRequestMemoryUpdate: () => void;
+    isTherapyModalOpen: boolean;
+    onOpenTherapyModal: () => void;
+    onCloseTherapyModal: () => void;
+    onSaveTherapySession: (session: ITherapySession) => void;
+    therapyTrialUsed: boolean;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID) => boolean;
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {
     return (
        // This container manages the chat layout, ensuring it takes up the full available height below the header.
        <div className="h-[calc(100vh-160px)] flex flex-col">
-            <CompanionCard {...props} />
+            <CompanionCard 
+                conversation={props.conversation}
+                onNewTurn={props.onNewTurn}
+                onboardingData={props.onboardingData}
+                kaiMemory={props.kaiMemory}
+                isSubscribed={props.isSubscribed}
+                onRequestMemoryUpdate={props.onRequestMemoryUpdate}
+                onStartTherapySession={props.onOpenTherapyModal}
+                therapyTrialUsed={props.therapyTrialUsed}
+                usageTracker={props.usageTracker}
+                checkAndConsumeUsage={props.checkAndConsumeUsage}
+            />
+            {props.isTherapyModalOpen && (
+                <TherapySessionModal 
+                    isOpen={props.isTherapyModalOpen}
+                    onClose={props.onCloseTherapyModal}
+                    onSaveSession={props.onSaveTherapySession}
+                />
+            )}
        </div>
     );
 };

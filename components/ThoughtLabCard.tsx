@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { IThoughtLabEntry } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
@@ -10,19 +11,12 @@ const BeakerIcon = () => (
     </svg>
 );
 
-const LockIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-);
-
 interface ThoughtLabCardProps {
     entries: IThoughtLabEntry[];
     onAddEntry: (entry: IThoughtLabEntry) => void;
-    isLocked: boolean;
 }
 
-export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEntry, isLocked }) => {
+export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEntry }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [step, setStep] = useState(1);
     const [currentEntry, setCurrentEntry] = useState<Partial<IThoughtLabEntry>>({});
@@ -118,23 +112,6 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ entries, onAddEn
             );
         }
     };
-    
-    if (isLocked) {
-        return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative h-full">
-                <TtsInfoButton explanation="Bienvenido al Laboratorio de Pensamientos. Esta es una herramienta de Terapia Cognitivo Conductual, o TCC. Su objetivo es ayudarte a ser un observador de tu propia mente. Te guiará para identificar una situación, capturar el pensamiento automático que surgió, y luego, con la ayuda de Kai, cuestionar ese pensamiento. El paso final es crear una perspectiva más equilibrada y compasiva. Cada sesión es un entrenamiento para tu mente." />
-                <div className="flex items-center space-x-3 mb-3">
-                    <BeakerIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Laboratorio de Pensamientos</h2>
-                </div>
-                 <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4 mt-4">
-                    <LockIcon />
-                    <h3 className="text-lg font-semibold text-white mt-2">Herramienta de TCC Avanzada</h3>
-                    <p className="text-slate-300 text-sm">Desmantela pensamientos negativos con la guía de Kai. Disponible en KIA Plus.</p>
-                </div>
-            </div>
-        );
-    }
     
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">

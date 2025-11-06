@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit, Archetype, ARCHETYPE_NAMES } from '../types';
+import { IConversationTurn, KaiEmotion, KaiGesture, OnboardingData, Archetype, ARCHETYPE_NAMES, FeatureID, UsageTracker } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -53,6 +53,12 @@ const PerspectiveIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const LockIconSmall: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 inline-block ml-1 opacity-70" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+  </svg>
+);
+
 
 const getKaiSystemPrompt = (onboardingData: OnboardingData, kaiMemory: string, isSubscribed: boolean, activeArchetype: Archetype): string => {
     let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
@@ -79,11 +85,8 @@ El usuario te ha proporcionado la siguiente información inicial sobre sí mismo
         basePrompt += `**IMPORTANTE - Enfoque Integrador:** El usuario está lidiando con múltiples desafíos. Tu mayor habilidad es conectar los puntos. Reconoce cómo la depresión puede ser un detonante para una adicción, o cómo el duelo puede manifestarse como ansiedad. No trates los problemas de forma aislada. Ofrece una visión holística.\n`;
     }
 
-    if (isSubscribed) {
-        if (kaiMemory) {
-            basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
-        }
-        basePrompt += `\n**HERRAMIENTAS PLUS:**\nEl usuario tiene acceso a herramientas avanzadas. Utiliza la información de su Resumen de Bienestar (prácticas de dopamina) para motivarlo. Conecta sus acciones diarias con sus metas a largo plazo y sus fuentes de bienestar natural. Por ejemplo: 'Veo en tu resumen que el [Categoría de Dopamina] ha sido importante para ti. ¡Genial! Cada pequeña acción como esa te acerca a tus metas.'\n`;
+    if (isSubscribed && kaiMemory) {
+        basePrompt += `\n**MEMORIA A LARGO PLAZO (Contexto Clave):**\n"${kaiMemory}"\nUsa esta memoria para informar tus respuestas y mostrar que recuerdas detalles importantes del pasado del usuario.\n`;
     }
     
     let archetypeInstruction = '';
@@ -121,21 +124,23 @@ Responde ahora:`;
 
 
 interface CompanionCardProps {
-    daysSober: number;
-    cravings: ICraving[];
-    journalEntry: string;
-    wellnessLog: IWellnessActivity[];
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
-    goals: IGoal[];
     onboardingData: OnboardingData;
     kaiMemory: string;
     isSubscribed: boolean;
-    dopamineHits: IDopamineHit[];
     onRequestMemoryUpdate: () => void;
+    onStartTherapySession: () => void;
+    therapyTrialUsed: boolean;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID) => boolean;
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits, onRequestMemoryUpdate }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({
+    conversation, onNewTurn, onboardingData, kaiMemory,
+    isSubscribed, onRequestMemoryUpdate, onStartTherapySession,
+    therapyTrialUsed, usageTracker, checkAndConsumeUsage
+}) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -221,43 +226,12 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         setIsUserInteracting(false);
         setIsLoading(true);
         setGesture('idle');
-
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const lastWeekCravings = cravings.filter(c => new Date(c.date) >= oneWeekAgo);
-        const cravingsSummary = lastWeekCravings.length > 0 ? `Ha tenido ${lastWeekCravings.length} antojo(s) esta semana.` : "No ha registrado antojos esta semana.";
-        const journalSummary = journalEntry.trim() ? `Su último diario dice: "${journalEntry.substring(0, 150)}..."` : "No ha escrito en su diario.";
-        const lastWeekWellness = wellnessLog.filter(w => new Date(w.date) >= oneWeekAgo);
-        const wellnessSummary = lastWeekWellness.length > 0
-            ? `Ha completado ${lastWeekWellness.length} ejercicio(s) de bienestar esta semana. El más reciente: ${lastWeekWellness[0]?.exerciseName}.`
-            : "No ha registrado ejercicios de bienestar esta semana.";
-        
-        const dopamineThisWeek = dopamineHits.filter(h => new Date(h.date) >= oneWeekAgo);
-        const dopamineCategoryCounts = dopamineThisWeek.reduce((acc, hit) => {
-            acc[hit.category] = (acc[hit.category] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-        const dopamineSummary = dopamineThisWeek.length > 0 
-            ? `Ha completado ${dopamineThisWeek.length} prácticas de bienestar. Resumen: ${Object.entries(dopamineCategoryCounts).map(([cat, count]) => `${cat}: ${count}`).join(', ')}.`
-            : "No ha realizado prácticas de dopamina saludable esta semana.";
-
-        const goalsSummary = goals.length > 0 
-            ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
-            : "No hay metas activas en este momento.";
         
         const systemInstruction = getKaiSystemPrompt(onboardingData, kaiMemory, isSubscribed, activeArchetype);
 
         const prompt = `
-            DATOS CONTEXTUALES:
-            - Días de progreso/sobriedad: ${daysSober}
-            - ${goalsSummary}
-            - Resumen de antojos (última semana): ${cravingsSummary}
-            - Última entrada del diario: ${journalSummary}
-            - Resumen de bienestar (última semana): ${wellnessSummary}
-            - Resumen de Dopamina Saludable (última semana): ${dopamineSummary}
-
-            CONVERSACIÓN ACTUAL (últimos 5 turnos):
-            ${conversation.slice(-5).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}
+            CONVERSACIÓN ACTUAL (últimos 10 turnos, sin incluir el más reciente):
+            ${conversation.slice(-10).map(t => `${t.role === 'user' ? 'Usuario' : 'Kai'}: ${t.text}`).join('\n')}
 
             ÚLTIMO MENSAJE/ACCIÓN DEL USUARIO: "${currentInput}"
 
@@ -355,9 +329,34 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     };
     
     const handleArchetypeSelect = (archetype: Archetype) => {
+        if (archetype === activeArchetype) {
+            setIsPerspectiveChangerOpen(false);
+            return;
+        }
+
+        if (archetype === 'coach') {
+            setActiveArchetype('coach');
+            setIsPerspectiveChangerOpen(false);
+            ttsService.speak(`Ahora hablas con ${ARCHETYPE_NAMES.coach}`);
+            return;
+        }
+
+        if (!isSubscribed) {
+            if (!checkAndConsumeUsage('oracle')) {
+                alert("Has usado tu cambio de perspectiva gratuito de este mes. Actualiza a KIA Plus para usos ilimitados.");
+                return;
+            }
+        }
+
         setActiveArchetype(archetype);
         setIsPerspectiveChangerOpen(false);
         ttsService.speak(`Ahora hablas con ${ARCHETYPE_NAMES[archetype]}`);
+    };
+
+    const remainingOracleUses = isSubscribed ? -1 : (1 - (usageTracker?.oracle?.count ?? 0));
+    const isArchetypeLocked = (archetype: Archetype): boolean => {
+        if (archetype === 'coach') return false;
+        return !isSubscribed && remainingOracleUses <= 0;
     };
     
     const renderMarkdown = (text: string) => ({ __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br />') });
@@ -388,6 +387,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         message += "\n\nJuntos, dentro de este espacio de amabilidad e introspección, podemos explorar esto. ¿Por dónde te gustaría empezar?"
         return message;
     }
+    
+    const canStartTherapy = isSubscribed || !therapyTrialUsed;
 
     return (
         <div className="bg-slate-800/50 border border-slate-700 rounded-2xl flex flex-col h-full">
@@ -451,6 +452,15 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                     </div>
                 </div>
                 <h2 className="text-xl font-bold text-slate-100 mt-2">Kai</h2>
+                 <button 
+                    onClick={onStartTherapySession} 
+                    disabled={!canStartTherapy}
+                    className="mt-2 text-xs font-semibold px-3 py-1 rounded-full transition-colors bg-slate-700/80 text-teal-300 border border-teal-500/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={canStartTherapy ? "Iniciar una sesión de introspección guiada" : "Ya has usado tu sesión de prueba gratuita. Actualiza a KIA Plus."}
+                 >
+                    Iniciar Sesión Privada
+                    {!isSubscribed && therapyTrialUsed && <LockIconSmall />}
+                 </button>
             </div>
             
             <div className="px-4 pb-4 flex flex-col w-full flex-grow min-h-0">
@@ -480,21 +490,29 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 <div className="relative">
                      {isPerspectiveChangerOpen && (
                         <div className="absolute bottom-full mb-2 w-full bg-slate-900/80 backdrop-blur-sm rounded-lg p-2 border border-slate-700 animate-fade-in-up-fast">
-                            <p className="text-xs text-center text-slate-400 mb-2">Cambiar perspectiva</p>
+                            <p className="text-xs text-center text-slate-400 mb-2">
+                                Cambiar perspectiva {!isSubscribed && `(${remainingOracleUses} uso gratis este mes)`}
+                            </p>
                             <div className="grid grid-cols-3 gap-2">
-                                {(Object.keys(ARCHETYPE_NAMES) as Archetype[]).map(arch => (
-                                    <button
-                                        key={arch}
-                                        onClick={() => handleArchetypeSelect(arch)}
-                                        className={`px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                                            activeArchetype === arch
-                                                ? 'bg-teal-600 text-white'
-                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                        }`}
-                                    >
-                                        {ARCHETYPE_NAMES[arch]}
-                                    </button>
-                                ))}
+                                {(Object.keys(ARCHETYPE_NAMES) as Archetype[]).map(arch => {
+                                    const locked = isArchetypeLocked(arch);
+                                    return (
+                                        <button
+                                            key={arch}
+                                            onClick={() => !locked && handleArchetypeSelect(arch)}
+                                            disabled={locked}
+                                            title={locked ? "Has usado tu cambio gratuito de este mes. Actualiza a KIA Plus." : ""}
+                                            className={`flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                                                activeArchetype === arch
+                                                    ? 'bg-teal-600 text-white'
+                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            } ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {ARCHETYPE_NAMES[arch]}
+                                            {locked && <LockIconSmall />}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -504,7 +522,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                             disabled={isLoading || conversation.length === 0 || !isSubscribed}
                             className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10 bg-slate-600 text-slate-200 hover:bg-slate-500 disabled:cursor-not-allowed"
                             aria-label="Recordar esta conversación"
-                            title={isSubscribed ? "Recordar esta conversación" : "Disponible en KIA Plus"}
+                            title={isSubscribed ? "Recordar esta conversación" : "Memoria a largo plazo disponible en KIA Plus"}
                         >
                             <BookmarkIcon />
                         </button>

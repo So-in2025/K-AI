@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { ICraving } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -8,16 +9,9 @@ const ChartIcon = () => (
     </svg>
 );
 
-const LockIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-  </svg>
-);
-
 interface PatternsCardProps {
     cravings: ICraving[];
     journalEntry: string;
-    isLocked: boolean;
 }
 
 const ProgressBar: React.FC<{ label: string; value: number; maxValue: number; }> = ({ label, value, maxValue }) => (
@@ -33,7 +27,7 @@ const ProgressBar: React.FC<{ label: string; value: number; maxValue: number; }>
 );
 
 
-export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEntry, isLocked }) => {
+export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEntry }) => {
     
     const analysis = useMemo(() => {
         if (cravings.length < 3) return null;
@@ -116,21 +110,13 @@ export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEnt
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
              <TtsInfoButton explanation="El conocimiento es poder. Esta tarjeta es tu espejo. Analiza los datos de tus antojos registrados para mostrarte, de forma clara y visual, cuáles son tus detonantes más frecuentes y qué estrategias de afrontamiento te están funcionando mejor. Usa esta información para ser más proactivo." />
-            <div className={`transition-all duration-300 ${isLocked ? 'blur-md' : ''}`}>
+            <div>
                 <div className="flex items-center space-x-3 mb-3">
                     <ChartIcon />
                     <h2 className="text-xl font-bold text-slate-100">Mis Patrones</h2>
                 </div>
                 <CardContent />
             </div>
-
-            {isLocked && (
-                <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4">
-                    <LockIcon />
-                    <h3 className="text-lg font-semibold text-white mt-2">Análisis de Patrones Avanzado</h3>
-                    <p className="text-slate-300 text-sm">Desbloquea esta función con KIA Plus para obtener una visión profunda de tus detonantes y estrategias.</p>
-                </div>
-            )}
         </div>
     );
 };

@@ -1,13 +1,15 @@
 
+
 import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
 import { ResourcesCard } from '../components/ResourcesCard';
-import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IDopamineHit } from '../types';
+import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IDopamineHit, ITherapySession, UsageTracker, FeatureID } from '../types';
 import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
 import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
+import { TherapyHistoryCard } from '../components/TherapyHistoryCard';
 
 
 interface ProgressViewProps {
@@ -21,10 +23,14 @@ interface ProgressViewProps {
     trustCircleConfig: ITrustCircleConfig | null;
     onUpdateTrustCircleConfig: (config: ITrustCircleConfig) => void;
     dopamineHits: IDopamineHit[];
+    therapySessions: ITherapySession[];
+    onDeleteTherapyHistory: () => void;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID) => boolean;
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
-    const { isSubscribed, onboardingData } = props;
+    const { isSubscribed, onboardingData, usageTracker, checkAndConsumeUsage } = props;
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -43,12 +49,19 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                         wellnessLog={props.wellnessLog}
                         daysSober={props.daysSober}
                         userFocus={onboardingData.focuses}
-                        isLocked={!isSubscribed}
+                        isSubscribed={isSubscribed}
                         dopamineHits={props.dopamineHits}
+                        usageTracker={usageTracker}
+                        checkAndConsumeUsage={checkAndConsumeUsage as (featureId: 'weekly_analysis') => boolean}
                     />
                 </div>
 
                 <div className="space-y-6">
+                    <TherapyHistoryCard 
+                        sessions={props.therapySessions}
+                        onDeleteHistory={props.onDeleteTherapyHistory}
+                        isLocked={!isSubscribed}
+                    />
                     <TrustCircleCard
                         config={props.trustCircleConfig}
                         onUpdateConfig={props.onUpdateTrustCircleConfig}
@@ -56,7 +69,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                         daysSober={props.daysSober}
                         wellnessLog={props.wellnessLog}
                     />
-                    {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} isLocked={!isSubscribed} />}
+                    {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} />}
                     <ResourcesCard />
                 </div>
             </div>

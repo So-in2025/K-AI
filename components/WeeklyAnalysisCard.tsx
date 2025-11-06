@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IWellnessActivity, UserFocus, IDopamineHit } from '../types';
+import { ICraving, IWellnessActivity, UserFocus, IDopamineHit, UsageTracker, FeatureID } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
 
 // Using a simple markdown parser to convert **bold** and lists
@@ -16,12 +17,6 @@ const parseMarkdown = (text: string) => {
     return html.replace(/\n/g, '<br />');
 };
 
-const LockIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-  </svg>
-);
-
 const BrainIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.94 13.94A8.5 8.5 0 014.06 4.06M4.06 13.94A8.5 8.5 0 0117.94 4.06M3 10h.01M3 14h.01M12 3v.01M12 21v.01M7 4.99L7.01 5M7 19l-.01.01" />
@@ -34,16 +29,18 @@ interface WeeklyAnalysisCardProps {
     wellnessLog: IWellnessActivity[];
     daysSober: number;
     userFocus: UserFocus[];
-    isLocked: boolean;
+    isSubscribed: boolean;
     dopamineHits: IDopamineHit[];
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: 'weekly_analysis') => boolean;
 }
 
-export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus, isLocked, dopamineHits }) => {
+export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus, isSubscribed, dopamineHits, usageTracker, checkAndConsumeUsage }) => {
     const [analysis, setAnalysis] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const canGenerate = useMemo(() => {
+    const canGenerateWithData = useMemo(() => {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
         const recentCravings = cravings.filter(c => new Date(c.date) >= oneWeekAgo);
@@ -52,7 +49,11 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
     }, [cravings, daysSober, journalEntry, userFocus]);
 
     const handleGenerateAnalysis = async () => {
-        if (isLocked) return;
+        if (!isSubscribed) {
+            if (!checkAndConsumeUsage('weekly_analysis')) {
+                return; // The button should be disabled, but this is a safeguard.
+            }
+        }
         setIsLoading(true);
         setAnalysis('');
         setError('');
@@ -114,54 +115,55 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
             setIsLoading(false);
         }
     };
+    
+    const remainingUses = isSubscribed ? -1 : (1 - (usageTracker?.weekly_analysis?.count ?? 0));
+    const canClickGenerate = canGenerateWithData && (isSubscribed || remainingUses > 0);
+
+    const getButtonText = () => {
+        if (!canGenerateWithData) return 'Se necesitan más datos (mín. 7 días)';
+        if (isSubscribed) return 'Generar mi análisis semanal';
+        return remainingUses > 0 ? `Generar análisis (te queda ${remainingUses} gratis)` : 'Análisis gratuito ya usado este mes';
+    };
+
 
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
             <TtsInfoButton explanation="Esta es una de las herramientas más potentes de KIA Plus. Cada semana, Kai analiza todos tus datos: antojos, diario, actividades de bienestar y más, para darte un resumen inteligente. Identificará tu fortaleza principal, el patrón más relevante de la semana y te dará una sugerencia clara y personalizada para seguir avanzando." />
-            <div className={`transition-all duration-300 ${isLocked ? 'blur-md pointer-events-none' : ''}`}>
-                <div className="flex items-center space-x-3 mb-3">
-                    <BrainIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Análisis Semanal con Kai</h2>
-                </div>
-                <p className="text-slate-400 mb-4 text-sm">Obtén una perspectiva más profunda de tu progreso y patrones de la última semana.</p>
-                
-                {!analysis && !isLoading && (
+            <div className="flex items-center space-x-3 mb-3">
+                <BrainIcon />
+                <h2 className="text-xl font-bold text-slate-100">Análisis Semanal con Kai</h2>
+            </div>
+            <p className="text-slate-400 mb-4 text-sm">Obtén una perspectiva más profunda de tu progreso y patrones de la última semana.</p>
+            
+            {!analysis && !isLoading && (
+                 <button
+                    onClick={handleGenerateAnalysis}
+                    disabled={!canClickGenerate}
+                    className="w-full bg-teal-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                >
+                    {getButtonText()}
+                </button>
+            )}
+
+            {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
+            
+            {isLoading && (
+                 <div className="h-40 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
+                    <p className="ml-4 text-slate-400">Kai está analizando tu progreso...</p>
+                 </div>
+            )}
+
+            {analysis && !isLoading && (
+                <div className="mt-4 bg-slate-700/50 p-4 rounded-lg space-y-2 text-slate-300">
+                    <div dangerouslySetInnerHTML={{ __html: parseMarkdown(analysis) }}></div>
                      <button
                         onClick={handleGenerateAnalysis}
-                        disabled={!canGenerate}
-                        className="w-full bg-teal-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                        disabled={!canClickGenerate}
+                        className="text-sm text-teal-400 font-semibold hover:underline mt-4 disabled:text-slate-500 disabled:no-underline"
                     >
-                        {canGenerate ? 'Generar mi análisis semanal' : 'Se necesitan más datos (mín. 7 días)'}
+                        {canClickGenerate ? "Generar de nuevo" : getButtonText()}
                     </button>
-                )}
-
-                {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
-                
-                {isLoading && (
-                     <div className="h-40 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
-                        <p className="ml-4 text-slate-400">Kai está analizando tu progreso...</p>
-                     </div>
-                )}
-
-                {analysis && !isLoading && (
-                    <div className="mt-4 bg-slate-700/50 p-4 rounded-lg space-y-2 text-slate-300">
-                        <div dangerouslySetInnerHTML={{ __html: parseMarkdown(analysis) }}></div>
-                         <button
-                            onClick={handleGenerateAnalysis}
-                            className="text-sm text-teal-400 font-semibold hover:underline mt-4"
-                        >
-                            Generar de nuevo
-                        </button>
-                    </div>
-                )}
-            </div>
-            
-            {isLocked && (
-                 <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4">
-                    <LockIcon />
-                    <h3 className="text-lg font-semibold text-white mt-2">Análisis Semanal Personalizado</h3>
-                    <p className="text-slate-300 text-sm">Obtén un informe detallado de Kai con tus fortalezas y sugerencias, disponible en KIA Plus.</p>
                 </div>
             )}
         </div>

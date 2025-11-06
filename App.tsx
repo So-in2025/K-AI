@@ -8,7 +8,7 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal, ITherapySession, UsageTracker, FeatureID } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -19,7 +19,7 @@ import {
     ONBOARDING_DATA_STORAGE_KEY, SUBSCRIPTION_STORAGE_KEY, ACTIVATION_CODE_KEY,
     GARDEN_GROWTH_POINTS_KEY, THOUGHT_LAB_STORAGE_KEY, TRUST_CIRCLE_STORAGE_KEY,
     KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, MOOD_JOURNAL_KEY,
-    KAI_CONVERSATION_KEY
+    KAI_CONVERSATION_KEY, THERAPY_SESSIONS_KEY, FEATURE_USAGE_KEY, THERAPY_TRIAL_USED_KEY
 } from './constants';
 
 
@@ -115,6 +115,16 @@ const App: React.FC = () => {
   const [dopamineHits, setDopamineHits] = useState<IDopamineHit[]>([]);
   const [habitLoops, setHabitLoops] = useState<IHabitLoop[]>([]);
   const [moodJournal, setMoodJournal] = useState<IMoodJournal | null>(null);
+  const [therapySessions, setTherapySessions] = useState<ITherapySession[]>([]);
+
+  // Monetization - Usage Tracking State
+  const [usageTracker, setUsageTracker] = useState<UsageTracker | null>(null);
+  const [therapyTrialUsed, setTherapyTrialUsed] = useState(false);
+
+
+  // MODAL STATES
+  const [isTherapyModalOpen, setIsTherapyModalOpen] = useState(false);
+
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
@@ -349,9 +359,44 @@ const App: React.FC = () => {
         const storedMoodJournal = localStorage.getItem(MOOD_JOURNAL_KEY);
         if(storedMoodJournal) setMoodJournal(JSON.parse(storedMoodJournal));
     } catch(e) { console.error("Failed to parse mood journal data", e); }
+    
+    try {
+        const storedTherapySessions = localStorage.getItem(THERAPY_SESSIONS_KEY);
+        if(storedTherapySessions) setTherapySessions(JSON.parse(storedTherapySessions));
+    } catch(e) { console.error("Failed to parse therapy sessions", e); }
 
 
   }, [calculateDaysSober]);
+
+  // Load usage tracking data
+    useEffect(() => {
+        try {
+            const storedTracker = localStorage.getItem(FEATURE_USAGE_KEY);
+            const now = new Date();
+            const initialTracker: UsageTracker = {
+                guardian: { count: 0, month: now.getMonth(), year: now.getFullYear() },
+                weekly_analysis: { count: 0, month: now.getMonth(), year: now.getFullYear() },
+                oracle: { count: 0, month: now.getMonth(), year: now.getFullYear() },
+            };
+
+            if (storedTracker) {
+                const parsed = JSON.parse(storedTracker);
+                // Basic validation and reset if month/year is old
+                if(parsed.guardian.year !== now.getFullYear() || parsed.guardian.month !== now.getMonth()) {
+                     setUsageTracker(initialTracker);
+                     localStorage.setItem(FEATURE_USAGE_KEY, JSON.stringify(initialTracker));
+                } else {
+                    setUsageTracker(parsed);
+                }
+            } else {
+                setUsageTracker(initialTracker);
+                localStorage.setItem(FEATURE_USAGE_KEY, JSON.stringify(initialTracker));
+            }
+        } catch (e) { console.error("Failed to load usage tracker", e); }
+
+        const trialUsed = localStorage.getItem(THERAPY_TRIAL_USED_KEY) === 'true';
+        setTherapyTrialUsed(trialUsed);
+    }, []);
 
   // Reminder notification effect
   useEffect(() => {
@@ -394,6 +439,36 @@ const App: React.FC = () => {
 
   const handleOpenApiKeyModal = () => setIsApiKeyModalOpen(true);
   
+  // Monetization - Usage Check and Consume Logic
+    const checkAndConsumeUsage = useCallback((featureId: FeatureID): boolean => {
+        if (hasPremiumAccess) {
+            return true;
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        // Create a new tracker object to avoid state mutation issues
+        const newTracker = { ...usageTracker } as UsageTracker;
+        let featureUsage = newTracker[featureId];
+
+        if (!featureUsage || featureUsage.year !== currentYear || featureUsage.month !== currentMonth) {
+            featureUsage = { count: 0, month: currentMonth, year: currentYear };
+        }
+
+        if (featureUsage.count < 1) {
+            featureUsage.count += 1;
+            newTracker[featureId] = featureUsage;
+            setUsageTracker(newTracker);
+            localStorage.setItem(FEATURE_USAGE_KEY, JSON.stringify(newTracker));
+            return true;
+        } else {
+            return false;
+        }
+    }, [hasPremiumAccess, usageTracker]);
+
+
   const updateKaiMemory = useCallback(async (conversationHistory: IConversationTurn[], currentMemory: string) => {
     if (!hasPremiumAccess) return; // Only for Plus users
 
@@ -715,7 +790,9 @@ const App: React.FC = () => {
       sessionPromiseRef.current = null;
     }
     
-    if (!guardianState.transcript.trim()) {
+    const finalTranscript = guardianState.transcript;
+
+    if (!finalTranscript.trim()) {
       dispatchGuardian({ type: 'RESET' });
       return;
     }
@@ -723,15 +800,17 @@ const App: React.FC = () => {
     dispatchGuardian({ type: 'START_ANALYSIS' });
 
     if (!hasPremiumAccess) {
-        dispatchGuardian({ type: 'SET_ANALYSIS', payload: { isLocked: true } });
-        return;
+        if (!checkAndConsumeUsage('guardian')) {
+            dispatchGuardian({ type: 'SET_ANALYSIS', payload: { isLocked: true } });
+            return;
+        }
     }
 
     const prompt = `
         Eres Kai, un terapeuta experto en adicciones y TCC. Analiza la siguiente transcripción de una situación social de alto riesgo para un usuario. Tu objetivo es identificar patrones de comportamiento y pensamiento que llevaron a un posible consumo.
 
         TRANSCRIPCIÓN:
-        "${guardianState.transcript}"
+        "${finalTranscript}"
 
         Analiza la transcripción y extrae la siguiente información:
         1.  **trigger**: ¿Cuál fue el detonante principal? (Ej: "La conversación sobre problemas económicos generó estrés.")
@@ -770,6 +849,28 @@ const App: React.FC = () => {
     }
   };
 
+  // Therapy Session Handlers
+  const handleSaveTherapySession = (session: ITherapySession) => {
+    if (!hasPremiumAccess && !therapyTrialUsed) {
+        setTherapyTrialUsed(true);
+        localStorage.setItem(THERAPY_TRIAL_USED_KEY, 'true');
+    }
+    const updatedSessions = [session, ...therapySessions];
+    setTherapySessions(updatedSessions);
+    localStorage.setItem(THERAPY_SESSIONS_KEY, JSON.stringify(updatedSessions));
+    updateGardenGrowth(15);
+    const summary = `[SESIÓN PRIVADA] Acabo de completar una sesión de terapia sobre ${session.mode}. El principal insight fue: "${session.summary.insights.substring(0, 80)}..."`;
+    handleNewConversationTurn({ role: 'user', text: summary });
+    setIsTherapyModalOpen(false);
+  };
+
+  const handleDeleteTherapyHistory = () => {
+    if (window.confirm("¿Estás seguro de que quieres borrar TODO tu historial de sesiones privadas? Esta acción es irreversible.")) {
+        setTherapySessions([]);
+        localStorage.removeItem(THERAPY_SESSIONS_KEY);
+    }
+  };
+
 
   if (!apiKey) {
     return (
@@ -803,21 +904,23 @@ const App: React.FC = () => {
                   isSubscribed={hasPremiumAccess}
                   moodJournal={moodJournal}
                   onUpdateMoodJournal={handleUpdateMoodJournal}
+                  usageTracker={usageTracker}
                 />;
       case 'kai':
         return <KaiView 
-                  daysSober={daysSober}
-                  cravings={cravings}
-                  journalEntry={journalEntry}
-                  wellnessLog={wellnessLog}
                   conversation={conversation}
                   onNewTurn={handleNewConversationTurn}
-                  goals={goals}
                   onboardingData={onboardingData}
                   kaiMemory={kaiMemory}
                   isSubscribed={hasPremiumAccess}
-                  dopamineHits={dopamineHits}
                   onRequestMemoryUpdate={handleRequestMemoryUpdate}
+                  isTherapyModalOpen={isTherapyModalOpen}
+                  onOpenTherapyModal={() => setIsTherapyModalOpen(true)}
+                  onCloseTherapyModal={() => setIsTherapyModalOpen(false)}
+                  onSaveTherapySession={handleSaveTherapySession}
+                  therapyTrialUsed={therapyTrialUsed}
+                  usageTracker={usageTracker}
+                  checkAndConsumeUsage={checkAndConsumeUsage}
                 />;
       case 'tools':
         return <ToolsView
@@ -850,6 +953,10 @@ const App: React.FC = () => {
                   trustCircleConfig={trustCircleConfig}
                   onUpdateTrustCircleConfig={handleUpdateTrustCircleConfig}
                   dopamineHits={dopamineHits}
+                  therapySessions={therapySessions}
+                  onDeleteTherapyHistory={handleDeleteTherapyHistory}
+                  usageTracker={usageTracker}
+                  checkAndConsumeUsage={checkAndConsumeUsage}
                 />;
       default:
         return <HomeView 
@@ -869,6 +976,7 @@ const App: React.FC = () => {
                   isSubscribed={hasPremiumAccess}
                   moodJournal={moodJournal}
                   onUpdateMoodJournal={handleUpdateMoodJournal}
+                  usageTracker={usageTracker}
                 />;
     }
   }

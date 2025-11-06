@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { IHabitLoop } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
@@ -11,19 +12,12 @@ const LoopIcon = () => (
     </svg>
 );
 
-const LockIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-);
-
 interface HabitLoopCardProps {
     loops: IHabitLoop[];
     onAddLoop: (loop: IHabitLoop) => void;
-    isLocked: boolean;
 }
 
-export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, isLocked }) => {
+export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [step, setStep] = useState(1);
     const [currentLoop, setCurrentLoop] = useState<Partial<IHabitLoop>>({});
@@ -122,23 +116,6 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop, 
             );
         }
     };
-    
-    if (isLocked) {
-        return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative h-full">
-                 <TtsInfoButton explanation="Esta es una herramienta de neurociencia avanzada. Todo hábito es un bucle de tres pasos: una señal, una rutina y una recompensa. Para cambiar un hábito, necesitas identificar estos tres componentes. Esta herramienta te guía, con la ayuda de Kai, para deconstruir un bucle destructivo y diseñar conscientemente una nueva rutina que te dé una recompensa similar, pero de una forma constructiva. Es la ingeniería inversa de tus patrones." />
-                <div className="flex items-center space-x-3 mb-3">
-                    <LoopIcon />
-                    <h2 className="text-xl font-bold text-slate-100">Arquitecto de Hábitos</h2>
-                </div>
-                 <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4 mt-4">
-                    <LockIcon />
-                    <h3 className="text-lg font-semibold text-white mt-2">Ingeniería de Comportamiento</h3>
-                    <p className="text-slate-300 text-sm">Deconstruye y rediseña tus hábitos con esta herramienta avanzada de TCC. Disponible en KIA Plus.</p>
-                </div>
-            </div>
-        );
-    }
     
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">

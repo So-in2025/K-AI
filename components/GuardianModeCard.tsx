@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { GuardianAnalysisResult, IGuardianAnalysis } from '../types';
+import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker } from '../types';
 import { UpgradeCard } from './UpgradeCard';
 import { TtsInfoButton } from './TtsInfoButton';
 
@@ -42,11 +42,12 @@ interface GuardianModeCardProps {
     triggerWords: string[];
     onUpdateConfig: (words: string[]) => void;
     isSubscribed: boolean;
+    usageTracker: UsageTracker | null;
 }
 
 const GUARDIAN_CONSENT_KEY = 'guardianConsentGiven';
 
-export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed }) => {
+export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed, usageTracker }) => {
     const [showConsent, setShowConsent] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [isEditingConfig, setIsEditingConfig] = useState(false);
@@ -78,6 +79,9 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
         onUpdateConfig(words);
         setIsEditingConfig(false);
     }
+
+    const remainingUses = isSubscribed ? -1 : (1 - (usageTracker?.guardian?.count ?? 0));
+    const canUseGuardian = isSubscribed || remainingUses > 0;
     
     const renderConfig = () => (
         <>
@@ -199,10 +203,16 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                         <p className="text-slate-400 mb-4 text-sm">Activa este modo en situaciones de alto riesgo. Kai escuchará discretamente para ayudarte a analizar los detonantes después.</p>
                         <button
                             onClick={handleStartClick}
-                            className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-3 px-5 rounded-lg hover:bg-teal-600/30 transition-colors"
+                            disabled={!canUseGuardian}
+                            className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-3 px-5 rounded-lg hover:bg-teal-600/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Activar Modo Guardián
+                            {canUseGuardian ? 'Activar Modo Guardián' : 'Análisis gratuito ya usado'}
                         </button>
+                        {!isSubscribed && (
+                             <p className="text-xs text-center text-slate-500 mt-2">
+                                Te queda {remainingUses} análisis gratuito este mes.
+                            </p>
+                        )}
                          <button
                             onClick={() => setIsEditingConfig(true)}
                             className="w-full text-xs text-center text-slate-400 hover:underline mt-3"

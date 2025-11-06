@@ -206,3 +206,37 @@ export const ARCHETYPE_NAMES: Record<Archetype, string> = {
   nino: 'El Niño Interior',
   sanador: 'El Sanador',
 };
+
+// Modo Terapeuta
+export type TherapyMode = 'cbt' | 'act' | 'narrative';
+
+export const THERAPY_MODES: Record<TherapyMode, { name: string; description: string }> = {
+    cbt: { name: 'Analizar un Pensamiento (TCC)', description: 'Ideal para reestructurar pensamientos recurrentes.' },
+    act: { name: 'Explorar una Emoción (ACT)', description: 'Para aceptar y navegar emociones difíciles sin juicio.' },
+    narrative: { name: 'Entender una Historia (Narrativa)', description: 'Para re-escribir una creencia limitante sobre ti.' },
+};
+
+export interface ITherapySummary {
+    insights: string;
+    patterns: string;
+    actionable: string;
+}
+
+export interface ITherapySession {
+    id: string;
+    date: string; // ISO string
+    mode: TherapyMode;
+    transcript: IConversationTurn[];
+    summary: ITherapySummary;
+}
+
+// Monetization - Usage Tracking
+export type FeatureID = 'guardian' | 'weekly_analysis' | 'oracle';
+
+export interface FeatureUsage {
+    count: number;
+    month: number; // e.g., 6 for July
+    year: number; // e.g., 2024
+}
+
+export type UsageTracker = Record<FeatureID, FeatureUsage>;

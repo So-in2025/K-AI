@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { GoalsCard } from '../components/GoalsCard';
 import { CravingTrackerCard } from '../components/CravingTrackerCard';
@@ -38,12 +39,10 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                     <ThoughtLabCard 
                         entries={props.thoughtLabEntries}
                         onAddEntry={props.onAddThoughtLabEntry}
-                        isLocked={!props.isSubscribed}
                     />
                     <HabitLoopCard
                         loops={props.habitLoops}
                         onAddLoop={props.onAddHabitLoop}
-                        isLocked={!props.isSubscribed}
                     />
                     <AffirmationGeneratorCard />
                 </div>

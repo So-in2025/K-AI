@@ -3,7 +3,7 @@ import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
 import { WellnessSanctuaryCard } from '../components/WellnessSanctuaryCard';
-import { IWellnessActivity, UserFocus, OnboardingData, IDopamineHit, IMoodJournal } from '../types';
+import { IWellnessActivity, UserFocus, OnboardingData, IDopamineHit, IMoodJournal, UsageTracker } from '../types';
 import { GuardianModeCard } from '../components/GuardianModeCard';
 import { MoodJournalCard } from '../components/MoodJournalCard';
 
@@ -30,6 +30,7 @@ interface HomeViewProps {
     isSubscribed: boolean;
     moodJournal: IMoodJournal | null;
     onUpdateMoodJournal: (journal: IMoodJournal | null) => void;
+    usageTracker: UsageTracker | null;
 }
 
 export const HomeView: React.FC<HomeViewProps> = (props) => {
@@ -55,6 +56,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                         triggerWords={props.guardianTriggerWords}
                         onUpdateConfig={props.onUpdateGuardianConfig}
                         isSubscribed={props.isSubscribed}
+                        usageTracker={props.usageTracker}
                      />
                 )}
                 <MoodJournalCard 
