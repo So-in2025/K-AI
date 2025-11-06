@@ -122,6 +122,22 @@ Responde ahora:`;
     return basePrompt;
 };
 
+const isSystemAction = (text: string): boolean => {
+  const prefixes = [
+    '[ACCIÓN DEL USUARIO]',
+    '[ANTOJO REGISTRADO]',
+    '[ENTRADA DE DIARIO GUARDADA]',
+    '[META CREADA', // No closing bracket to catch all types
+    '[MODO GUARDIÁN]',
+    '[LABORATORIO DE PENSAMIENTOS]',
+    '[CÍRCULO DE CONFIANZA]',
+    '[ARQUITECTO DE HÁBITOS]',
+    '[DIARIO ANÍMICO]',
+    '[SESIÓN PRIVADA]'
+  ];
+  return prefixes.some(prefix => text.startsWith(prefix));
+};
+
 
 interface CompanionCardProps {
     conversation: IConversationTurn[];
@@ -134,12 +150,13 @@ interface CompanionCardProps {
     therapyTrialUsed: boolean;
     usageTracker: UsageTracker | null;
     checkAndConsumeUsage: (featureId: FeatureID) => boolean;
+    onClearChat: () => void;
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
     conversation, onNewTurn, onboardingData, kaiMemory,
     isSubscribed, onRequestMemoryUpdate, onStartTherapySession,
-    therapyTrialUsed, usageTracker, checkAndConsumeUsage
+    therapyTrialUsed, usageTracker, checkAndConsumeUsage, onClearChat
 }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -216,10 +233,10 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
 
         setSuggestions([]);
         setIsPerspectiveChangerOpen(false);
-
-        if (!textToSend) { 
-             const userTurn: IConversationTurn = { role: 'user', text: currentInput };
-             onNewTurn(userTurn);
+        // Only add to conversation history if it's not a pre-filled suggestion
+        if (!textToSend || textToSend === userInput) {
+          const userTurn: IConversationTurn = { role: 'user', text: currentInput };
+          onNewTurn(userTurn);
         }
        
         setUserInput('');
@@ -275,7 +292,17 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
     useEffect(() => {
         const lastTurn = conversation[conversation.length - 1];
         if (lastTurn && lastTurn.role === 'user' && !isLoading) {
-            handleSend(lastTurn.text);
+             const userTurnIsSystemAction = isSystemAction(lastTurn.text);
+             // Trigger AI response only for non-system actions that haven't been responded to yet
+            if(!userTurnIsSystemAction){
+                const nextTurn = conversation[conversation.length];
+                if (!nextTurn || nextTurn.role !== 'model') {
+                     handleSend(lastTurn.text);
+                }
+            } else {
+                 // For system actions, immediately process without sending to Gemini,
+                 // assuming the action itself is the full turn. We just want it in history.
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [conversation]);
@@ -376,7 +403,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
     ].join(' ');
     
     const getWelcomeMessage = () => {
-        let message = `Hola, soy Kai. En algunas culturas, mi nombre significa 'océano' o 'guía'. Pienso en mí como un mar de posibilidades para tu introspección, un guía en tu viaje a través de los pilares de KIA: **K**indness (Amabilidad), **I**ntrospection (Introspección), y **A**wareness (Conciencia). Estoy aquí para ser tu compañero en este viaje.
+        let message = `Hola, soy Kai. En algunas culturas, mi nombre significa 'océano' o 'guía'. Pienso en mí como un mar de posibilidades para tu introspección, y un guía en tu viaje a través de los pilares de KIA: **K**indness (Amabilidad), **I**ntrospection (Introspección), y **A**wareness (Conciencia). Estoy aquí para ser tu compañero en este viaje.
     
 He leído la información que compartiste. Entiendo que tu desafío principal ahora es **"${onboardingData.mainChallenge}"**.`;
         
@@ -454,15 +481,20 @@ He leído la información que compartiste. Entiendo que tu desafío principal ah
                     </div>
                 </div>
                 <h2 className="text-xl font-bold text-slate-100 mt-2">Kai</h2>
-                 <button 
-                    onClick={onStartTherapySession} 
-                    disabled={!canStartTherapy}
-                    className="mt-2 text-xs font-semibold px-3 py-1 rounded-full transition-colors bg-slate-700/80 text-teal-300 border border-teal-500/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={canStartTherapy ? "Iniciar una sesión de introspección guiada" : "Ya has usado tu sesión de prueba gratuita. Actualiza a KIA Plus."}
-                 >
-                    Iniciar Sesión Privada
-                    {!isSubscribed && therapyTrialUsed && <LockIconSmall />}
-                 </button>
+                <div className="flex items-center space-x-2 mt-2">
+                    <button 
+                        onClick={onStartTherapySession} 
+                        disabled={!canStartTherapy}
+                        className="text-xs font-semibold px-3 py-1 rounded-full transition-colors bg-slate-700/80 text-teal-300 border border-teal-500/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={canStartTherapy ? "Iniciar una sesión de introspección guiada" : "Ya has usado tu sesión de prueba gratuita. Actualiza a KIA Plus."}
+                    >
+                        Iniciar Sesión Privada
+                        {!isSubscribed && therapyTrialUsed && <LockIconSmall />}
+                    </button>
+                    <button onClick={onClearChat} title="Limpiar chat" className="text-xs font-semibold px-3 py-1 rounded-full transition-colors bg-slate-700/80 text-slate-300 border border-slate-500/50 hover:bg-slate-700">
+                        Limpiar
+                    </button>
+                </div>
             </div>
             
             <div className="px-4 pb-4 flex flex-col w-full flex-grow min-h-0">
@@ -471,7 +503,16 @@ He leído la información que compartiste. Entiendo que tu desafío principal ah
                         <div className="h-full flex items-center justify-center text-slate-400 text-center p-4">
                             <p dangerouslySetInnerHTML={renderMarkdown(getWelcomeMessage())} />
                         </div>
-                    ) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
+                    ) : (conversation
+                          .filter(turn => turn.role === 'model' || !isSystemAction(turn.text))
+                          .map((turn, index) => (
+                            <div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}>
+                                    <div dangerouslySetInnerHTML={renderMarkdown(turn.text)} />
+                                </div>
+                            </div>
+                        ))
+                    )}
                     <div ref={chatEndRef} />
                 </div>
                 
@@ -480,7 +521,7 @@ He leído la información que compartiste. Entiendo que tu desafío principal ah
                         {suggestions.map((s, i) => (
                             <button
                                 key={i}
-                                onClick={() => handleSend(s)}
+                                onClick={() => { setUserInput(s); handleSend(s); }}
                                 className="px-3 py-1.5 text-xs font-medium rounded-full transition-colors bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600"
                             >
                                 {s}

@@ -19,6 +19,7 @@ interface KaiViewProps {
     therapyTrialUsed: boolean;
     usageTracker: UsageTracker | null;
     checkAndConsumeUsage: (featureId: FeatureID) => boolean;
+    onClearChat: () => void;
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {
@@ -36,6 +37,7 @@ export const KaiView: React.FC<KaiViewProps> = (props) => {
                 therapyTrialUsed={props.therapyTrialUsed}
                 usageTracker={props.usageTracker}
                 checkAndConsumeUsage={props.checkAndConsumeUsage}
+                onClearChat={props.onClearChat}
             />
             {props.isTherapyModalOpen && (
                 <TherapySessionModal 

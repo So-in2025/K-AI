@@ -500,9 +500,17 @@ const App: React.FC = () => {
     });
     if(turn.role === 'user') {
         updateLastInteraction();
-        setActiveView('kai');
+        // Do not switch view automatically to allow background actions
+        // setActiveView('kai'); 
     }
   }, [updateLastInteraction]);
+  
+  const handleClearChat = useCallback(() => {
+    if (window.confirm("¿Estás seguro de que quieres borrar todo el historial de esta conversación?")) {
+        setConversation([]);
+        localStorage.removeItem(KAI_CONVERSATION_KEY);
+    }
+  }, []);
 
   const handleRequestMemoryUpdate = useCallback(() => {
     if (conversation.length > 0 && hasPremiumAccess) {
@@ -920,6 +928,7 @@ const App: React.FC = () => {
                   therapyTrialUsed={therapyTrialUsed}
                   usageTracker={usageTracker}
                   checkAndConsumeUsage={checkAndConsumeUsage}
+                  onClearChat={handleClearChat}
                 />;
       case 'tools':
         return <ToolsView
@@ -981,7 +990,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
+    <div className="bg-slate-900 h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
       {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
       <Header 
@@ -991,9 +1000,9 @@ const App: React.FC = () => {
         isDevMode={isDevMode}
       />
       
-      <main className="flex-grow flex flex-col p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24">
+      <main className="flex-grow flex flex-col p-4 md:p-6 w-full max-w-screen-2xl mx-auto pb-24 min-h-0">
         {onboardingData.focuses.includes('addiction') && <SOSCard />}
-        <div className="mt-6 flex-grow flex flex-col">
+        <div className="mt-6 flex-grow flex flex-col min-h-0">
           {renderView()}
         </div>
       </main>
