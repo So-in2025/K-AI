@@ -18,7 +18,8 @@ import {
     WELLNESS_LOG_STORAGE_KEY, REMINDERS_STORAGE_KEY, LAST_INTERACTION_KEY,
     ONBOARDING_DATA_STORAGE_KEY, SUBSCRIPTION_STORAGE_KEY, ACTIVATION_CODE_KEY,
     GARDEN_GROWTH_POINTS_KEY, THOUGHT_LAB_STORAGE_KEY, TRUST_CIRCLE_STORAGE_KEY,
-    KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, FREEDOM_VAULT_KEY, MOOD_JOURNAL_KEY
+    KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, FREEDOM_VAULT_KEY, MOOD_JOURNAL_KEY,
+    KAI_CONVERSATION_KEY
 } from './constants';
 
 
@@ -280,6 +281,11 @@ const App: React.FC = () => {
 
     const savedEntry = localStorage.getItem(JOURNAL_STORAGE_KEY);
     if (savedEntry) setJournalEntry(savedEntry);
+
+    try {
+        const storedConversation = localStorage.getItem(KAI_CONVERSATION_KEY);
+        if(storedConversation) setConversation(JSON.parse(storedConversation));
+    } catch(e) { console.error("Failed to parse conversation history", e); }
     
     try {
         const storedLog = localStorage.getItem(WELLNESS_LOG_STORAGE_KEY);
@@ -433,17 +439,21 @@ const App: React.FC = () => {
   const handleNewConversationTurn = useCallback((turn: IConversationTurn) => {
     setConversation(prev => {
         const newConversation = [...prev, turn];
-        // After 5 turns, update memory
-        if (newConversation.length % 5 === 0 && turn.role === 'model') {
-            updateKaiMemory(newConversation, kaiMemory);
-        }
+        localStorage.setItem(KAI_CONVERSATION_KEY, JSON.stringify(newConversation));
         return newConversation;
     });
     if(turn.role === 'user') {
         updateLastInteraction();
         setActiveView('kai');
     }
-  }, [updateLastInteraction, updateKaiMemory, kaiMemory]);
+  }, [updateLastInteraction]);
+
+  const handleRequestMemoryUpdate = useCallback(() => {
+    if (conversation.length > 0 && hasPremiumAccess) {
+      updateKaiMemory(conversation, kaiMemory);
+      ttsService.speak("Entendido. Recordaré esta conversación.");
+    }
+  }, [conversation, kaiMemory, updateKaiMemory, hasPremiumAccess]);
   
   const handleLogCraving = (cravingData: ICraving) => {
     const updatedCravings = [cravingData, ...cravings];
@@ -837,6 +847,7 @@ const App: React.FC = () => {
                   isSubscribed={hasPremiumAccess}
                   dopamineHits={dopamineHits}
                   freedomVaultConfig={freedomVaultConfig}
+                  onRequestMemoryUpdate={handleRequestMemoryUpdate}
                 />;
       case 'tools':
         return <ToolsView

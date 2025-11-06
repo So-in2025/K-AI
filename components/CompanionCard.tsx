@@ -40,6 +40,12 @@ const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
+const BookmarkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+  </svg>
+);
+
 const getKaiSystemPrompt = (onboardingData: OnboardingData, kaiMemory: string, isSubscribed: boolean): string => {
     let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
 - Empático y sabio (usando técnicas de TCC y mindfulness) si el usuario necesita apoyo.
@@ -97,9 +103,10 @@ interface CompanionCardProps {
     isSubscribed: boolean;
     dopamineHits: IDopamineHit[];
     freedomVaultConfig: IFreedomVaultConfig | null;
+    onRequestMemoryUpdate: () => void;
 }
 
-export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits, freedomVaultConfig }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, cravings, journalEntry, wellnessLog, conversation, onNewTurn, goals, onboardingData, kaiMemory, isSubscribed, dopamineHits, freedomVaultConfig, onRequestMemoryUpdate }) => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
@@ -439,6 +446,15 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 )}
 
                 <div className="relative flex items-center">
+                     <button
+                        onClick={onRequestMemoryUpdate}
+                        disabled={isLoading || conversation.length === 0 || !isSubscribed}
+                        className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10 bg-slate-600 text-slate-200 hover:bg-slate-500 disabled:cursor-not-allowed"
+                        aria-label="Recordar esta conversación"
+                        title={isSubscribed ? "Recordar esta conversación" : "Disponible en KIA Plus"}
+                    >
+                        <BookmarkIcon />
+                    </button>
                     <textarea
                         ref={textareaRef}
                         value={userInput}
@@ -450,7 +466,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                             }
                         }}
                         placeholder={isLoading ? "Kai está reflexionando..." : "Habla con Kai..."}
-                        className="w-full p-3 pr-16 bg-slate-700 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-teal-500 resize-none text-slate-100"
+                        className="w-full p-3 pl-14 pr-16 bg-slate-700 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-teal-500 resize-none text-slate-100"
                         rows={1}
                         disabled={isLoading}
                     />

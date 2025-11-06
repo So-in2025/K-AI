@@ -16,6 +16,7 @@ interface KaiViewProps {
     isSubscribed: boolean;
     dopamineHits: IDopamineHit[];
     freedomVaultConfig: IFreedomVaultConfig | null;
+    onRequestMemoryUpdate: () => void;
 }
 
 export const KaiView: React.FC<KaiViewProps> = (props) => {
