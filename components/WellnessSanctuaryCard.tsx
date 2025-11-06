@@ -47,6 +47,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     
     const [journeyStep, setJourneyStep] = useState<JourneyStep>('idle');
     const [journeyType, setJourneyType] = useState<JourneyType | null>(null);
+    const [journeyTimeLeft, setJourneyTimeLeft] = useState<number>(0);
     const [activeQuest, setActiveQuest] = useState<INeuroQuest | null>(null);
     const [questStep, setQuestStep] = useState<QuestStep>('intention');
     const [questTextInput, setQuestTextInput] = useState('');
@@ -57,46 +58,65 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioElementsRef = useRef<{ [key: string]: any }>({});
     const vibrationIntervalRef = useRef<number | null>(null);
+    const journeyTimerIntervalRef = useRef<number | null>(null);
     const practiceCompletedRef = useRef(false);
     const activePracticeRef = useRef<string | null>(null);
 
     const cleanup = (isCompleted: boolean = false) => {
-        setJourneyStep('idle');
-        setJourneyType(null);
+        // Stop sounds with a fade
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+            const { drum, solfeggio, drone, binaural, noise, fade } = audioElementsRef.current;
+            const fadeDuration = 0.5; // half a second to fade out
+            if (fade) {
+                if (drum?.gainNode) fade(drum.gainNode, 0, fadeDuration);
+                if (solfeggio?.gainNode) fade(solfeggio.gainNode, 0, fadeDuration);
+                if (drone?.gainNode) fade(drone.gainNode, 0, fadeDuration);
+                if (binaural?.gainNode) fade(binaural.gainNode, 0, fadeDuration);
+                if (noise?.gainNode) fade(noise.gainNode, 0, fadeDuration);
+            }
+            
+            setTimeout(() => {
+                if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                    audioContextRef.current.close().catch(console.error);
+                }
+            }, fadeDuration * 1000 + 100);
+        } else if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            audioContextRef.current.close().catch(console.error);
+        }
         
+        // Clear intervals immediately
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
+        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
+        if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
         
         ttsService.stop();
         if(navigator.vibrate) navigator.vibrate(0);
         
-        if (audioElementsRef.current.drumInterval) clearInterval(audioElementsRef.current.drumInterval);
-        if (audioElementsRef.current.nodes) {
-            audioElementsRef.current.nodes.forEach((node: any) => {
-                try { 
-                    if (node.stop) node.stop(0);
-                    if(node.disconnect) node.disconnect();
-                } catch(e) { /* ignore */ }
-            });
-        }
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close().catch(console.error);
-        }
-
         if (activePracticeRef.current && !isCompleted && !practiceCompletedRef.current) {
              ttsService.speak("Noté que no terminamos la práctica. Recuerda que cada pequeño esfuerzo cuenta. Vuelve cuando estés listo.");
         }
-        
+
+        // Reset states
+        setJourneyStep('idle');
+        setJourneyType(null);
+        setJourneyTimeLeft(0);
         setView('tabs');
         setSelectedExercise(null); setSelectedMeditation(null); setSelectedVideo(null);
         setActiveQuest(null); setProgress(0);
         setCurrentStepInfo({ name: '', duration: 0, animationClass: '' });
         setQuestTextInput(''); setQuestStep('intention'); setMentalDumpStep(0);
         
-        intervalRef.current = null; timeoutRef.current = null; audioContextRef.current = null;
-        audioElementsRef.current = {}; vibrationIntervalRef.current = null;
-        practiceCompletedRef.current = false; activePracticeRef.current = null;
+        // Reset refs
+        intervalRef.current = null; 
+        timeoutRef.current = null; 
+        audioContextRef.current = null;
+        audioElementsRef.current = {}; 
+        vibrationIntervalRef.current = null;
+        journeyTimerIntervalRef.current = null;
+        practiceCompletedRef.current = false; 
+        activePracticeRef.current = null;
     };
     
     useEffect(() => {
@@ -183,6 +203,21 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setJourneyType(type);
         setView('active_journey');
         activePracticeRef.current = `Viaje Sonoro (${type})`;
+
+        const totalDurationSeconds = 12 * 60;
+        setJourneyTimeLeft(totalDurationSeconds);
+
+        if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
+        journeyTimerIntervalRef.current = window.setInterval(() => {
+            setJourneyTimeLeft(prev => {
+                if (prev <= 1) {
+                    if (journeyTimerIntervalRef.current) clearInterval(journeyTimerIntervalRef.current);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
         setJourneyStep('grounding');
     };
 
@@ -384,7 +419,38 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const renderActiveMeditation = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3> <p className="text-slate-400 mb-4">Escucha la guía de Kai...</p> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
     const renderActiveMovement = () => ( <> <button onClick={() => { setSelectedVideo(null); setView('tabs'); activePracticeRef.current = null; }} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button> <h3 className="font-bold text-slate-100 text-lg mb-2">{selectedVideo?.name}</h3> <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden"><iframe className="w-full h-full" src={`https://www.youtube.com/embed/${selectedVideo?.youtubeId}?autoplay=1`} title={selectedVideo?.name} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe></div> <button onClick={() => completePractice({ date: new Date().toISOString(), exerciseName: selectedVideo!.name, durationMinutes: selectedVideo!.duration, category: 'Movement' })} className="w-full mt-4 bg-lime-600 text-white font-semibold py-3 px-5 rounded-lg">He completado esta rutina</button> </> );
     const renderActiveQuest = () => ( <div className="p-3 bg-slate-700/50 rounded-lg"> <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest?.name}</h3> <p className="text-sm text-slate-300 mb-3 text-center">{activeQuest?.script.find(s=>s.step===questStep)?.text}</p> {questStep === 'reflection' && <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión..." className="w-full h-24 p-2 bg-slate-700 rounded-lg"/>} <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={() => completeDopamineHit({ id: crypto.randomUUID(), date: new Date().toISOString(), activity: activeQuest!.activityLogName, category: activeQuest!.category })} disabled={questStep !== 'reflection' || questTextInput.trim().length < 10} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-slate-500">Completar</button> </div> </div> );
-    const renderShamanicJourney = () => { const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo Visión...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; return ( <div className="text-center"> <h3 className="font-bold text-slate-100 text-lg mb-2 capitalize">Viaje Sonoro {journeyType}</h3> <div className="p-4 bg-slate-900/50 rounded-lg"> <div className={`journey-visual journey-${journeyStep}`}><div className="heart"></div><div className="energy-ring"></div><div className="particle p1"></div><div className="particle p2"></div><div className="particle p3"></div></div> <p className="text-purple-300 font-semibold min-h-[24px] transition-opacity duration-500">{stepText[journeyStep]}</p> {journeyStep !== 'finished' ? <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> } </div> </div> ); };
+    const renderShamanicJourney = () => { 
+        const stepText: Record<JourneyStep, string> = { idle: '', grounding: 'Enraizando...', descent: 'Descendiendo...', deepening: 'Profundizando...', vision: 'Recibiendo Visión...', return: 'Regresando...', integration: 'Integrando...', finished: 'Completado.' }; 
+        const formatTime = (seconds: number) => {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        };
+        return ( 
+            <div className="text-center"> 
+                <h3 className="font-bold text-slate-100 text-lg mb-2 capitalize">Viaje Sonoro {journeyType}</h3> 
+                <div className="p-4 bg-slate-900/50 rounded-lg"> 
+                    <div className={`journey-visual journey-${journeyStep}`}>
+                        <div className="heart"></div>
+                        <div className="energy-ring"></div>
+                        <div className="particle p1"></div>
+                        <div className="particle p2"></div>
+                        <div className="particle p3"></div>
+                    </div> 
+                    <p className="text-purple-300 font-semibold min-h-[24px] transition-opacity duration-500">{stepText[journeyStep]}</p> 
+                    {journeyStep !== 'finished' && journeyStep !== 'idle' && (
+                        <p className="text-sm text-slate-400 font-mono mt-2">
+                            Tiempo restante: {formatTime(journeyTimeLeft)}
+                        </p>
+                    )}
+                    {journeyStep !== 'finished' ? 
+                        <button onClick={() => cleanup()} className="w-full mt-4 bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Detener Viaje</button> 
+                        : <button onClick={() => cleanup(true)} className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg">Finalizar</button> 
+                    } 
+                </div> 
+            </div> 
+        ); 
+    };
     const renderMentalDump = () => { const currentPrompt = mentalDumpPrompts[mentalDumpStep]; return ( <> <h3 className="font-bold text-slate-100 text-lg mb-2">Vaciado Mental Guiado</h3> <div className="bg-slate-700/50 p-4 rounded-lg"> <p className="font-semibold text-teal-300">{currentPrompt.title}</p> <p className="text-sm text-slate-300 mb-3">{currentPrompt.instruction}</p> <textarea key={mentalDumpStep} placeholder={currentPrompt.placeholder} className="w-full h-28 p-3 bg-slate-700 rounded-lg" autoFocus/> <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={handleNextDumpStep} className="flex-1 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">{mentalDumpStep < 2 ? 'Siguiente' : 'Finalizar'}</button> </div> </div> </> ); };
 
     return (

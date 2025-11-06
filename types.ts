@@ -248,3 +248,8 @@ export interface ITtsSettings {
     rate: number; // 0.1 to 10
     pitch: number; // 0 to 2
 }
+
+export interface IQuote {
+    text: string;
+    author: string;
+}

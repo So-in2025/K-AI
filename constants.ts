@@ -1,6 +1,6 @@
 
 
-import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest } from './types';
+import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest, IQuote } from './types';
 
 // STORAGE KEYS
 export const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
@@ -362,4 +362,19 @@ export const NEURO_QUESTS: INeuroQuest[] = [
             { step: 'reflection', text: 'Bien. ¿Qué notaste? ¿Había más tensión de la que pensabas? Describe brevemente la sensación de soltar, aunque sea un poco. Este es un acto de profundo cuidado propio.', pauseAfter: 1000 },
         ]
     }
+];
+
+export const EPIC_QUOTES: IQuote[] = [
+    { text: "El obstáculo es el camino.", author: "Marco Aurelio" },
+    { text: "No se nos da una vida corta, sino que la acortamos. No somos indigentes, sino que la malgastamos.", author: "Séneca" },
+    { text: "Aquel que tiene un porqué para vivir se puede enfrentar a todos los 'cómos'.", author: "Friedrich Nietzsche" },
+    { text: "El hombre que se levanta es más grande que el que no ha caído.", author: "Concepción Arenal" },
+    { text: "La herida es el lugar por donde la luz entra en ti.", author: "Rumi" },
+    { text: "No soy lo que me ha pasado, soy lo que elijo ser.", author: "Carl Jung" },
+    { text: "La única persona en la que estás destinado a convertirte es la persona que decides ser.", author: "Ralph Waldo Emerson" },
+    { text: "El secreto del cambio es enfocar toda tu energía, no en luchar contra lo viejo, sino en construir lo nuevo.", author: "Sócrates" },
+    { text: "Entre el estímulo y la respuesta hay un espacio. En ese espacio reside nuestro poder de elegir nuestra respuesta. En nuestra respuesta yace nuestro crecimiento y nuestra libertad.", author: "Viktor Frankl" },
+    { text: "La vida se encoge o se expande en proporción a tu coraje.", author: "Anaïs Nin" },
+    { text: "Un viaje de mil millas comienza con un solo paso.", author: "Lao Tzu" },
+    { text: "Lo que no me mata, me hace más fuerte.", author: "Friedrich Nietzsche" },
 ];
