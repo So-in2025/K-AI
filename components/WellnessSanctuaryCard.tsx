@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
 import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
@@ -15,10 +16,28 @@ interface WellnessSanctuaryCardProps {
     onLogDopamineHit: (hit: IDopamineHit) => void;
 }
 
-type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'neuro_selection' | 'neuro_quests' | 'shamanic_journey';
+type View = 'menu' | 'breathing' | 'meditation' | 'movement' | 'active_movement' | 'rest_ritual' | 'neuro_selection' | 'neuro_quests' | 'shamanic_journey' | 'mental_dump';
 type JourneyStep = 'idle' | 'intention' | 'callingIn' | 'journeyDeep' | 'returnCall' | 'integration' | 'finished';
 type QuestStep = 'intention' | 'practice' | 'reflection' | 'done';
 type Neurotransmitter = 'dopamine' | 'serotonin';
+
+const mentalDumpPrompts = [
+    {
+        title: "Tareas Pendientes",
+        instruction: "Primero, escribe todo lo que tengas pendiente para mañana. Sácalo de tu cabeza y ponlo aquí.",
+        placeholder: "Ej: Enviar el correo a Juan, comprar leche, preparar la reunión..."
+    },
+    {
+        title: "Conversaciones en tu Mente",
+        instruction: "Ahora, escribe cualquier conversación o interacción de hoy que siga dando vueltas en tu mente.",
+        placeholder: "Ej: La llamada con mi madre, el comentario de mi jefe..."
+    },
+    {
+        title: "Preocupaciones Futuras",
+        instruction: "Finalmente, escribe cualquier preocupación o miedo sobre el futuro, por pequeño que sea.",
+        placeholder: "Ej: ¿Qué pasará con...?, me preocupa si podré..."
+    }
+];
 
 
 export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit }) => {
@@ -45,6 +64,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const [questStep, setQuestStep] = useState<QuestStep>('intention');
     const [questTextInput, setQuestTextInput] = useState('');
     
+    // Mental Dump state
+    const [mentalDumpStep, setMentalDumpStep] = useState(0);
+
     const intervalRef = useRef<number | null>(null);
     const stepTimeoutRef = useRef<number | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -103,6 +125,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         setActiveQuest(null);
         setQuestTextInput('');
         setQuestStep('intention');
+        setMentalDumpStep(0);
         setView('menu');
     
         // Voice feedback logic
@@ -266,7 +289,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             return wind;
         };
         
-        audioElementsRef.current = { playChime };
+        // Fix: Store playDrum and playRattle in the ref to make them accessible in the useEffect hook.
+        audioElementsRef.current = { playChime, playDrum, playRattle };
         audioElementsRef.current.wind = createWind();
         
         // Start the journey sequence
@@ -293,6 +317,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     break;
 
                 case 'callingIn':
+                    // Fix: Access playDrum and playRattle from the ref where they are stored.
                     audioElementsRef.current.drumInterval = setInterval(audioElementsRef.current.playDrum, 333); // 180 BPM
                     audioElementsRef.current.rattleInterval = setInterval(audioElementsRef.current.playRattle, 166);
                     await ttsService.speakSequence([
@@ -382,6 +407,22 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         }
     }, [questStep, activeQuest]);
 
+    // Mental Dump TTS Logic
+    useEffect(() => {
+        if (view === 'mental_dump' && isActiveRef.current) {
+            const intro = "Bienvenido al Vaciado Mental. El objetivo es sacar de tu mente todo lo que te preocupa para que puedas descansar. No te preocupes por la gramática, solo escribe. Empecemos.";
+            if (mentalDumpStep === 0 && view === 'mental_dump') { // Check view again inside async
+                ttsService.speak(intro).then(() => {
+                    if(isActiveRef.current && view === 'mental_dump') {
+                        ttsService.speak(mentalDumpPrompts[0].instruction);
+                    }
+                });
+            } else if (mentalDumpStep < mentalDumpPrompts.length) {
+                ttsService.speak(mentalDumpPrompts[mentalDumpStep].instruction);
+            }
+        }
+    }, [view, mentalDumpStep]);
+
 
     const handleCompleteQuest = () => {
         if (!activeQuest) return;
@@ -449,7 +490,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             {
                 name: "Vaciado Mental (Diario)",
                 description: "Escribe y suelta tus preocupaciones para un descanso reparador.",
-                action: () => { alert("Ve a 'Herramientas > Mi Diario' para escribir. Este acto de 'vaciar' la mente antes de dormir es una práctica poderosa."); }
+                action: () => { setIsActive(true); setView('mental_dump'); }
             },
         ];
 
@@ -647,6 +688,42 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
              </div>
         );
     };
+    
+    const renderMentalDump = () => {
+        const currentPrompt = mentalDumpPrompts[mentalDumpStep];
+    
+        const handleNextDumpStep = () => {
+            if (mentalDumpStep < mentalDumpPrompts.length - 1) {
+                setMentalDumpStep(prev => prev + 1);
+            } else {
+                ttsService.speak("Excelente. Has vaciado tu mente. Estos pensamientos están a salvo y ya no necesitan ocupar tu espacio esta noche.");
+                resetState({ completed: true, activity: { date: new Date().toISOString(), exerciseName: 'Vaciado Mental Guiado', durationMinutes: 5 } });
+            }
+        };
+    
+        return (
+            <>
+                <button onClick={() => resetState({})} className="text-sm text-slate-400 mb-2 hover:underline">{'< Salir'}</button>
+                <h3 className="font-bold text-slate-100 text-lg mb-2">Vaciado Mental Guiado</h3>
+                <div className="bg-slate-700/50 p-4 rounded-lg">
+                    <p className="font-semibold text-teal-300">{currentPrompt.title}</p>
+                    <p className="text-sm text-slate-300 mb-3">{currentPrompt.instruction}</p>
+                    <textarea
+                        key={mentalDumpStep}
+                        placeholder={currentPrompt.placeholder}
+                        className="w-full h-28 p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500"
+                        autoFocus
+                    />
+                    <button
+                        onClick={handleNextDumpStep}
+                        className="w-full mt-3 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700"
+                    >
+                        {mentalDumpStep < mentalDumpPrompts.length - 1 ? 'Siguiente Paso' : 'Finalizar y Liberar'}
+                    </button>
+                </div>
+            </>
+        );
+    };
 
     const renderActiveSession = () => {
        const sessionName = selectedExercise?.name || selectedMeditation?.name;
@@ -675,9 +752,10 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     const renderActiveMovement = () => {
         if (!selectedVideo) return null;
+        const previousView = selectedVideo.category === 'rest' ? 'rest_ritual' : 'movement';
         return (
              <>
-                <button onClick={() => setView('movement')} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button>
+                <button onClick={() => setView(previousView)} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button>
                 <h3 className="font-bold text-slate-100 text-lg mb-2">{selectedVideo.name}</h3>
                 <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
                      <iframe
@@ -700,7 +778,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
 
     const renderContent = () => {
-        if (isActive && !activeQuest && journeyStep === 'idle') return renderActiveSession();
+        if (isActive && !activeQuest && journeyStep === 'idle' && view !== 'mental_dump') return renderActiveSession();
         if (view === 'active_movement') return renderActiveMovement();
 
         switch(view) {
@@ -712,6 +790,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
             case 'neuro_quests': return renderNeuroQuests();
             case 'rest_ritual': return renderRestRitual();
             case 'shamanic_journey': return renderShamanicJourney();
+            case 'mental_dump': return renderMentalDump();
             default: return renderMenu();
         }
     }
