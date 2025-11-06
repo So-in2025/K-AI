@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
-import { ApiKeyModal } from './components/ApiKeyModal';
+import { SettingsModal } from './components/SettingsModal';
 import { NavigationBar, View } from './components/NavigationBar';
 import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
 import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal, ITherapySession, UsageTracker, FeatureID } from './types';
-import { getApiKey, getGeminiResponse } from './services/geminiService';
+import { getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
@@ -86,8 +86,7 @@ function guardianReducer(state: GuardianState, action: GuardianAction): Guardian
 
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('home');
   
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
@@ -170,13 +169,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const existingApiKey = getApiKey();
-    if (existingApiKey) {
-      setApiKey(existingApiKey);
-    } else {
-      setIsApiKeyModalOpen(true);
-    }
-
      try {
         const storedData = localStorage.getItem(ONBOARDING_DATA_STORAGE_KEY);
         if (storedData) {
@@ -429,15 +421,6 @@ const App: React.FC = () => {
       localStorage.setItem(ONBOARDING_DATA_STORAGE_KEY, JSON.stringify(data));
       setIsOnboardingOpen(false);
   };
-
-  const handleSaveApiKey = (key: string, remember: boolean) => {
-    const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('geminiApiKey', key);
-    setApiKey(key);
-    setIsApiKeyModalOpen(false);
-  };
-
-  const handleOpenApiKeyModal = () => setIsApiKeyModalOpen(true);
   
   // Monetization - Usage Check and Consume Logic
     const checkAndConsumeUsage = useCallback((featureId: FeatureID): boolean => {
@@ -686,13 +669,16 @@ const App: React.FC = () => {
 
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
-    if (!apiKey) return;
+    if (!process.env.API_KEY) {
+        dispatchGuardian({ type: 'SET_ERROR', payload: 'La API Key no está configurada en el servidor.' });
+        return;
+    }
     dispatchGuardian({ type: 'START' });
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       
       const newSessionPromise = ai.live.connect({
@@ -870,15 +856,6 @@ const App: React.FC = () => {
         localStorage.removeItem(THERAPY_SESSIONS_KEY);
     }
   };
-
-
-  if (!apiKey) {
-    return (
-        <div className="bg-slate-900 min-h-screen">
-             {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => {if(apiKey) setIsApiKeyModalOpen(false)}} />}
-        </div>
-    );
-  }
   
   if (isOnboardingOpen || !onboardingData) {
       return <OnboardingModal onSave={handleSaveOnboarding} />;
@@ -983,9 +960,9 @@ const App: React.FC = () => {
   
   return (
     <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
-      {isApiKeyModalOpen && <ApiKeyModal onSave={handleSaveApiKey} onClose={() => setIsApiKeyModalOpen(false)} />}
+      {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} />}
       <Header 
-        onSettingsClick={handleOpenApiKeyModal} 
+        onSettingsClick={() => setIsSettingsModalOpen(true)} 
         onboardingData={onboardingData} 
         onDevClick={handleToggleDevMode}
         isDevMode={isDevMode}

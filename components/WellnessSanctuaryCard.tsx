@@ -561,7 +561,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                             explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
                             className="!text-slate-400 hover:!text-teal-400"
                         />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
+                         <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
                     </div>
                     <div className="space-y-3">
                         <div className="relative">

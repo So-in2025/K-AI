@@ -1,8 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { IMoodJournal, IMoodPlan } from '../types';
 import { GoogleGenAI, Type } from '@google/genai';
-import { getApiKey } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
 import ttsService from '../services/ttsService';
 
@@ -88,14 +86,14 @@ export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ moodJournal, o
     
     const handleAnalysis = async (transcript: string) => {
         setStatus('analyzing');
-        const apiKey = getApiKey();
-        if (!apiKey) {
+        // Fix: Replaced getApiKey() with direct access to environment variable and added a check for its existence, following API guidelines.
+        if (!process.env.API_KEY) {
             setError("API Key no configurada.");
             setStatus('error');
             return;
         }
 
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const schema = {
             type: Type.OBJECT,
             properties: {
