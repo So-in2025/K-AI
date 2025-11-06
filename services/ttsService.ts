@@ -1,5 +1,11 @@
+import { ITtsSettings } from '../types';
+import { TTS_SETTINGS_KEY } from '../constants';
+
 class TtsService {
   private voice: SpeechSynthesisVoice | null = null;
+  private voices: SpeechSynthesisVoice[] = [];
+  private settings: ITtsSettings = { voiceName: null, rate: 1, pitch: 1 };
+  
   private isReadyPromise: Promise<void>;
   private isInitialized = false;
   private utteranceQueue: { text: string; pause: number; rate?: number; pitch?: number }[] = [];
@@ -10,12 +16,21 @@ class TtsService {
     this.isReadyPromise = new Promise((resolve) => {
        if (typeof window !== 'undefined' && window.speechSynthesis) {
           const checkVoices = () => {
-              const voices = window.speechSynthesis.getVoices();
-              if (voices.length > 0) {
-                  const spanishMaleGoogle = voices.find(v => v.lang.startsWith('es-') && v.name.includes('Google') && !v.name.includes('Femenina'));
-                  const spanishMale = voices.find(v => v.lang.startsWith('es-') && (v.name.includes('Male') || v.name.includes('Masculino')));
-                  const spanishFallback = voices.find(v => v.lang.startsWith('es-'));
-                  this.voice = spanishMaleGoogle || spanishMale || spanishFallback || null;
+              this.voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('es-'));
+              if (this.voices.length > 0) {
+                  const storedSettings = localStorage.getItem(TTS_SETTINGS_KEY);
+                  if (storedSettings) {
+                      this.settings = JSON.parse(storedSettings);
+                  }
+                  
+                  const preferredVoice = this.voices.find(v => v.name === this.settings.voiceName);
+                  const spanishMaleGoogle = this.voices.find(v => v.name.includes('Google') && !v.name.includes('Femenina'));
+                  const spanishMale = this.voices.find(v => v.name.includes('Male') || v.name.includes('Masculino'));
+                  this.voice = preferredVoice || spanishMaleGoogle || spanishMale || this.voices[0] || null;
+                  
+                  if (this.voice && !this.settings.voiceName) {
+                      this.settings.voiceName = this.voice.name;
+                  }
                   resolve();
               }
           };
@@ -25,7 +40,6 @@ class TtsService {
           } else {
               window.speechSynthesis.onvoiceschanged = () => {
                 checkVoices();
-                this.isReadyPromise = Promise.resolve();
               };
           }
        } else {
@@ -39,6 +53,15 @@ class TtsService {
         window.speechSynthesis.getVoices();
         this.isInitialized = true;
     }
+  }
+
+  public getAvailableVoices = (): SpeechSynthesisVoice[] => this.voices;
+  public getSettings = (): ITtsSettings => this.settings;
+  
+  public updateSettings(newSettings: Partial<ITtsSettings>) {
+      this.settings = { ...this.settings, ...newSettings };
+      localStorage.setItem(TTS_SETTINGS_KEY, JSON.stringify(this.settings));
+      this.voice = this.voices.find(v => v.name === this.settings.voiceName) || this.voice;
   }
 
   private processQueue() {
@@ -61,12 +84,14 @@ class TtsService {
     }
     
     const utterance = new SpeechSynthesisUtterance(item.text);
-    if (this.voice) {
-        utterance.voice = this.voice;
-        utterance.lang = this.voice.lang;
+    const selectedVoice = this.voices.find(v => v.name === this.settings.voiceName);
+    utterance.voice = selectedVoice || this.voice;
+    if (utterance.voice) {
+        utterance.lang = utterance.voice.lang;
     }
-    utterance.rate = item.rate || 1;
-    utterance.pitch = item.pitch || 1;
+    
+    utterance.rate = item.rate ?? this.settings.rate;
+    utterance.pitch = item.pitch ?? this.settings.pitch;
 
     utterance.onend = () => {
         setTimeout(() => {
@@ -84,7 +109,7 @@ class TtsService {
     window.speechSynthesis.speak(utterance);
   }
 
-  public speak(text: string, rate = 1, pitch = 1): Promise<void> {
+  public speak(text: string, rate?: number, pitch?: number): Promise<void> {
     return new Promise(async (resolve) => {
       await this.isReadyPromise;
       if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
@@ -129,7 +154,10 @@ class TtsService {
         }
 
         this.stop();
-        this.utteranceQueue = [...script];
+        this.utteranceQueue = script.map(item => ({
+            text: item.text,
+            pause: item.pause,
+        }));
         this.currentSequenceResolver = resolve;
         this.processQueue();
       });

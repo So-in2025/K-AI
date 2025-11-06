@@ -470,6 +470,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
                             <p dangerouslySetInnerHTML={renderMarkdown(getWelcomeMessage())} />
                         </div>
                     ) : (conversation.map((turn, index) => (<div key={index} className={`mb-4 flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${turn.role === 'user' ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-200'}`}><div dangerouslySetInnerHTML={renderMarkdown(turn.text)} /></div></div>)))}
+                    <div className="h-16 flex-shrink-0" /> {/* Intelligent Airbag */}
                     <div ref={chatEndRef} />
                 </div>
                 

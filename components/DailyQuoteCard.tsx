@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
+import ttsService from '../services/ttsService';
 
 const QuoteIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor">
@@ -13,18 +14,25 @@ export const DailyQuoteCard: React.FC = () => {
   const [quote, setQuote] = useState<string>('Cargando inspiración para ti...');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchQuote = async () => {
+  const getNewQuote = useCallback(async () => {
+    ttsService.stop();
     setIsLoading(true);
     const prompt = "Genera una cita motivacional corta y poderosa para alguien que se está recuperando de una adicción. Debe ser esperanzadora, enfocada en la fortaleza interior y no debe sonar como un robot. En español. No incluyas comillas al principio ni al final.";
     const response = await getGeminiResponse(prompt);
     setQuote(response);
     setIsLoading(false);
-  };
+    if (response && !response.startsWith("Error:")) {
+        ttsService.speak(response);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchQuote();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    getNewQuote();
+    return () => {
+        ttsService.stop();
+    };
+  }, [getNewQuote]);
+
 
   return (
     <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-lg text-white relative">
@@ -43,7 +51,7 @@ export const DailyQuoteCard: React.FC = () => {
         </blockquote>
       )}
       <button 
-        onClick={fetchQuote} 
+        onClick={getNewQuote} 
         disabled={isLoading}
         className="text-sm mt-4 text-white opacity-75 hover:opacity-100 transition disabled:opacity-50">
           Obtener otra cita

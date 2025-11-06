@@ -1,4 +1,5 @@
 
+
 export enum MessageCategory {
   Morning = 'morning',
   Afternoon = 'afternoon',
@@ -240,3 +241,10 @@ export interface FeatureUsage {
 }
 
 export type UsageTracker = Record<FeatureID, FeatureUsage>;
+
+// TTS Settings
+export interface ITtsSettings {
+    voiceName: string | null;
+    rate: number; // 0.1 to 10
+    pitch: number; // 0 to 2
+}

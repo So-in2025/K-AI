@@ -1,4 +1,5 @@
 
+
 import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest } from './types';
 
 // STORAGE KEYS
@@ -20,6 +21,7 @@ export const HABIT_LOOPS_KEY = 'habitLoops';
 export const MOOD_JOURNAL_KEY = 'moodJournalData';
 export const KAI_CONVERSATION_KEY = 'kaiConversationHistory';
 export const THERAPY_SESSIONS_KEY = 'kiaTherapySessions';
+export const TTS_SETTINGS_KEY = 'kiaTtsSettings';
 
 // Monetization Keys
 export const FEATURE_USAGE_KEY = 'kiaFeatureUsage';
