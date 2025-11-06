@@ -170,3 +170,27 @@ export interface INeuroQuest { // RENAMED
     category: string;
     script: { step: 'intention' | 'practice' | 'reflection'; text: string; pauseAfter: number }[];
 }
+
+// Mood Journal Types
+export interface IMoodPlan {
+    nutrition: {
+        title: string;
+        description: string;
+        color: string;
+    };
+    attire: {
+        title: string;
+        description: string;
+    };
+    routine: {
+        title: string;
+        description: string;
+    };
+}
+
+export interface IMoodJournal {
+    date: string; // ISO string
+    detectedMood: string;
+    transcript: string;
+    plan: IMoodPlan;
+}

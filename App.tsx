@@ -8,29 +8,20 @@ import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
-import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IFreedomVaultConfig } from './types';
+import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IFreedomVaultConfig, IMoodJournal } from './types';
 import { getApiKey, getGeminiResponse } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
+import {
+    CRAVINGS_STORAGE_KEY, PROGRESS_STORAGE_KEY, JOURNAL_STORAGE_KEY,
+    WELLNESS_LOG_STORAGE_KEY, REMINDERS_STORAGE_KEY, LAST_INTERACTION_KEY,
+    ONBOARDING_DATA_STORAGE_KEY, SUBSCRIPTION_STORAGE_KEY, ACTIVATION_CODE_KEY,
+    GARDEN_GROWTH_POINTS_KEY, THOUGHT_LAB_STORAGE_KEY, TRUST_CIRCLE_STORAGE_KEY,
+    KAI_MEMORY_KEY, DOPAMINE_DIET_KEY, HABIT_LOOPS_KEY, FREEDOM_VAULT_KEY, MOOD_JOURNAL_KEY
+} from './constants';
 
 
-const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
-const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
-const JOURNAL_STORAGE_KEY = 'journalEntry';
-const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
-const REMINDERS_STORAGE_KEY = 'remindersList';
-const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
-const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
-const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
-const ACTIVATION_CODE_KEY = 'activationCode';
-const GARDEN_GROWTH_POINTS_KEY = 'gardenGrowthPoints';
-const THOUGHT_LAB_STORAGE_KEY = 'thoughtLabEntries';
-const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
-const KAI_MEMORY_KEY = 'kaiMemory';
-const DOPAMINE_DIET_KEY = 'dopamineDiet';
-const HABIT_LOOPS_KEY = 'habitLoops';
-const FREEDOM_VAULT_KEY = 'freedomVault';
 const FREEDOM_VAULT_DEPOSITS_KEY = 'freedomVaultDeposits';
 const GUARDIAN_CONFIG_KEY = 'guardianConfig';
 
@@ -125,6 +116,7 @@ const App: React.FC = () => {
   const [habitLoops, setHabitLoops] = useState<IHabitLoop[]>([]);
   const [freedomVaultConfig, setFreedomVaultConfig] = useState<IFreedomVaultConfig | null>(null);
   const [depositedAmount, setDepositedAmount] = useState(0);
+  const [moodJournal, setMoodJournal] = useState<IMoodJournal | null>(null);
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
@@ -359,6 +351,11 @@ const App: React.FC = () => {
         const storedGuardianConfig = localStorage.getItem(GUARDIAN_CONFIG_KEY);
         if(storedGuardianConfig) setGuardianTriggerWords(JSON.parse(storedGuardianConfig));
     } catch(e) { console.error("Failed to parse guardian config", e); }
+
+    try {
+        const storedMoodJournal = localStorage.getItem(MOOD_JOURNAL_KEY);
+        if(storedMoodJournal) setMoodJournal(JSON.parse(storedMoodJournal));
+    } catch(e) { console.error("Failed to parse mood journal data", e); }
 
 
   }, [calculateDaysSober]);
@@ -618,6 +615,19 @@ const App: React.FC = () => {
       handleNewConversationTurn({ role: 'user', text: summary });
   };
 
+  const handleUpdateMoodJournal = (journal: IMoodJournal | null) => {
+      setMoodJournal(journal);
+      if (journal) {
+          localStorage.setItem(MOOD_JOURNAL_KEY, JSON.stringify(journal));
+          const summary = `[DIARIO ANÍMICO] Acabo de registrar mi estado de ánimo. Me siento: "${journal.detectedMood}".`;
+          handleNewConversationTurn({ role: 'user', text: summary });
+          updateGardenGrowth(2);
+      } else {
+          localStorage.removeItem(MOOD_JOURNAL_KEY);
+      }
+  };
+
+
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
     if (!apiKey) return;
@@ -810,6 +820,8 @@ const App: React.FC = () => {
                   guardianTriggerWords={guardianTriggerWords}
                   onUpdateGuardianConfig={handleUpdateGuardianConfig}
                   isSubscribed={hasPremiumAccess}
+                  moodJournal={moodJournal}
+                  onUpdateMoodJournal={handleUpdateMoodJournal}
                 />;
       case 'kai':
         return <KaiView 
@@ -878,6 +890,8 @@ const App: React.FC = () => {
                   guardianTriggerWords={guardianTriggerWords}
                   onUpdateGuardianConfig={handleUpdateGuardianConfig}
                   isSubscribed={hasPremiumAccess}
+                  moodJournal={moodJournal}
+                  onUpdateMoodJournal={handleUpdateMoodJournal}
                 />;
     }
   }

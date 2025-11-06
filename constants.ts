@@ -18,6 +18,7 @@ export const KAI_MEMORY_KEY = 'kaiMemory';
 export const DOPAMINE_DIET_KEY = 'dopamineDiet';
 export const HABIT_LOOPS_KEY = 'habitLoops';
 export const FREEDOM_VAULT_KEY = 'freedomVault';
+export const MOOD_JOURNAL_KEY = 'moodJournalData';
 
 
 export const MESSAGES: Record<MessageCategory, IMessage[]> = {
