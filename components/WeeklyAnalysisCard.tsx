@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { ICraving, IWellnessActivity, UserFocus, IDopamineHit, UsageTracker, FeatureID } from '../types';
@@ -24,6 +23,7 @@ const BrainIcon = () => (
 );
 
 interface WeeklyAnalysisCardProps {
+    apiKey: string | null;
     cravings: ICraving[];
     journalEntry: string;
     wellnessLog: IWellnessActivity[];
@@ -35,7 +35,7 @@ interface WeeklyAnalysisCardProps {
     checkAndConsumeUsage: (featureId: 'weekly_analysis') => boolean;
 }
 
-export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings, journalEntry, wellnessLog, daysSober, userFocus, isSubscribed, dopamineHits, usageTracker, checkAndConsumeUsage }) => {
+export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ apiKey, cravings, journalEntry, wellnessLog, daysSober, userFocus, isSubscribed, dopamineHits, usageTracker, checkAndConsumeUsage }) => {
     const [analysis, setAnalysis] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -106,7 +106,7 @@ export const WeeklyAnalysisCard: React.FC<WeeklyAnalysisCardProps> = ({ cravings
         `;
 
         try {
-            const response = await getGeminiResponse(prompt);
+            const response = await getGeminiResponse(apiKey, prompt);
             setAnalysis(response);
         } catch (err) {
             setError('No se pudo generar el análisis. Inténtalo de nuevo.');

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
@@ -415,7 +414,6 @@ const App: React.FC = () => {
                 if (!sessionStorage.getItem(notifiedKey)) {
                     new Notification('KIA Recordatorio', {
                         body: reminder.text,
-                        icon: '/vite.svg', // Consider using a proper app icon
                     });
                     sessionStorage.setItem(notifiedKey, 'true');
                 }
@@ -482,7 +480,7 @@ const App: React.FC = () => {
     `;
 
     try {
-        const newMemory = await getGeminiResponse(prompt);
+        const newMemory = await getGeminiResponse(apiKey, prompt);
         setKaiMemory(newMemory);
         localStorage.setItem(KAI_MEMORY_KEY, newMemory);
         console.log("Kai's memory updated.");
@@ -490,7 +488,7 @@ const App: React.FC = () => {
         console.error("Failed to update Kai's memory:", e);
     }
 
-  }, [hasPremiumAccess]);
+  }, [hasPremiumAccess, apiKey]);
   
   const handleNewConversationTurn = useCallback((turn: IConversationTurn) => {
     setConversation(prev => {
@@ -579,7 +577,7 @@ const App: React.FC = () => {
         Responde ahora:
     `;
     
-    const content = await getGeminiResponse(prompt);
+    const content = await getGeminiResponse(apiKey, prompt);
     const newGoal: IGoal = { type, content };
 
     setGoals(prev => {
@@ -836,7 +834,7 @@ const App: React.FC = () => {
     `;
 
     try {
-        const response = await getGeminiResponse(prompt);
+        const response = await getGeminiResponse(apiKey, prompt);
         const cleanedResponse = response.replace(/```json\n|```/g, '').trim();
         const parsedAnalysis: IGuardianAnalysis = JSON.parse(cleanedResponse);
         dispatchGuardian({ type: 'SET_ANALYSIS', payload: parsedAnalysis });
@@ -895,6 +893,7 @@ const App: React.FC = () => {
     switch(activeView) {
       case 'home':
         return <HomeView 
+                  apiKey={apiKey}
                   startDate={startDate}
                   daysSober={daysSober}
                   onStartDate={handleStartDate}
@@ -915,6 +914,7 @@ const App: React.FC = () => {
                 />;
       case 'kai':
         return <KaiView 
+                  apiKey={apiKey}
                   conversation={conversation}
                   onNewTurn={handleNewConversationTurn}
                   onboardingData={onboardingData}
@@ -932,6 +932,7 @@ const App: React.FC = () => {
                 />;
       case 'tools':
         return <ToolsView
+                  apiKey={apiKey}
                   goals={goals}
                   onGenerateGoal={handleGenerateGoal}
                   isGoalsLoading={isGoalsLoading}
@@ -951,6 +952,7 @@ const App: React.FC = () => {
                 />;
       case 'progress':
         return <ProgressView 
+                  apiKey={apiKey}
                   cravings={cravings}
                   journalEntry={journalEntry}
                   wellnessLog={wellnessLog}
@@ -968,6 +970,7 @@ const App: React.FC = () => {
                 />;
       default:
         return <HomeView 
+                  apiKey={apiKey}
                   startDate={startDate}
                   daysSober={daysSober}
                   onStartDate={handleStartDate}

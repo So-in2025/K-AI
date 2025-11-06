@@ -1,23 +1,22 @@
-
-
 import React, { useState } from 'react';
 import { IHabitLoop } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const LoopIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M5 9a7 7 0 107-7" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 20v-5h-5M19 15a7 7 0 10-7 7" />
     </svg>
 );
 
 interface HabitLoopCardProps {
+    apiKey: string | null;
     loops: IHabitLoop[];
     onAddLoop: (loop: IHabitLoop) => void;
 }
 
-export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop }) => {
+export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ apiKey, loops, onAddLoop }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [step, setStep] = useState(1);
     const [currentLoop, setCurrentLoop] = useState<Partial<IHabitLoop>>({});
@@ -39,7 +38,7 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop }
                 Ejemplo: "Gracias por compartir eso. Y cuando haces [rutina], ¿qué sentimiento o alivio estás buscando realmente? ¿Es escapar del estrés, buscar conexión, aliviar el aburrimiento?".
                 Responde solo con la pregunta.
             `;
-            const cravingQuestion = await getGeminiResponse(prompt);
+            const cravingQuestion = await getGeminiResponse(apiKey, prompt);
             setCurrentLoop(prev => ({ ...prev, craving: cravingQuestion })); 
             setIsLoading(false);
         }
@@ -54,7 +53,7 @@ export const HabitLoopCard: React.FC<HabitLoopCardProps> = ({ loops, onAddLoop }
                 Escribe un breve párrafo de resumen y ánimo (2-3 frases) que valide su trabajo.
                 Ejemplo: "Excelente trabajo de introspección. Has identificado que [Señal] te llevaba a [Rutina Antigua] para buscar [Recompensa]. Al reemplazarlo con [Nueva Rutina], estás atendiendo esa misma necesidad de una forma que te fortalece. Cada vez que elijas la nueva rutina, estarás reforzando este nuevo camino."
             `;
-            const summary = await getGeminiResponse(prompt);
+            const summary = await getGeminiResponse(apiKey, prompt);
             setCurrentLoop(prev => ({...prev, kaiSummary: summary}));
             setIsLoading(false);
         }

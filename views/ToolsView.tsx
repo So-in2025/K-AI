@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { GoalsCard } from '../components/GoalsCard';
 import { CravingTrackerCard } from '../components/CravingTrackerCard';
@@ -12,6 +10,7 @@ import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop } fr
 
 
 interface ToolsViewProps {
+    apiKey: string | null;
     goals: IGoal[];
     onGenerateGoal: (type: GoalType) => void;
     isGoalsLoading: boolean;
@@ -36,15 +35,17 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <div className="space-y-6">
                     <JournalCard entry={props.journalEntry} onEntryChange={props.onJournalChange} onSave={props.onJournalSave} />
-                    <ThoughtLabCard 
+                    <ThoughtLabCard
+                        apiKey={props.apiKey}
                         entries={props.thoughtLabEntries}
                         onAddEntry={props.onAddThoughtLabEntry}
                     />
                     <HabitLoopCard
+                        apiKey={props.apiKey}
                         loops={props.habitLoops}
                         onAddLoop={props.onAddHabitLoop}
                     />
-                    <AffirmationGeneratorCard />
+                    <AffirmationGeneratorCard apiKey={props.apiKey} />
                 </div>
                 <div className="space-y-6">
                     <CravingTrackerCard cravings={props.cravings} onLogCraving={props.onLogCraving} />

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { IConversationTurn, KaiEmotion, KaiGesture, OnboardingData, Archetype, ARCHETYPE_NAMES, FeatureID, UsageTracker } from '../types';
@@ -140,6 +138,7 @@ const isSystemAction = (text: string): boolean => {
 
 
 interface CompanionCardProps {
+    apiKey: string | null;
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
     onboardingData: OnboardingData;
@@ -154,7 +153,7 @@ interface CompanionCardProps {
 }
 
 export const CompanionCard: React.FC<CompanionCardProps> = ({
-    conversation, onNewTurn, onboardingData, kaiMemory,
+    apiKey, conversation, onNewTurn, onboardingData, kaiMemory,
     isSubscribed, onRequestMemoryUpdate, onStartTherapySession,
     therapyTrialUsed, usageTracker, checkAndConsumeUsage, onClearChat
 }) => {
@@ -188,7 +187,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
           Responde únicamente con un array JSON de 3 strings. Ejemplo: ["¿Cómo puedo aplicar eso en una situación real?", "¿Qué hago si esos pensamientos vuelven?", "¿Puedes darme un ejemplo práctico?"]
         `;
         try {
-            const response = await getGeminiResponse(suggestionPrompt);
+            const response = await getGeminiResponse(apiKey, suggestionPrompt);
             const jsonMatch = response.match(/\[.*\]/s);
             if (jsonMatch) {
                 const parsedSuggestions = JSON.parse(jsonMatch[0]);
@@ -255,7 +254,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
             Ahora, genera tu respuesta siguiendo las reglas definidas en tus instrucciones de sistema.
         `;
         
-        const rawResponse = await getGeminiResponse(prompt, systemInstruction);
+        const rawResponse = await getGeminiResponse(apiKey, prompt, systemInstruction);
         
         if (rawResponse.startsWith("Error:")) {
             const errorTurn: IConversationTurn = { role: 'model', text: rawResponse };

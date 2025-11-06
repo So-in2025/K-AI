@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -9,7 +8,11 @@ const SparklesIcon = () => (
     </svg>
 );
 
-export const AffirmationGeneratorCard: React.FC = () => {
+interface AffirmationGeneratorCardProps {
+    apiKey: string | null;
+}
+
+export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> = ({ apiKey }) => {
     const [userInput, setUserInput] = useState('');
     const [affirmation, setAffirmation] = useState('');
     const [explanation, setExplanation] = useState('');
@@ -39,7 +42,7 @@ export const AffirmationGeneratorCard: React.FC = () => {
         `;
 
         try {
-            const response = await getGeminiResponse(prompt);
+            const response = await getGeminiResponse(apiKey, prompt);
             const parts = response.split('||');
             if (parts.length === 2) {
                 setAffirmation(parts[0].trim());

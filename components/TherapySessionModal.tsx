@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { IConversationTurn, ITherapySession, TherapyMode, THERAPY_MODES, ITherapySummary } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
@@ -29,12 +28,13 @@ const getTherapySystemInstruction = (mode: TherapyMode): string => {
 
 
 interface TherapySessionModalProps {
+    apiKey: string | null;
     isOpen: boolean;
     onClose: () => void;
     onSaveSession: (session: ITherapySession) => void;
 }
 
-export const TherapySessionModal: React.FC<TherapySessionModalProps> = ({ isOpen, onClose, onSaveSession }) => {
+export const TherapySessionModal: React.FC<TherapySessionModalProps> = ({ apiKey, isOpen, onClose, onSaveSession }) => {
     const [step, setStep] = useState<'consent' | 'mode' | 'chat' | 'summary'>('consent');
     const [mode, setMode] = useState<TherapyMode | null>(null);
     const [transcript, setTranscript] = useState<IConversationTurn[]>([]);
@@ -82,7 +82,7 @@ export const TherapySessionModal: React.FC<TherapySessionModalProps> = ({ isOpen
         const systemInstruction = getTherapySystemInstruction(mode);
         const prompt = `CONVERSACIÓN ACTUAL:\n${newTranscript.map(t => `${t.role}: ${t.text}`).join('\n')}\n\nKAI:`;
         
-        const response = await getGeminiResponse(prompt, systemInstruction);
+        const response = await getGeminiResponse(apiKey, prompt, systemInstruction);
 
         if (response.includes('[CRISIS_DETECTED]')) {
             setIsCrisis(true);
@@ -114,7 +114,7 @@ export const TherapySessionModal: React.FC<TherapySessionModalProps> = ({ isOpen
             [ACTIONABLE]Aquí la sugerencia accionable.[END_ACTIONABLE]
         `;
 
-        const response = await getGeminiResponse(prompt);
+        const response = await getGeminiResponse(apiKey, prompt);
 
         const insightsMatch = response.match(/\[INSIGHTS\](.*?)\[END_INSIGHTS\]/s);
         const patternsMatch = response.match(/\[PATTERNS\](.*?)\[END_PATTERNS\]/s);

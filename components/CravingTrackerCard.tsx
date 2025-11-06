@@ -18,109 +18,61 @@ export const CravingTrackerCard: React.FC<CravingTrackerCardProps> = ({ cravings
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const chartData = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
 
-        const data: { day: string; count: number }[] = [];
-        const dayLabels = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const data = days.map(day => {
+            const dayCravings = cravings.filter(c => c.date.startsWith(day));
+            return dayCravings.length;
+        });
 
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
+        const maxCraving = Math.max(...data, 1); // Avoid division by zero
 
-            const dayOfWeek = dayLabels[date.getDay()];
-            const label = i === 0 ? 'Hoy' : dayOfWeek;
-            
-            const count = cravings.filter(craving => {
-                const cravingDate = new Date(craving.date);
-                cravingDate.setHours(0, 0, 0, 0);
-                return cravingDate.getTime() === date.getTime();
-            }).length;
-
-            data.push({ day: label, count });
-        }
-        return data;
+        return { 
+            labels: days.map(d => new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'short' }).charAt(0).toUpperCase()), 
+            data, 
+            maxCraving 
+        };
     }, [cravings]);
-
-    const maxCount = useMemo(() => {
-        const counts = chartData.map(d => d.count);
-        const max = Math.max(...counts);
-        return max === 0 ? 1 : max;
-    }, [chartData]);
-
-    const totalLast7Days = useMemo(() => chartData.reduce((sum, day) => sum + day.count, 0), [chartData]);
-
-    const isToday = (someDate: Date) => {
-        const today = new Date();
-        return someDate.getDate() === today.getDate() &&
-            someDate.getMonth() === today.getMonth() &&
-            someDate.getFullYear() === today.getFullYear();
-    };
-
-    const cravingsToday = cravings.filter(c => isToday(new Date(c.date))).length;
     
-    const handleLogSuccess = (cravingData: ICraving) => {
-        onLogCraving(cravingData);
+    const handleLogSuccess = (craving: ICraving) => {
+        onLogCraving(craving);
         setIsModalOpen(false);
     };
 
     return (
-        <>
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
-            <TtsInfoButton explanation="Un antojo no es una debilidad, es información. Al registrarlo, nos das los datos para entender qué lo detona y qué estrategias te funcionan mejor. Con el tiempo, esta herramienta te ayudará a predecir y desarmar los antojos antes de que tomen fuerza." />
+            <TtsInfoButton explanation="El seguimiento de antojos es una herramienta poderosa para el autoconocimiento. Cada vez que registras un antojo, no estás fallando; estás recopilando datos valiosos sobre tus detonantes. Esta tarjeta te ayuda a visualizar la frecuencia de tus antojos a lo largo de la semana, para que puedas ver tu progreso y entender mejor tus patrones." />
             <div className="flex items-center space-x-3 mb-3">
                 <WaveIcon />
-                <h2 className="text-xl font-bold text-slate-100">Registro de Antojos</h2>
+                <h2 className="text-xl font-bold text-slate-100">Seguimiento de Antojos</h2>
             </div>
-            <p className="text-slate-400 mb-4 text-sm">Reconocer un antojo es un paso de poder. Regístralo para visualizar y entender tus patrones.</p>
-            
-            <div className="bg-slate-900 rounded-lg p-4 flex justify-around text-center mb-4">
-                <div>
-                    <p className="text-2xl font-bold text-teal-400">{cravingsToday}</p>
-                    <p className="text-xs text-slate-400">Hoy</p>
-                </div>
-                <div>
-                    <p className="text-2xl font-bold text-teal-400">{cravings.length}</p>
-                    <p className="text-xs text-slate-400">Total</p>
-                </div>
-            </div>
-            
-            <div className="mt-6 mb-4">
-                <h3 className="text-md font-semibold text-slate-200 mb-3 text-center">Antojos en la Última Semana</h3>
-                {totalLast7Days > 0 ? (
-                    <div className="flex justify-around items-end h-32 bg-slate-900/50 p-3 rounded-lg" aria-label="Gráfica de antojos de los últimos 7 días">
-                        {chartData.map((data, index) => (
-                            <div key={index} className="flex flex-col items-center h-full justify-end w-1/7 text-center">
-                                <span className="text-xs font-bold text-slate-300" aria-label={`${data.count} antojos`}>{data.count}</span>
-                                <div 
-                                    className="w-4 md:w-6 bg-teal-400 rounded-t-sm hover:bg-teal-500 transition-colors"
-                                    style={{ height: `${(data.count / maxCount) * 80}%` }}
-                                    title={`${data.count} antojo(s) el día ${data.day}`}
-                                ></div>
-                                <span className="text-xs text-slate-400 mt-1" aria-hidden="true">{data.day}</span>
-                            </div>
-                        ))}
+            <p className="text-slate-400 mb-4 text-sm">Registra los antojos para entender tus patrones. Cada registro es una victoria.</p>
+
+            <div className="h-32 flex items-end justify-around px-2 gap-2">
+                {chartData.data.map((value, index) => (
+                    <div key={index} className="flex flex-col items-center flex-1" title={`${value} antojo(s)`}>
+                        <div 
+                            className="w-4 bg-teal-500 rounded-t-sm transition-all duration-300"
+                            style={{ height: `${Math.max(2, (value / chartData.maxCraving) * 100)}%` }}
+                        ></div>
+                        <span className="text-xs text-slate-400 mt-1">{chartData.labels[index]}</span>
                     </div>
-                ) : (
-                    <div className="text-center text-sm text-slate-400 bg-slate-900/50 p-4 rounded-lg">
-                        ¡Felicidades! Ningún antojo registrado en los últimos 7 días.
-                    </div>
-                )}
+                ))}
             </div>
-            
-            <button
+            <div className="border-t border-slate-700 my-4"></div>
+
+            <button 
                 onClick={() => setIsModalOpen(true)}
-                className="w-full bg-teal-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors mt-2"
+                className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 transition-colors"
             >
-                Registrar Antojo
+                Registrar un Antojo
             </button>
+
+            {isModalOpen && <LogCravingModal onClose={() => setIsModalOpen(false)} onLogCraving={handleLogSuccess} />}
         </div>
-        {isModalOpen && (
-            <LogCravingModal 
-                onClose={() => setIsModalOpen(false)}
-                onLogCraving={handleLogSuccess}
-            />
-        )}
-        </>
     );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
@@ -14,6 +13,7 @@ type GuardianState = {
   error: string | null;
 }
 interface HomeViewProps {
+    apiKey: string | null;
     startDate: Date | null;
     daysSober: number;
     onStartDate: () => void;
@@ -60,6 +60,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                      />
                 )}
                 <MoodJournalCard 
+                    apiKey={props.apiKey}
                     moodJournal={props.moodJournal}
                     onUpdateMoodJournal={props.onUpdateMoodJournal}
                 />

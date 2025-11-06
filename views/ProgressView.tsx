@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
@@ -13,6 +11,7 @@ import { TherapyHistoryCard } from '../components/TherapyHistoryCard';
 
 
 interface ProgressViewProps {
+    apiKey: string | null;
     cravings: ICraving[];
     journalEntry: string;
     wellnessLog: IWellnessActivity[];
@@ -30,7 +29,7 @@ interface ProgressViewProps {
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = (props) => {
-    const { isSubscribed, onboardingData, usageTracker, checkAndConsumeUsage } = props;
+    const { apiKey, isSubscribed, onboardingData, usageTracker, checkAndConsumeUsage } = props;
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -44,6 +43,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                     <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
                     <WellnessSummaryCard wellnessLog={props.wellnessLog} dopamineHits={props.dopamineHits} />
                      <WeeklyAnalysisCard 
+                        apiKey={apiKey}
                         cravings={props.cravings}
                         journalEntry={props.journalEntry}
                         wellnessLog={props.wellnessLog}

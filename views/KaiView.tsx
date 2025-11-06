@@ -1,11 +1,10 @@
-
-
 import React from 'react';
 import { CompanionCard } from '../components/CompanionCard';
 import { TherapySessionModal } from '../components/TherapySessionModal';
 import { IConversationTurn, OnboardingData, ITherapySession, UsageTracker, FeatureID } from '../types';
 
 interface KaiViewProps {
+    apiKey: string | null;
     conversation: IConversationTurn[];
     onNewTurn: (turn: IConversationTurn) => void;
     onboardingData: OnboardingData;
@@ -27,6 +26,7 @@ export const KaiView: React.FC<KaiViewProps> = (props) => {
        // This container manages the chat layout, ensuring it takes up the full available height below the header.
        <div className="h-full flex flex-col">
             <CompanionCard 
+                apiKey={props.apiKey}
                 conversation={props.conversation}
                 onNewTurn={props.onNewTurn}
                 onboardingData={props.onboardingData}
@@ -41,6 +41,7 @@ export const KaiView: React.FC<KaiViewProps> = (props) => {
             />
             {props.isTherapyModalOpen && (
                 <TherapySessionModal 
+                    apiKey={props.apiKey}
                     isOpen={props.isTherapyModalOpen}
                     onClose={props.onCloseTherapyModal}
                     onSaveSession={props.onSaveTherapySession}

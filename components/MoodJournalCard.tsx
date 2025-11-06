@@ -3,7 +3,6 @@ import { IMoodJournal, IMoodPlan } from '../types';
 import { GoogleGenAI, Type } from '@google/genai';
 import { TtsInfoButton } from './TtsInfoButton';
 import ttsService from '../services/ttsService';
-import { getApiKey } from '../services/geminiService';
 
 // Speech Recognition Types
 interface SpeechRecognition {
@@ -42,11 +41,12 @@ const colorMap: Record<string, { bg: string; text: string; border: string; }> = 
 };
 
 interface MoodJournalCardProps {
+    apiKey: string | null;
     moodJournal: IMoodJournal | null;
     onUpdateMoodJournal: (journal: IMoodJournal | null) => void;
 }
 
-export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ moodJournal, onUpdateMoodJournal }) => {
+export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ apiKey, moodJournal, onUpdateMoodJournal }) => {
     const [status, setStatus] = useState<'idle' | 'recording' | 'analyzing' | 'error'>('idle');
     const [error, setError] = useState('');
     const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -87,7 +87,6 @@ export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ moodJournal, o
     
     const handleAnalysis = async (transcript: string) => {
         setStatus('analyzing');
-        const apiKey = getApiKey();
         if (!apiKey) {
             setError("API Key no configurada. Ve a Configuración.");
             setStatus('error');

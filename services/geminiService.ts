@@ -19,12 +19,11 @@ export const saveApiKey = (key: string, forSession: boolean = false) => {
 };
 
 
-export const getGeminiResponse = async (prompt: string, systemInstruction?: string): Promise<string> => {
+export const getGeminiResponse = async (apiKey: string | null, prompt: string, systemInstruction?: string): Promise<string> => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         return "Error: Parece que no tienes conexión a internet. Por favor, revisa tu conexión e inténtalo de nuevo.";
     }
 
-    const apiKey = getApiKey();
     if (!apiKey) {
         return "Error: Tu API Key de Gemini no ha sido configurada. Por favor, ve a Configuración para añadirla.";
     }
@@ -49,7 +48,7 @@ export const getGeminiResponse = async (prompt: string, systemInstruction?: stri
              return "Error: La conexión con el servicio de IA tardó demasiado en responder. Por favor, revisa tu conexión a internet e inténtalo de nuevo.";
         }
         if (errorMessage.includes('API key not valid')) {
-             return "Error: Tu API Key no es válida. Por favor, revisa que esté correcta en Configuración o genera una nueva.";
+             return "Error: Tu API Key no es válida o no tiene los permisos necesarios. Por favor, revísala en los ajustes o genera una nueva.";
         }
         
         return "Hubo un error al conectar con el servicio de IA. Por favor, inténtalo de nuevo más tarde.";
