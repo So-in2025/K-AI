@@ -62,6 +62,7 @@ export interface IExercise {
   description: string;
   setup?: { text: string; pause: number }[]; // <-- ADDED FOR PREPARATION PHASE
   steps: { name: string; duration: number; instruction?: string }[];
+  isPremium?: boolean;
 }
 
 export interface IMeditation {
@@ -69,6 +70,7 @@ export interface IMeditation {
     name: string;
     description: string;
     script: { text: string; pause: number }[]; // pause in ms
+    isPremium?: boolean;
 }
 
 export interface IMovementVideo {

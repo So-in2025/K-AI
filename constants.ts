@@ -166,6 +166,40 @@ export const BREATHING_EXERCISES: IExercise[] = [
       { name: 'Exhala', duration: 1500, instruction: 'Exhala de forma natural, sin forzar.' },
     ],
   },
+  {
+    id: 'coherent',
+    name: 'Respiración Coherente (Resonancia)',
+    description: 'Sincroniza corazón y cerebro para un estado de calma y equilibrio óptimo (5 seg. dentro, 5 seg. fuera).',
+    isPremium: true,
+    setup: preparationScript,
+    steps: [
+      { name: 'Inhala', duration: 5000 },
+      { name: 'Exhala', duration: 5000 },
+    ],
+  },
+  {
+    id: 'tummo-breathwork',
+    name: 'Respiración de Fuego Interior',
+    description: 'Ciclos de respiración potente para generar calor, vitalidad y una sensación de poder interno.',
+    isPremium: true,
+    setup: preparationScript,
+    steps: [
+        { name: 'Inhala Vientre', duration: 1000 }, 
+        { name: 'Inhala Pecho', duration: 1000 }, 
+        { name: 'Exhala Relajado', duration: 2000 }
+    ],
+  },
+  {
+    id: 'bhramari',
+    name: 'Respiración de Zumbido de Abeja (Bhramari)',
+    description: 'Calma la mente y alivia la agitación y la ansiedad a través de una suave vibración sonora.',
+    isPremium: true,
+    setup: preparationScript,
+    steps: [
+      { name: 'Inhala', duration: 4000 },
+      { name: 'Zumba al Exhalar', duration: 8000, instruction: 'Tápate los oídos y exhala lentamente produciendo un zumbido grave, como una abeja.' },
+    ],
+  },
 ];
 
 export const GUIDED_MEDITATIONS: IMeditation[] = [
@@ -224,7 +258,55 @@ export const GUIDED_MEDITATIONS: IMeditation[] = [
             { text: 'Poco a poco, comienza a mover los dedos de las manos y los pies. Regresa a tu cuerpo.', pause: 6000 },
             { text: 'Cuando estés listo, abre suavemente los ojos. La práctica de Yoga Nidra ha concluido.', pause: 2000 },
         ]
-    }
+    },
+    {
+        id: 'metta',
+        name: 'Meditación Metta (Amor Benevolente)',
+        description: 'Cultiva la compasión y el amor incondicional hacia ti mismo y hacia los demás.',
+        isPremium: true,
+        script: [
+            { text: 'Encuentra una postura cómoda y cierra los ojos.', pause: 3000 },
+            { text: 'Trae tu atención a tu corazón. Repite mentalmente, dirigiéndote a ti mismo:', pause: 4000 },
+            { text: 'Que yo esté a salvo.', pause: 4000 },
+            { text: 'Que yo sea feliz.', pause: 4000 },
+            { text: 'Que yo esté sano.', pause: 4000 },
+            { text: 'Que yo viva con calma.', pause: 5000 },
+            { text: 'Ahora, visualiza a un ser querido. Ofrécele los mismos deseos:', pause: 6000 },
+            { text: 'Que estés a salvo. Que seas feliz. Que estés sano. Que vivas con calma.', pause: 8000 },
+            { text: 'Ahora, expande este sentimiento a todos los seres, sin excepción.', pause: 6000 },
+            { text: 'Que todos los seres estén a salvo. Que todos los seres sean felices. Que todos los seres vivan con calma.', pause: 9000 },
+            { text: 'Permanece con este sentimiento de conexión. Cuando estés listo, abre los ojos.', pause: 5000 },
+        ]
+    },
+    {
+        id: 'rain',
+        name: 'Meditación RAIN (Para Emociones Difíciles)',
+        description: 'Una práctica de mindfulness para navegar emociones intensas con autocompasión.',
+        isPremium: true,
+        script: [
+            { text: 'Trae a tu mente, con gentileza, una situación que te cause dificultad.', pause: 5000 },
+            { text: 'R: Reconoce lo que estás sintiendo. Nómbralo en tu mente. "Esto es ansiedad", "esto es tristeza".', pause: 8000 },
+            { text: 'A: Acepta. Permite que la emoción esté aquí, sin luchar. Dale espacio para existir.', pause: 8000 },
+            { text: 'I: Investiga con curiosidad. ¿Cómo se siente esto en tu cuerpo? ¿Dónde está la tensión? Observa, sin juicio.', pause: 12000 },
+            { text: 'N: Nutre. Ofrece un gesto de autocompasión. Una mano en el corazón. Pregúntate: ¿Qué necesito ahora mismo?', pause: 12000 },
+            { text: 'Reconocer, Aceptar, Investigar, Nutrir. Estás aprendiendo a estar contigo. La práctica ha terminado.', pause: 5000 },
+        ]
+    },
+    {
+        id: 'deep-focus',
+        name: 'Meditación de Enfoque Profundo (Tercer Ojo)',
+        description: 'Calma la mente y mejora la intuición y la claridad enfocando tu energía en el centro de tu frente.',
+        isPremium: true,
+        script: [
+            { text: 'Adopta una postura erguida pero relajada y cierra los ojos.', pause: 4000 },
+            { text: 'Lleva tu atención al flujo de tu respiración.', pause: 8000 },
+            { text: 'Ahora, suavemente, lleva tu atención al punto en el centro de tu frente, justo por encima de tus cejas.', pause: 8000 },
+            { text: 'Simplemente descansa tu conciencia en este punto. Imagina una pequeña luz o una vibración suave.', pause: 12000 },
+            { text: 'Si tu mente se distrae, amablemente, tráela de vuelta a este punto de enfoque.', pause: 8000 },
+            { text: 'Este es tu centro de intuición y claridad. Al descansar tu atención aquí, calmas el ruido mental.', pause: 10000 },
+            { text: 'Ahora, suelta el punto de enfoque. Cuando estés listo, abre los ojos. La práctica ha terminado.', pause: 6000 },
+        ]
+    },
 ];
 
 // Videos de YouTube curados para prácticas de movimiento y descanso.

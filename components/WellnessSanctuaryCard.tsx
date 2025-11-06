@@ -202,6 +202,42 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     }
     
     const startShamanicJourney = (type: JourneyType) => {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioCtx;
+        
+        const allNodes: any[] = [];
+        const fade = (gainNode: GainNode, targetVolume: number, duration: number) => { if (!audioCtx || audioCtx.state === 'closed') return; gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration); };
+        const createSoundSource = (createFn: (gainNode: GainNode) => any, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); allNodes.push(gainNode); createFn(gainNode); return { gainNode }; };
+        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.drum) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); allNodes.push(osc, gain); };
+        const createDrone = (gainNode: GainNode, freq: number) => createOscillator(gainNode, freq, 'sine');
+        const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); allNodes.push(pannerL, pannerR); };
+        const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); allNodes.push(osc); };
+        const createFilteredNoise = (gainNode: GainNode, type: BiquadFilterType, frequency: number) => { if (!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency; noise.connect(filter); filter.connect(gainNode); noise.start(); allNodes.push(noise, filter); };
+    
+        let sounds: { [key: string]: any } = { nodes: allNodes, fade };
+        if (type === 'shamanic') {
+             sounds.drum = createSoundSource(() => {}, 0);
+             sounds.drumInterval = setInterval(playDrum, 333);
+        } else if (type === 'solfeggio') {
+             sounds.solfeggio = createSoundSource(g => createOscillator(g, 528, 'sine'), 0);
+             sounds.drone = createSoundSource(g => createDrone(g, 60), 0);
+        } else if (type === 'binaural') {
+             sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0);
+             sounds.noise = createSoundSource(g => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; noise.connect(g); noise.start(); allNodes.push(noise); }, 0);
+        } else if (type === 'trauma-release') {
+            sounds.drone = createSoundSource(g => createDrone(g, 98), 0);
+            sounds.binaural = createSoundSource(g => createBinaural(g, 100, 10), 0);
+            sounds.shimmer = createSoundSource(g => createOscillator(g, 392, 'sine'), 0);
+        } else if (type === 'manifestation') {
+            sounds.drone = createSoundSource(g => createDrone(g, 261), 0);
+            sounds.focus = createSoundSource(g => createOscillator(g, 417, 'sine'), 0);
+            sounds.binaural = createSoundSource(g => createBinaural(g, 150, 15), 0);
+        } else if (type === 'nature-connect') {
+            sounds.drone = createSoundSource(g => createDrone(g, 87), 0);
+            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 400), 0);
+        }
+        audioElementsRef.current = sounds;
+        
         setJourneyType(type);
         setView('active_journey');
         activePracticeRef.current = `Viaje Sonoro (${type})`;
@@ -225,45 +261,9 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
 
     useEffect(() => {
         if (view !== 'active_journey' || journeyStep === 'idle' || !journeyType) return;
-
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current = audioCtx;
-        const allNodes: any[] = [];
         
-        const fade = (gainNode: GainNode, targetVolume: number, duration: number) => { if (!audioCtx || audioCtx.state === 'closed') return; gainNode.gain.linearRampToValueAtTime(targetVolume, audioCtx.currentTime + duration); };
-        const createSoundSource = (createFn: (gainNode: GainNode) => any, initialVolume = 0) => { if (!audioCtx) return { gainNode: null }; const gainNode = audioCtx.createGain(); gainNode.gain.value = initialVolume; gainNode.connect(audioCtx.destination); allNodes.push(gainNode); createFn(gainNode); return { gainNode }; };
-        const playDrum = () => { if (!audioCtx || audioCtx.state === 'closed' || !audioElementsRef.current.drum) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioElementsRef.current.drum.gainNode); osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5); allNodes.push(osc, gain); };
-        const createDrone = (gainNode: GainNode, freq: number) => createOscillator(gainNode, freq, 'sine');
-        const createBinaural = (gainNode: GainNode, baseFreq: number, beatFreq: number) => { if(!audioCtx) return; const pannerL = audioCtx.createStereoPanner(); pannerL.pan.value = -1; const pannerR = audioCtx.createStereoPanner(); pannerR.pan.value = 1; createOscillator(pannerL, baseFreq - beatFreq / 2, 'sine'); createOscillator(pannerR, baseFreq + beatFreq / 2, 'sine'); pannerL.connect(gainNode); pannerR.connect(gainNode); allNodes.push(pannerL, pannerR); };
-        const createOscillator = (node: AudioNode, freq: number, type: OscillatorType) => { if(!audioCtx) return; const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq; osc.connect(node); osc.start(); allNodes.push(osc); };
-        const createFilteredNoise = (gainNode: GainNode, type: BiquadFilterType, frequency: number) => { if (!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; noise.buffer = buffer; noise.loop = true; const filter = audioCtx.createBiquadFilter(); filter.type = type; filter.frequency.value = frequency; noise.connect(filter); filter.connect(gainNode); noise.start(); allNodes.push(noise, filter); };
-
-        let sounds: { [key: string]: any } = { nodes: allNodes, fade };
-        if (journeyType === 'shamanic') {
-             sounds.drum = createSoundSource(() => {}, 0);
-             sounds.drumInterval = setInterval(playDrum, 333);
-        } else if (journeyType === 'solfeggio') {
-             sounds.solfeggio = createSoundSource(g => createOscillator(g, 528, 'sine'), 0);
-             sounds.drone = createSoundSource(g => createDrone(g, 60), 0);
-        } else if (journeyType === 'binaural') {
-             sounds.binaural = createSoundSource(g => createBinaural(g, 100, 7), 0); // Theta wave
-             sounds.noise = createSoundSource(g => { if(!audioCtx) return; const noise = audioCtx.createBufferSource(); const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i=0; i<data.length; i++) data[i] = Math.random()*2-1; noise.buffer = buffer; noise.loop = true; noise.connect(g); noise.start(); allNodes.push(noise); }, 0);
-        } else if (journeyType === 'trauma-release') {
-            sounds.drone = createSoundSource(g => createDrone(g, 98), 0);
-            sounds.binaural = createSoundSource(g => createBinaural(g, 100, 10), 0);
-            sounds.shimmer = createSoundSource(g => createOscillator(g, 392, 'sine'), 0);
-        } else if (journeyType === 'manifestation') {
-            sounds.drone = createSoundSource(g => createDrone(g, 261), 0);
-            sounds.focus = createSoundSource(g => createOscillator(g, 417, 'sine'), 0);
-            sounds.binaural = createSoundSource(g => createBinaural(g, 150, 15), 0);
-        } else if (journeyType === 'nature-connect') {
-            sounds.drone = createSoundSource(g => createDrone(g, 87), 0);
-            sounds.noise = createSoundSource(g => createFilteredNoise(g, 'lowpass', 400), 0);
-        }
-        audioElementsRef.current = sounds;
-
         const runJourneyStep = async () => {
-            if (!activePracticeRef.current) return;
+            if (!activePracticeRef.current || !audioElementsRef.current.fade) return;
             const { fade } = audioElementsRef.current;
             if (vibrationIntervalRef.current) clearInterval(vibrationIntervalRef.current);
             if (navigator.vibrate) navigator.vibrate(0);
@@ -367,20 +367,56 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     const renderTabContent = () => (
         <div className="mt-4 space-y-3">
             {activeTab === 'breathing' && (
-                <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                    <TtsInfoButton explanation="La respiración consciente es la forma más rápida de regular tu sistema nervioso. Al controlar tu respiración, activas el nervio vago y pasas de un estado de 'lucha o huida' a uno de 'descanso y digestión', reduciendo el cortisol y la ansiedad." className="!text-slate-400 hover:!text-teal-400" />
-                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas técnicas calman tu sistema nervioso para reducir el estrés y la ansiedad de forma inmediata.</p>
-                </div>
+                <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton explanation="La respiración consciente es la forma más rápida de regular tu sistema nervioso. Al controlar tu respiración, activas el nervio vago y pasas de un estado de 'lucha o huida' a uno de 'descanso y digestión', reduciendo el cortisol y la ansiedad." className="!text-slate-400 hover:!text-teal-400" />
+                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas técnicas calman tu sistema nervioso para reducir el estrés y la ansiedad de forma inmediata.</p>
+                    </div>
+                    {BREATHING_EXERCISES.map(ex => {
+                        const isLocked = ex.isPremium && !isSubscribed;
+                        return (
+                            <button 
+                                key={ex.id} 
+                                onClick={() => !isLocked && startBreathingExercise(ex)} 
+                                disabled={isLocked}
+                                className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            >
+                                <div className="flex-grow">
+                                    <h4>{ex.name}</h4>
+                                    <p className="text-xs text-slate-400">{ex.description}</p>
+                                </div>
+                                {isLocked && <LockIcon />}
+                            </button>
+                        );
+                    })}
+                </>
             )}
-            {activeTab === 'breathing' && BREATHING_EXERCISES.map(ex => <button key={ex.id} onClick={() => startBreathingExercise(ex)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{ex.name}</h4><p className="text-xs text-slate-400">{ex.description}</p></button>)}
 
             {activeTab === 'meditation' && (
-                 <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                    <TtsInfoButton explanation="La meditación es un entrenamiento para tu cerebro. Prácticas como el escaneo corporal fortalecen la corteza prefrontal, mejorando tu enfoque y control emocional, y reducen la actividad en la 'Red Neuronal por Defecto', lo que disminuye la rumiación y los pensamientos ansiosos." className="!text-slate-400 hover:!text-teal-400" />
-                    <p><strong className="text-slate-200">¿Cómo funciona?</strong> Entrena tu mente para enfocarse en el presente, reduciendo el ruido mental y fomentando la claridad.</p>
-                </div>
+                <>
+                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                        <TtsInfoButton explanation="La meditación es un entrenamiento para tu cerebro. Prácticas como el escaneo corporal fortalecen la corteza prefrontal, mejorando tu enfoque y control emocional, y reducen la actividad en la 'Red Neuronal por Defecto', lo que disminuye la rumiación y los pensamientos ansiosos." className="!text-slate-400 hover:!text-teal-400" />
+                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Entrena tu mente para enfocarse en el presente, reduciendo el ruido mental y fomentando la claridad.</p>
+                    </div>
+                    {GUIDED_MEDITATIONS.map(med => {
+                        const isLocked = med.isPremium && !isSubscribed;
+                        return (
+                             <button 
+                                key={med.id} 
+                                onClick={() => !isLocked && startMeditation(med)}
+                                disabled={isLocked}
+                                className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            >
+                                <div className="flex-grow">
+                                    <h4>{med.name}</h4>
+                                    <p className="text-xs text-slate-400">{med.description}</p>
+                                </div>
+                                {isLocked && <LockIcon />}
+                            </button>
+                        )
+                    })}
+                </>
             )}
-            {activeTab === 'meditation' && GUIDED_MEDITATIONS.map(med => <button key={med.id} onClick={() => startMeditation(med)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><h4>{med.name}</h4><p className="text-xs text-slate-400">{med.description}</p></button>)}
             
             {activeTab === 'movement' && (
                  <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
