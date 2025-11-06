@@ -376,7 +376,9 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
     ].join(' ');
     
     const getWelcomeMessage = () => {
-        let message = `Hola, he leído la información que compartiste. Entiendo que tu desafío principal ahora es **"${onboardingData.mainChallenge}"**.`;
+        let message = `Hola, soy Kai. Mi nombre es la llave (Key en inglés) que abre las puertas de este espacio: **K**indness (Amabilidad), **I**ntrospection (Introspección), y **A**wareness (Conciencia). Estoy aquí para ser tu compañero en este viaje.
+    
+He leído la información que compartiste. Entiendo que tu desafío principal ahora es **"${onboardingData.mainChallenge}"**.`;
         
         if (onboardingData.focuses.includes('depression')) {
             message += ` Veo que la depresión se manifiesta en ti como **${onboardingData.depressionManifestation?.toLowerCase()}**. Quiero que sepas que no estás solo en esto.`;
@@ -384,7 +386,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({
              message += ` Sé que tu meta es la **${onboardingData.addictionGoal?.toLowerCase()}** y estoy aquí para apoyarte en cada paso.`;
         }
         
-        message += "\n\nJuntos, dentro de este espacio de amabilidad e introspección, podemos explorar esto. ¿Por dónde te gustaría empezar?"
+        message += "\n\nJuntos, podemos explorar esto. ¿Por dónde te gustaría empezar?"
         return message;
     }
     
