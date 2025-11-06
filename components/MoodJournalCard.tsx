@@ -3,6 +3,7 @@ import { IMoodJournal, IMoodPlan } from '../types';
 import { GoogleGenAI, Type } from '@google/genai';
 import { TtsInfoButton } from './TtsInfoButton';
 import ttsService from '../services/ttsService';
+import { getApiKey } from '../services/geminiService';
 
 // Speech Recognition Types
 interface SpeechRecognition {
@@ -86,14 +87,14 @@ export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ moodJournal, o
     
     const handleAnalysis = async (transcript: string) => {
         setStatus('analyzing');
-        // Fix: Replaced getApiKey() with direct access to environment variable and added a check for its existence, following API guidelines.
-        if (!process.env.API_KEY) {
-            setError("API Key no configurada.");
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            setError("API Key no configurada. Ve a Configuración.");
             setStatus('error');
             return;
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey });
         const schema = {
             type: Type.OBJECT,
             properties: {

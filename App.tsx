@@ -9,9 +9,10 @@ import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
 import { ICraving, IConversationTurn, IGoal, GoalType, IWellnessActivity, UserFocus, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal, ITherapySession, UsageTracker, FeatureID } from './types';
-import { getGeminiResponse } from './services/geminiService';
+import { getGeminiResponse, getApiKey } from './services/geminiService';
 import ttsService from './services/ttsService';
 import { OnboardingModal } from './components/OnboardingModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import {
     CRAVINGS_STORAGE_KEY, PROGRESS_STORAGE_KEY, JOURNAL_STORAGE_KEY,
@@ -87,6 +88,9 @@ function guardianReducer(state: GuardianState, action: GuardianAction): Guardian
 
 const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
   const [activeView, setActiveView] = useState<View>('home');
   
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
@@ -170,6 +174,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
      try {
+        const storedKey = getApiKey();
+        if (storedKey) {
+            setApiKey(storedKey);
+        } else {
+            setIsApiKeyModalOpen(true);
+        }
+
         const storedData = localStorage.getItem(ONBOARDING_DATA_STORAGE_KEY);
         if (storedData) {
             const parsedData = JSON.parse(storedData);
@@ -669,8 +680,9 @@ const App: React.FC = () => {
 
   // Guardian Mode Handlers
   const handleStartGuardian = async () => {
-    if (!process.env.API_KEY) {
-        dispatchGuardian({ type: 'SET_ERROR', payload: 'La API Key no está configurada en el servidor.' });
+    if (!apiKey) {
+        dispatchGuardian({ type: 'SET_ERROR', payload: 'La API Key no está configurada.' });
+        setIsApiKeyModalOpen(true);
         return;
     }
     dispatchGuardian({ type: 'START' });
@@ -678,7 +690,7 @@ const App: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       
       const newSessionPromise = ai.live.connect({
@@ -857,9 +869,19 @@ const App: React.FC = () => {
     }
   };
   
+  const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
+    setIsApiKeyModalOpen(false);
+  };
+
   if (isOnboardingOpen || !onboardingData) {
       return <OnboardingModal onSave={handleSaveOnboarding} />;
   }
+  
+  if (!apiKey && isApiKeyModalOpen) {
+      return <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />;
+  }
+
 
   const renderView = () => {
     switch(activeView) {
@@ -960,7 +982,8 @@ const App: React.FC = () => {
   
   return (
     <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
-      {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} />}
+      {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
+      {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
       <Header 
         onSettingsClick={() => setIsSettingsModalOpen(true)} 
         onboardingData={onboardingData} 

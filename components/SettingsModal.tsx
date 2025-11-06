@@ -4,6 +4,7 @@ import { ITtsSettings } from '../types';
 
 interface SettingsModalProps {
     onClose: () => void;
+    onOpenApiKeyModal: () => void;
 }
 
 const CloseIcon = () => (
@@ -13,7 +14,7 @@ const CloseIcon = () => (
 );
 
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal }) => {
     const [ttsSettings, setTtsSettings] = useState<ITtsSettings | null>(null);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -44,6 +45,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                     <h2 className="text-2xl font-bold text-slate-100">Configuración</h2>
                      <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
                 </div>
+                
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-teal-300 mb-2">API Key de Gemini</h3>
+                    <p className="text-sm text-slate-400 mb-3">
+                        Tu clave personal para interactuar con la IA de Kai.
+                    </p>
+                    <button 
+                        onClick={() => {
+                            onClose(); // Close this modal first
+                            onOpenApiKeyModal(); // Then open the other
+                        }}
+                        className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-500"
+                    >
+                        Cambiar API Key
+                    </button>
+                </div>
+
 
                 {ttsSettings && (
                     <div className="mb-6">

@@ -1,17 +1,35 @@
 import { GoogleGenAI } from "@google/genai";
 
+const API_KEY_STORAGE_KEY = 'geminiApiKey';
+
+// Helper function to get the API key from local or session storage
+export const getApiKey = (): string | null => {
+    return localStorage.getItem(API_KEY_STORAGE_KEY) || sessionStorage.getItem(API_KEY_STORAGE_KEY);
+};
+
+// Helper function to save the API key
+export const saveApiKey = (key: string, forSession: boolean = false) => {
+    if (forSession) {
+        sessionStorage.setItem(API_KEY_STORAGE_KEY, key);
+        localStorage.removeItem(API_KEY_STORAGE_KEY);
+    } else {
+        localStorage.setItem(API_KEY_STORAGE_KEY, key);
+        sessionStorage.removeItem(API_KEY_STORAGE_KEY);
+    }
+};
+
+
 export const getGeminiResponse = async (prompt: string, systemInstruction?: string): Promise<string> => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
         return "Error: Parece que no tienes conexión a internet. Por favor, revisa tu conexión e inténtalo de nuevo.";
     }
 
-    // API Key is now handled by environment variables.
-    if (!process.env.API_KEY) {
-        console.error("Gemini API key is not configured in process.env.API_KEY");
-        return "Error: La API Key de Gemini no ha sido configurada en el entorno de la aplicación.";
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        return "Error: Tu API Key de Gemini no ha sido configurada. Por favor, ve a Configuración para añadirla.";
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     try {
         const response = await ai.models.generateContent({
@@ -31,7 +49,7 @@ export const getGeminiResponse = async (prompt: string, systemInstruction?: stri
              return "Error: La conexión con el servicio de IA tardó demasiado en responder. Por favor, revisa tu conexión a internet e inténtalo de nuevo.";
         }
         if (errorMessage.includes('API key not valid')) {
-             return "Error: La API Key configurada en el servidor no es válida. Por favor, contacta al administrador de la aplicación.";
+             return "Error: Tu API Key no es válida. Por favor, revisa que esté correcta en Configuración o genera una nueva.";
         }
         
         return "Hubo un error al conectar con el servicio de IA. Por favor, inténtalo de nuevo más tarde.";
