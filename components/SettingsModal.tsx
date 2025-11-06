@@ -19,18 +19,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
     useEffect(() => {
-        // Poll for voices, as they load asynchronously on mobile.
-        const voiceInterval = setInterval(() => {
+        const populateVoices = () => {
             const availableVoices = ttsService.getAvailableVoices();
             if (availableVoices.length > 0) {
                 setVoices(availableVoices);
-                setTtsSettings(ttsService.getSettings());
+                if (!ttsSettings) { // Set initial settings only once
+                    setTtsSettings(ttsService.getSettings());
+                }
+                return true;
+            }
+            return false;
+        };
+
+        // 1. Intento inmediato
+        if (populateVoices()) return;
+
+        // 2. Escuchar el evento (método preferido)
+        speechSynthesis.onvoiceschanged = () => {
+            populateVoices();
+        };
+
+        // 3. Usar un intervalo como fallback para navegadores problemáticos
+        const voiceInterval = setInterval(() => {
+            if (populateVoices()) {
                 clearInterval(voiceInterval);
             }
-        }, 100);
+        }, 250);
 
-        return () => clearInterval(voiceInterval);
-    }, []);
+        // Limpieza al desmontar el componente
+        return () => {
+            clearInterval(voiceInterval);
+            speechSynthesis.onvoiceschanged = null;
+        };
+    }, [ttsSettings]); // Depend on ttsSettings to avoid re-running if it's already set
 
     const handleTtsChange = (change: Partial<ITtsSettings>) => {
         if (!ttsSettings) return;

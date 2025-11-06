@@ -19,23 +19,21 @@ class TtsService {
         }
         
         // Intentar cargar las voces. `onvoiceschanged` es crucial para móviles.
-        window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
-        this.loadVoices();
+        window.speechSynthesis.onvoiceschanged = () => this.loadInitialVoice();
+        this.loadInitialVoice();
     }
   }
   
-  private loadVoices() {
+  private loadInitialVoice() {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
           const allVoices = window.speechSynthesis.getVoices();
           if (allVoices.length > 0) {
               this.voices = allVoices.filter(v => v.lang.startsWith('es-'));
               
-              // Si hay una voz guardada, intentar encontrarla
               const preferredVoice = this.voices.find(v => v.name === this.settings.voiceName);
               if (preferredVoice) {
                   this.voice = preferredVoice;
               } else if (this.voices.length > 0) {
-                  // Si no, buscar una voz masculina de Google como predeterminada
                   const spanishMaleGoogle = this.voices.find(v => v.name.includes('Google') && !v.name.includes('Femenina'));
                   const spanishMale = this.voices.find(v => v.name.includes('Male') || v.name.includes('Masculino'));
                   this.voice = spanishMaleGoogle || spanishMale || this.voices[0];
@@ -47,9 +45,9 @@ class TtsService {
   }
 
   public getAvailableVoices = (): SpeechSynthesisVoice[] => {
-    // Intentar cargar las voces de nuevo si están vacías, esto ayuda en móviles
-    if (this.voices.length === 0) {
-        this.loadVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        // Siempre obtener la lista más fresca, crucial para la carga asíncrona en móviles.
+        this.voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('es-'));
     }
     return this.voices;
   }
@@ -59,7 +57,7 @@ class TtsService {
   public updateSettings(newSettings: Partial<ITtsSettings>) {
       this.settings = { ...this.settings, ...newSettings };
       localStorage.setItem(TTS_SETTINGS_KEY, JSON.stringify(this.settings));
-      this.voice = this.voices.find(v => v.name === this.settings.voiceName) || this.voice;
+      this.voice = this.getAvailableVoices().find(v => v.name === this.settings.voiceName) || this.voice;
   }
 
   private processQueue() {
