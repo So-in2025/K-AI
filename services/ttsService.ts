@@ -6,56 +6,54 @@ class TtsService {
   private voices: SpeechSynthesisVoice[] = [];
   private settings: ITtsSettings = { voiceName: null, rate: 1, pitch: 1 };
   
-  private isReadyPromise: Promise<void>;
-  private isInitialized = false;
   private utteranceQueue: { text: string; pause: number; rate?: number; pitch?: number }[] = [];
   private isSpeaking = false;
   private currentSequenceResolver: (() => void) | null = null;
 
   constructor() {
-    this.isReadyPromise = new Promise((resolve) => {
-       if (typeof window !== 'undefined' && window.speechSynthesis) {
-          const checkVoices = () => {
-              this.voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('es-'));
-              if (this.voices.length > 0) {
-                  const storedSettings = localStorage.getItem(TTS_SETTINGS_KEY);
-                  if (storedSettings) {
-                      this.settings = JSON.parse(storedSettings);
-                  }
-                  
-                  const preferredVoice = this.voices.find(v => v.name === this.settings.voiceName);
-                  const spanishMaleGoogle = this.voices.find(v => v.name.includes('Google') && !v.name.includes('Femenina'));
-                  const spanishMale = this.voices.find(v => v.name.includes('Male') || v.name.includes('Masculino'));
-                  this.voice = preferredVoice || spanishMaleGoogle || spanishMale || this.voices[0] || null;
-                  
-                  if (this.voice && !this.settings.voiceName) {
-                      this.settings.voiceName = this.voice.name;
-                  }
-                  resolve();
-              }
-          };
-
-          if (window.speechSynthesis.getVoices().length > 0) {
-              checkVoices();
-          } else {
-              window.speechSynthesis.onvoiceschanged = () => {
-                checkVoices();
-              };
-          }
-       } else {
-          resolve();
-       }
-    });
-  }
-  
-  public init() {
-    if (!this.isInitialized && typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.getVoices();
-        this.isInitialized = true;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        // Cargar las configuraciones guardadas
+        const storedSettings = localStorage.getItem(TTS_SETTINGS_KEY);
+        if (storedSettings) {
+            this.settings = JSON.parse(storedSettings);
+        }
+        
+        // Intentar cargar las voces. `onvoiceschanged` es crucial para móviles.
+        window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+        this.loadVoices();
     }
   }
+  
+  private loadVoices() {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+          const allVoices = window.speechSynthesis.getVoices();
+          if (allVoices.length > 0) {
+              this.voices = allVoices.filter(v => v.lang.startsWith('es-'));
+              
+              // Si hay una voz guardada, intentar encontrarla
+              const preferredVoice = this.voices.find(v => v.name === this.settings.voiceName);
+              if (preferredVoice) {
+                  this.voice = preferredVoice;
+              } else if (this.voices.length > 0) {
+                  // Si no, buscar una voz masculina de Google como predeterminada
+                  const spanishMaleGoogle = this.voices.find(v => v.name.includes('Google') && !v.name.includes('Femenina'));
+                  const spanishMale = this.voices.find(v => v.name.includes('Male') || v.name.includes('Masculino'));
+                  this.voice = spanishMaleGoogle || spanishMale || this.voices[0];
+                  this.settings.voiceName = this.voice.name;
+                  localStorage.setItem(TTS_SETTINGS_KEY, JSON.stringify(this.settings));
+              }
+          }
+      }
+  }
 
-  public getAvailableVoices = (): SpeechSynthesisVoice[] => this.voices;
+  public getAvailableVoices = (): SpeechSynthesisVoice[] => {
+    // Intentar cargar las voces de nuevo si están vacías, esto ayuda en móviles
+    if (this.voices.length === 0) {
+        this.loadVoices();
+    }
+    return this.voices;
+  }
+  
   public getSettings = (): ITtsSettings => this.settings;
   
   public updateSettings(newSettings: Partial<ITtsSettings>) {
@@ -84,7 +82,7 @@ class TtsService {
     }
     
     const utterance = new SpeechSynthesisUtterance(item.text);
-    const selectedVoice = this.voices.find(v => v.name === this.settings.voiceName);
+    const selectedVoice = this.getAvailableVoices().find(v => v.name === this.settings.voiceName);
     utterance.voice = selectedVoice || this.voice;
     if (utterance.voice) {
         utterance.lang = utterance.voice.lang;
@@ -111,7 +109,6 @@ class TtsService {
 
   public speak(text: string, rate?: number, pitch?: number): Promise<void> {
     return new Promise(async (resolve) => {
-      await this.isReadyPromise;
       if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
         resolve();
         return;
@@ -146,14 +143,14 @@ class TtsService {
   }
 
   public speakSimple(text: string) {
-    this.isReadyPromise.then(() => {
       if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
         return;
       }
-      this.stop(); // Stop any ongoing speech (from sequences, etc.)
+      this.stop(); // Detener cualquier locución en curso
       const utterance = new SpeechSynthesisUtterance(text);
-      const selectedVoice = this.voices.find(v => v.name === this.settings.voiceName);
+      const selectedVoice = this.getAvailableVoices().find(v => v.name === this.settings.voiceName);
       utterance.voice = selectedVoice || this.voice;
+
       if (utterance.voice) {
         utterance.lang = utterance.voice.lang;
       }
@@ -165,12 +162,10 @@ class TtsService {
       };
 
       window.speechSynthesis.speak(utterance);
-    });
   }
 
   public speakSequence(script: { text: string; pause: number }[]): Promise<void> {
       return new Promise(async (resolve) => {
-        await this.isReadyPromise;
         if (!script || script.length === 0 || typeof window === 'undefined' || !window.speechSynthesis) {
             resolve();
             return;

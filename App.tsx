@@ -196,7 +196,6 @@ const App: React.FC = () => {
         setIsOnboardingOpen(true);
     }
 
-    ttsService.init();
     updateLastInteraction();
   }, [updateLastInteraction]);
 
@@ -993,7 +992,7 @@ const App: React.FC = () => {
   }
   
   return (
-    <div className="bg-slate-900 h-full text-slate-200 flex flex-col">
+    <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col">
       {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
       {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
       <Header 

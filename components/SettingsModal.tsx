@@ -19,12 +19,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
     useEffect(() => {
-        // give it a moment for voices to load from the browser
-        const timer = setTimeout(() => {
-            setTtsSettings(ttsService.getSettings());
-            setVoices(ttsService.getAvailableVoices());
+        // Poll for voices, as they load asynchronously on mobile.
+        const voiceInterval = setInterval(() => {
+            const availableVoices = ttsService.getAvailableVoices();
+            if (availableVoices.length > 0) {
+                setVoices(availableVoices);
+                setTtsSettings(ttsService.getSettings());
+                clearInterval(voiceInterval);
+            }
         }, 100);
-        return () => clearTimeout(timer);
+
+        return () => clearInterval(voiceInterval);
     }, []);
 
     const handleTtsChange = (change: Partial<ITtsSettings>) => {
@@ -75,9 +80,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
                                     onChange={(e) => handleTtsChange({ voiceName: e.target.value })}
                                     className="w-full p-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg"
                                 >
-                                    {voices.map(voice => (
+                                    {voices.length > 0 ? voices.map(voice => (
                                         <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>
-                                    ))}
+                                    )) : <option>Cargando voces...</option>}
                                 </select>
                             </div>
                             <div>
