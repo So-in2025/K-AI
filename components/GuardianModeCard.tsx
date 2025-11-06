@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker } from '../types';
 import { UpgradeCard } from './UpgradeCard';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const ShieldIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 22l9-1.056A12.02 12.02 0 0017.618 7.984z" />
     </svg>
 );
@@ -163,7 +164,7 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                             <div className="relative h-16 w-16">
                                 <div className="absolute inset-0 bg-red-500 rounded-full animate-ping"></div>
                                 <div className="relative h-16 w-16 bg-red-600 rounded-full flex items-center justify-center">
-                                    <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                    <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,11 @@
+
 import React, { useState, useMemo } from 'react';
 import { ICraving } from '../types';
 import { LogCravingModal } from './LogCravingModal';
 import { TtsInfoButton } from './TtsInfoButton';
 
 const WaveIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8s4-4 8 0 8 4 8 4-4-4-8 0-8 4-8 4zM4 14s4-4 8 0 8 4 8 4-4-4-8 0-8 4-8 4z" />
     </svg>
 );

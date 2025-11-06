@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { IHabitLoop } from '../types';
 import { getGeminiResponse } from '../services/geminiService';

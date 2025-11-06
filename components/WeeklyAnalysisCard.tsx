@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { ICraving, IWellnessActivity, UserFocus, IDopamineHit, UsageTracker, FeatureID } from '../types';
@@ -17,7 +18,7 @@ const parseMarkdown = (text: string) => {
 };
 
 const BrainIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.94 13.94A8.5 8.5 0 014.06 4.06M4.06 13.94A8.5 8.5 0 0117.94 4.06M3 10h.01M3 14h.01M12 3v.01M12 21v.01M7 4.99L7.01 5M7 19l-.01.01" />
     </svg>
 );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { IGoal, GoalType } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
