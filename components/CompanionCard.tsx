@@ -1,7 +1,8 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
-import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit } from '../types';
+import { ICraving, IConversationTurn, KaiEmotion, KaiGesture, IWellnessActivity, IGoal, UserFocus, OnboardingData, IDopamineHit, Archetype, ARCHETYPE_NAMES } from '../types';
 import ttsService from '../services/ttsService';
 
 // Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
@@ -46,7 +47,14 @@ const BookmarkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const getKaiSystemPrompt = (onboardingData: OnboardingData, kaiMemory: string, isSubscribed: boolean): string => {
+const PerspectiveIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+
+const getKaiSystemPrompt = (onboardingData: OnboardingData, kaiMemory: string, isSubscribed: boolean, activeArchetype: Archetype): string => {
     let basePrompt = `Eres Kai, un compañero IA para el bienestar y la sanación. Tu personalidad es fluida y adaptativa. Analiza el historial de la conversación y el último mensaje/acción del usuario para adaptar tu tono. Puedes ser:
 - Empático y sabio (usando técnicas de TCC y mindfulness) si el usuario necesita apoyo.
 - Analítico y previsor (basado en datos) si el usuario pide una estrategia.
@@ -77,6 +85,28 @@ El usuario te ha proporcionado la siguiente información inicial sobre sí mismo
         }
         basePrompt += `\n**HERRAMIENTAS PLUS:**\nEl usuario tiene acceso a herramientas avanzadas. Utiliza la información de su Resumen de Bienestar (prácticas de dopamina) para motivarlo. Conecta sus acciones diarias con sus metas a largo plazo y sus fuentes de bienestar natural. Por ejemplo: 'Veo en tu resumen que el [Categoría de Dopamina] ha sido importante para ti. ¡Genial! Cada pequeña acción como esa te acerca a tus metas.'\n`;
     }
+    
+    let archetypeInstruction = '';
+    switch (activeArchetype) {
+        case 'sabio':
+            archetypeInstruction = `\n**MODO DE PERSPECTIVA - EL SABIO:**\nAhora encarnas el arquetipo del Sabio. Responde a la siguiente consulta del usuario desde una perspectiva de sabiduría, desapego y visión a largo plazo. Usa un lenguaje tranquilo, profundo y metafórico. Tu objetivo es ofrecer una nueva perspectiva, no una solución directa.`;
+            break;
+        case 'guerrero':
+            archetypeInstruction = `\n**MODO DE PERSPECTIVA - EL GUERRERO INTERIOR:**\nAhora encarnas el arquetipo del Guerrero Interior. Responde a la siguiente consulta del usuario desde una perspectiva de coraje, disciplina, límites y acción directa. Usa un lenguaje que inspire fuerza y responsabilidad.`;
+            break;
+        case 'nino':
+            archetypeInstruction = `\n**MODO DE PERSPECTIVA - EL NIÑO INTERIOR:**\nAhora encarnas el arquetipo del Niño Interior. Responde desde una perspectiva de curiosidad, asombro, juego y emoción pura. Valida los sentimientos del usuario de forma simple, directa y sin juicios.`;
+            break;
+        case 'sanador':
+            archetypeInstruction = `\n**MODO DE PERSPECTIVA - EL SANADOR:**\nAhora encarnas el arquetipo del Sanador. Responde desde una perspectiva de compasión, gentileza, aceptación y autocuidado. Tu lenguaje debe ser suave, paciente y reconfortante.`;
+            break;
+        case 'coach':
+        default:
+            // No additional instruction for the default coach persona.
+            break;
+    }
+
+    basePrompt += archetypeInstruction;
 
     basePrompt += `\nREGLAS DE RESPUESTA:
 1. Basado en TODO el contexto (datos y conversación), formula una respuesta conversacional, concisa y profunda.
@@ -116,6 +146,9 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
     const [emotion, setEmotion] = useState<KaiEmotion>('empathetic');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+    
+    const [activeArchetype, setActiveArchetype] = useState<Archetype>('coach');
+    const [isPerspectiveChangerOpen, setIsPerspectiveChangerOpen] = useState(false);
 
 
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -177,6 +210,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         if (!currentInput.trim() || isLoading) return;
 
         setSuggestions([]);
+        setIsPerspectiveChangerOpen(false);
 
         if (!textToSend) { 
              const userTurn: IConversationTurn = { role: 'user', text: currentInput };
@@ -211,7 +245,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
             ? `Metas Activas: ${goals.map(g => `(${g.type}) ${g.content}`).join('; ')}.` 
             : "No hay metas activas en este momento.";
         
-        const systemInstruction = getKaiSystemPrompt(onboardingData, kaiMemory, isSubscribed);
+        const systemInstruction = getKaiSystemPrompt(onboardingData, kaiMemory, isSubscribed, activeArchetype);
 
         const prompt = `
             DATOS CONTEXTUALES:
@@ -320,6 +354,12 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
         }
     };
     
+    const handleArchetypeSelect = (archetype: Archetype) => {
+        setActiveArchetype(archetype);
+        setIsPerspectiveChangerOpen(false);
+        ttsService.speak(`Ahora hablas con ${ARCHETYPE_NAMES[archetype]}`);
+    };
+    
     const renderMarkdown = (text: string) => ({ __html: text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br />') });
 
     const emotionClasses: Record<KaiEmotion, string> = {
@@ -396,6 +436,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 @keyframes orbit3 { from { transform: translate(-50%, -50%) rotateY(120deg) rotateX(-60deg) translateX(65px); } to { transform: translate(-50%, -50%) rotateY(480deg) rotateX(-60deg) translateX(65px); } }
                 @keyframes nod-gesture { 0%, 100% { transform: rotateX(0); } 25% { transform: rotateX(-15deg); } 75% { transform: rotateX(10deg); } }
                 @keyframes shake-gesture { 0%, 100% { transform: rotateY(0); } 25% { transform: rotateY(-15deg); } 75% { transform: rotateY(15deg); } }
+                @keyframes fade-in-up-fast { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-fade-in-up-fast { animation: fade-in-up-fast 0.2s ease-out forwards; }
             `}</style>
             
             <div className="p-4 flex flex-col items-center justify-center" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
@@ -422,7 +464,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                 </div>
                 
                 {suggestions.length > 0 && !isLoading && !userInput && (
-                    <div className="flex flex-wrap justify-center gap-2 mb-2 animate-fade-in-up">
+                    <div className="flex flex-wrap justify-center gap-2 mb-2 animate-fade-in-up-fast">
                         {suggestions.map((s, i) => (
                             <button
                                 key={i}
@@ -435,45 +477,77 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ daysSober, craving
                     </div>
                 )}
 
-                <div className="relative flex items-center">
-                     <button
-                        onClick={onRequestMemoryUpdate}
-                        disabled={isLoading || conversation.length === 0 || !isSubscribed}
-                        className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10 bg-slate-600 text-slate-200 hover:bg-slate-500 disabled:cursor-not-allowed"
-                        aria-label="Recordar esta conversación"
-                        title={isSubscribed ? "Recordar esta conversación" : "Disponible en KIA Plus"}
-                    >
-                        <BookmarkIcon />
-                    </button>
-                    <textarea
-                        ref={textareaRef}
-                        value={userInput}
-                        onChange={handleUserInput}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
-                        placeholder={isLoading ? "Kai está reflexionando..." : "Habla con Kai..."}
-                        className="w-full p-3 pl-14 pr-16 bg-slate-700 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-teal-500 resize-none text-slate-100"
-                        rows={1}
-                        disabled={isLoading}
-                    />
-                     <button
-                        onClick={userInput.trim() ? () => handleSend() : handleMicClick}
-                        disabled={isLoading}
-                        className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10
-                            ${userInput.trim()
-                                ? 'bg-teal-600 text-white hover:bg-teal-500'
-                                : isListening 
-                                    ? 'bg-red-500 text-white animate-pulse' 
-                                    : 'bg-slate-600 text-slate-200 hover:bg-slate-500'
-                            }`}
-                        aria-label={userInput.trim() ? 'Enviar' : (isListening ? 'Detener' : 'Grabar')}
-                    >
-                        {userInput.trim() ? <SendIcon /> : <MicIcon />}
-                    </button>
+                <div className="relative">
+                     {isPerspectiveChangerOpen && (
+                        <div className="absolute bottom-full mb-2 w-full bg-slate-900/80 backdrop-blur-sm rounded-lg p-2 border border-slate-700 animate-fade-in-up-fast">
+                            <p className="text-xs text-center text-slate-400 mb-2">Cambiar perspectiva</p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(Object.keys(ARCHETYPE_NAMES) as Archetype[]).map(arch => (
+                                    <button
+                                        key={arch}
+                                        onClick={() => handleArchetypeSelect(arch)}
+                                        className={`px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                                            activeArchetype === arch
+                                                ? 'bg-teal-600 text-white'
+                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                        }`}
+                                    >
+                                        {ARCHETYPE_NAMES[arch]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="relative flex items-center">
+                         <button
+                            onClick={onRequestMemoryUpdate}
+                            disabled={isLoading || conversation.length === 0 || !isSubscribed}
+                            className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10 bg-slate-600 text-slate-200 hover:bg-slate-500 disabled:cursor-not-allowed"
+                            aria-label="Recordar esta conversación"
+                            title={isSubscribed ? "Recordar esta conversación" : "Disponible en KIA Plus"}
+                        >
+                            <BookmarkIcon />
+                        </button>
+                        <textarea
+                            ref={textareaRef}
+                            value={userInput}
+                            onChange={handleUserInput}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            placeholder={isLoading ? "Kai está reflexionando..." : `Habla con ${ARCHETYPE_NAMES[activeArchetype]}...`}
+                            className="w-full p-3 pl-14 pr-28 bg-slate-700 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-teal-500 resize-none text-slate-100"
+                            rows={1}
+                            disabled={isLoading}
+                        />
+                         <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                             <button
+                                onClick={() => setIsPerspectiveChangerOpen(prev => !prev)}
+                                className={`p-2 rounded-full transition-all duration-200 flex items-center justify-center h-10 w-10 ${isPerspectiveChangerOpen ? 'bg-teal-600 text-white' : 'bg-slate-600 text-slate-200 hover:bg-slate-500'}`}
+                                aria-label="Cambiar Perspectiva"
+                                title="Cambiar Perspectiva"
+                            >
+                                <PerspectiveIcon />
+                            </button>
+                            <button
+                                onClick={userInput.trim() ? () => handleSend() : handleMicClick}
+                                disabled={isLoading}
+                                className={`p-2 rounded-full transition-all duration-200 disabled:opacity-50 flex items-center justify-center h-10 w-10
+                                    ${userInput.trim()
+                                        ? 'bg-teal-600 text-white hover:bg-teal-500'
+                                        : isListening 
+                                            ? 'bg-red-500 text-white animate-pulse' 
+                                            : 'bg-slate-600 text-slate-200 hover:bg-slate-500'
+                                    }`}
+                                aria-label={userInput.trim() ? 'Enviar' : (isListening ? 'Detener' : 'Grabar')}
+                            >
+                                {userInput.trim() ? <SendIcon /> : <MicIcon />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -195,3 +195,14 @@ export interface IMoodJournal {
     transcript: string;
     plan: IMoodPlan;
 }
+
+// Oraculo Interior
+export type Archetype = 'coach' | 'sabio' | 'guerrero' | 'nino' | 'sanador';
+
+export const ARCHETYPE_NAMES: Record<Archetype, string> = {
+  coach: 'Kai Coach',
+  sabio: 'El Sabio',
+  guerrero: 'El Guerrero',
+  nino: 'El Niño Interior',
+  sanador: 'El Sanador',
+};
