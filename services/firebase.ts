@@ -5,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 
 // Configuración del proyecto de Firebase del usuario.
 const firebaseConfig = {
-  apiKey: "AIzaSyAVEAnKo_Mhn6clvjEOBXqCddUViSej3ik",
+  apiKey: "AIzaSyAVEAnKo_Mhn6clvjEOBXqCddUVISej3ik",
   authDomain: "kia-ia.firebaseapp.com",
   projectId: "kia-ia",
   storageBucket: "kia-ia.appspot.com",

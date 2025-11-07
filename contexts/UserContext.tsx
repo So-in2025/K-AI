@@ -32,6 +32,45 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return null;
     }, [userData?.geminiApiKey]);
 
+    const updateUserData = useCallback(async (data: Partial<IUserProfile>) => {
+        if (user) {
+            // Optimistic update
+            setUserData(prev => prev ? { ...prev, ...data } : null);
+            await updateUserProfile(user.uid, data);
+        }
+    }, [user]);
+    
+    const checkSubscriptionActivation = useCallback(async () => {
+        const activationCode = localStorage.getItem('activationCode');
+        if (activationCode && user && !userData?.isSubscribed) {
+            console.log("Found activation code, attempting to verify...");
+            try {
+                const response = await fetch('/.netlify/functions/check-activation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: activationCode }),
+                });
+
+                if (response.ok) {
+                    const { activated } = await response.json();
+                    if (activated) {
+                        console.log("Activation successful!");
+                        await updateUserData({ isSubscribed: true });
+                        localStorage.removeItem('activationCode');
+                        alert("¡Felicidades! KIA Plus ha sido activado en tu cuenta.");
+                    } else {
+                        console.log("Activation code not valid or already used.");
+                        // Optionally remove invalid code
+                        // localStorage.removeItem('activationCode');
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking subscription activation:", error);
+            }
+        }
+    }, [user, userData?.isSubscribed, updateUserData]);
+
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (userAuth) => {
             setLoading(true);
@@ -50,6 +89,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        if (user && userData) {
+            checkSubscriptionActivation();
+        }
+    }, [user, userData, checkSubscriptionActivation]);
+
     const login = async () => {
         try {
             await signInWithPopup(auth, googleProvider);
@@ -65,14 +110,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error("Error during sign-out:", error);
         }
     };
-
-    const updateUserData = useCallback(async (data: Partial<IUserProfile>) => {
-        if (user) {
-            // Optimistic update
-            setUserData(prev => prev ? { ...prev, ...data } : null);
-            await updateUserProfile(user.uid, data);
-        }
-    }, [user]);
 
     const daysSober = useMemo(() => {
         if (!userData?.startDate) return 0;
