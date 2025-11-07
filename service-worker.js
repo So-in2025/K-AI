@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kia-cache-v1';
+const CACHE_NAME = 'kia-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',

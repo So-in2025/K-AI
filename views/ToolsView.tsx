@@ -11,8 +11,7 @@ import { useUser } from '../contexts/UserContext';
 import { IGoal, GoalType, IReminder, ICraving, IThoughtLabEntry, IHabitLoop } from '../types';
 
 export const ToolsView: React.FC = () => {
-    // Fix: Get all necessary data and functions from the user context.
-    const { userData, updateUserData, addConversationTurn, checkAndConsumeUsage } = useUser();
+    const { userData, updateUserData, addConversationTurn, checkAndConsumeUsage, geminiService } = useUser();
     const [goals, setGoals] = useState<IGoal[]>(userData?.goals || []);
     const [isLoadingGoals, setIsLoadingGoals] = useState(false);
 
@@ -23,22 +22,20 @@ export const ToolsView: React.FC = () => {
     }, [userData?.goals]);
 
     const handleGenerateGoal = useCallback(async (type: GoalType) => {
-        if (!userData?.geminiApiKey || !userData.onboardingData) return;
+        if (!geminiService || !userData?.onboardingData) return;
         setIsLoadingGoals(true);
 
         const focusText = userData.onboardingData.focuses.join(', ');
         const prompt = `Basado en el enfoque de un usuario en ${focusText} y su progreso, genera una meta ${type} que sea S.M.A.R.T. (Específica, Medible, Alcanzable, Relevante, con Plazo). Sé conciso. Responde solo con el texto de la meta.`;
         
-        // This requires direct call to gemini, cannot use the service from context as it's not provided in this view
-        const geminiSvc = new (await import('../services/geminiService')).GeminiService(userData.geminiApiKey);
-        const content = await geminiSvc.generateContent(prompt);
+        const content = await geminiService.generateContent(prompt);
         
         const newGoal: IGoal = { type, content };
         const updatedGoals = [...goals.filter(g => g.type !== type), newGoal];
         setGoals(updatedGoals);
         updateUserData({ goals: updatedGoals }); 
         setIsLoadingGoals(false);
-    }, [userData, updateUserData, goals]);
+    }, [userData, updateUserData, goals, geminiService]);
 
     const handleJournalSave = useCallback(() => {
         if (userData?.journalEntry) {
