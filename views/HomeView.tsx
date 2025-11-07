@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
@@ -12,6 +11,7 @@ type GuardianState = {
   status: 'idle' | 'starting' | 'active' | 'stopping' | 'analyzing' | 'error';
   analysis: any; // Simplified for prop drilling, consider a more specific type
   error: string | null;
+  transcript: string;
 }
 interface HomeViewProps {
     apiKey: string | null;
@@ -49,7 +49,6 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                 </div>
                 {props.onboardingData.focuses.includes('addiction') && (
                      <GuardianModeCard 
-                        apiKey={props.apiKey}
                         status={props.guardianState.status}
                         analysis={props.guardianState.analysis}
                         error={props.guardianState.error}
@@ -59,7 +58,8 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                         onUpdateConfig={props.onUpdateGuardianConfig}
                         isSubscribed={props.isSubscribed}
                         usageTracker={props.usageTracker}
-                        onboardingData={props.onboardingData}
+                        apiKey={props.apiKey} 
+                        transcript={props.guardianState.transcript}
                      />
                 )}
                 <MoodJournalCard 

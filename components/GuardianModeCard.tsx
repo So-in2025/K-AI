@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker, OnboardingData, UserFocus } from '../types';
+import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker, OnboardingData } from '../types';
 import { UpgradeCard } from './UpgradeCard';
 import { TtsInfoButton } from './TtsInfoButton';
-import { getGeminiResponse } from '../services/geminiService';
 
 const ShieldIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,18 +44,18 @@ interface GuardianModeCardProps {
     analysis: GuardianAnalysisResult | null;
     error: string | null;
     onStart: () => void;
-    onStop: (transcript: string, prompt: string) => void; // Pass transcript and prompt
+    onStop: () => void;
     triggerWords: string[];
     onUpdateConfig: (words: string[]) => void;
     isSubscribed: boolean;
     usageTracker: UsageTracker | null;
-    onboardingData: OnboardingData;
     apiKey: string | null;
+    transcript: string;
 }
 
 const GUARDIAN_CONSENT_KEY = 'guardianConsentGiven';
 
-export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed, usageTracker, onboardingData, apiKey }) => {
+export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed, usageTracker }) => {
     const [showConsent, setShowConsent] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [isEditingConfig, setIsEditingConfig] = useState(false);
@@ -114,6 +113,29 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
             </div>
         </>
     );
+    
+    const renderAnalysisContent = (analysisData: IGuardianAnalysis) => {
+        // This is a flexible way to display different analysis structures
+        const analysisItems = [
+            { title: "Detonante Principal / Reacción en Cadena", content: (analysisData as any).trigger || (analysisData as any).chainReaction, icon: <TriggerIcon /> },
+            { title: "Presión Social / Creencia Nuclear", content: (analysisData as any).socialPressure || (analysisData as any).coreBelief, icon: <SocialPressureIcon /> },
+            { title: "Justificaciones / Insight Holístico", content: (analysisData as any).justification || (analysisData as any).holisticInsight, icon: <JustificationIcon /> },
+            { title: "Punto de Inflexión / Oportunidad de Compasión", content: (analysisData as any).turningPoint || (analysisData as any).compassionOpportunity, icon: <TurningPointIcon /> },
+            { title: "Estrategia Sugerida / Acción Integradora", content: (analysisData as any).escapeStrategy || (analysisData as any).integrativeStrategy || (analysisData as any).gentleAction, icon: <EscapeStrategyIcon /> },
+        ].filter(item => item.content); // Only show items that have content
+
+        return (
+             <div className="space-y-4 bg-slate-900/50 p-4 rounded-lg">
+                {analysisItems.map(item => (
+                    <div key={item.title}>
+                        <h4 className="font-semibold text-teal-400 text-sm flex items-center">{item.icon}{item.title.split(' / ')[0]}</h4>
+                        <p className="text-slate-300 text-sm pl-7">{item.content}</p>
+                    </div>
+                ))}
+             </div>
+        )
+    }
+
 
     const renderContent = () => {
         if (isEditingConfig) return renderConfig();
@@ -134,24 +156,10 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                 );
             }
             const analysisData = analysis as IGuardianAnalysis;
-            const analysisItems = [
-                { title: "Detonante Principal", content: analysisData.trigger, icon: <TriggerIcon /> },
-                { title: "Presión Social", content: analysisData.socialPressure, icon: <SocialPressureIcon /> },
-                { title: "Justificaciones", content: analysisData.justification, icon: <JustificationIcon /> },
-                { title: "Punto de Inflexión", content: analysisData.turningPoint, icon: <TurningPointIcon /> },
-                { title: "Estrategia Sugerida", content: analysisData.escapeStrategy, icon: <EscapeStrategyIcon /> },
-            ];
             return (
                 <div>
                      <p className="text-slate-400 mb-4 text-sm">Aquí tienes un análisis de la situación para ayudarte a reflexionar. Usa estos insights para fortalecerte.</p>
-                     <div className="space-y-4 bg-slate-900/50 p-4 rounded-lg">
-                        {analysisItems.map(item => (
-                            <div key={item.title}>
-                                <h4 className="font-semibold text-teal-400 text-sm flex items-center">{item.icon}{item.title}</h4>
-                                <p className="text-slate-300 text-sm pl-7">{item.content}</p>
-                            </div>
-                        ))}
-                     </div>
+                     {renderAnalysisContent(analysisData)}
                      <button 
                         onClick={() => setShowAnalysis(false)}
                         className="w-full mt-4 bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-700"
@@ -177,7 +185,7 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                             </div>
                         </div>
                         <button
-                            onClick={() => onStop('', '')} // Let the App component handle the logic
+                            onClick={onStop}
                             disabled={status === 'stopping'}
                             className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700 transition-colors disabled:bg-red-800"
                         >
@@ -234,13 +242,13 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
     };
 
     return (
-        <div className={`bg-slate-800 p-6 rounded-2xl shadow-lg relative transition-all duration-500 ${status === 'active' ? 'ring-2 ring-red-500/50 animate-pulse-border' : ''}`}>
+        <div className={`bg-slate-800 p-6 rounded-2xl shadow-lg relative transition-all duration-500 ${status === 'active' ? 'ring-2 ring-red-500/50' : ''}`}>
              <style>{`
                 @keyframes pulse-border {
                     0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
                     50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
                 }
-                .animate-pulse-border {
+                .ring-2 {
                     animation: pulse-border 2s infinite;
                 }
             `}</style>

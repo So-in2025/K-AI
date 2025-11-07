@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
@@ -154,6 +153,11 @@ const App: React.FC = () => {
 
   // Guardian Mode State with Reducer
   const [guardianState, dispatchGuardian] = useReducer(guardianReducer, initialGuardianState);
+  // FIX: Use a ref to hold the transcript to avoid stale closures in callbacks.
+  const guardianTranscriptRef = useRef(guardianState.transcript);
+  useEffect(() => {
+    guardianTranscriptRef.current = guardianState.transcript;
+  }, [guardianState.transcript]);
   const [guardianTriggerWords, setGuardianTriggerWords] = useState<string[]>([]);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -775,7 +779,8 @@ const App: React.FC = () => {
           onerror: (e: ErrorEvent) => {
             console.error('Guardian mode error:', e);
             dispatchGuardian({ type: 'SET_ERROR', payload: 'Error de conexión del Modo Guardián.' });
-            handleStopGuardian();
+            // FIX: Pass the transcript from the ref to handleStopGuardian to avoid stale closures.
+            handleStopGuardian(guardianTranscriptRef.current);
           },
           onclose: () => {
             console.log('Guardian mode connection closed.');
@@ -794,7 +799,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleStopGuardian = async () => {
+  const handleStopGuardian = async (transcript: string) => {
     dispatchGuardian({ type: 'STOP' });
 
     if (streamRef.current) {
@@ -816,10 +821,8 @@ const App: React.FC = () => {
       }
       sessionPromiseRef.current = null;
     }
-    
-    const finalTranscript = guardianState.transcript;
 
-    if (!finalTranscript.trim()) {
+    if (!transcript.trim()) {
       dispatchGuardian({ type: 'RESET' });
       return;
     }
@@ -832,36 +835,54 @@ const App: React.FC = () => {
             return;
         }
     }
-
-    const prompt = `
-        Eres Kai, un terapeuta experto en adicciones y TCC. Analiza la siguiente transcripción de una situación social de alto riesgo para un usuario. Tu objetivo es identificar patrones de comportamiento y pensamiento que llevaron a un posible consumo.
-
+    
+    // --- DYNAMIC PROMPT SELECTION LOGIC ---
+    let analysisPrompt = `
+        Eres Kai, un terapeuta experto. Analiza la siguiente transcripción. Tu objetivo es identificar patrones de comportamiento y pensamiento. Responde únicamente con un objeto JSON con las claves: "trigger", "socialPressure", "justification", "turningPoint", "escapeStrategy".
+        
         TRANSCRIPCIÓN:
-        "${finalTranscript}"
-
-        Analiza la transcripción y extrae la siguiente información:
-        1.  **trigger**: ¿Cuál fue el detonante principal? (Ej: "La conversación sobre problemas económicos generó estrés.")
-        2.  **socialPressure**: ¿Hubo presión social? Descríbela. (Ej: "Juan le ofreció directamente y se burló cuando dudó.")
-        3.  **justification**: ¿Qué justificaciones o pensamientos permisivos usó el usuario o otros para racionalizar el consumo? (Ej: "El usuario dijo 'solo por hoy no pasa nada' para minimizar las consecuencias.")
-        4.  **turningPoint**: ¿Cuál fue el punto de inflexión donde la decisión de consumir se volvió casi inevitable? (Ej: "Cuando aceptó quedarse 'solo cinco minutos más' después de que sacaron la droga.")
-        5.  **escapeStrategy**: ¿Qué estrategia concreta podría haber usado para evitar el consumo en esa situación? (Ej: "Podría haber dicho 'Tengo un compromiso temprano mañana, debo irme' en el momento en que la conversación se volvió incómoda.")
-
-        Responde únicamente con un objeto JSON, sin explicaciones adicionales. El formato debe ser:
-        {
-          "trigger": "...",
-          "socialPressure": "...",
-          "justification": "...",
-          "turningPoint": "...",
-          "escapeStrategy": "..."
-        }
+        "${transcript}"
     `;
 
+    const focuses = onboardingData?.focuses || [];
+    if (focuses.length > 1) { // Integrative prompt
+        analysisPrompt = `
+            Eres Kai, un terapeuta experto en enfoques integradores. El usuario está lidiando con ${focuses.join(', ')}. Analiza la siguiente transcripción para identificar las CONEXIONES entre estos desafíos.
+            TRANSCRIPCIÓN: "${transcript}"
+            Genera un objeto JSON con 4 claves:
+            1. "chainReaction": Describe la reacción en cadena. Ej: "Una conversación sobre [tema de duelo] llevó a un sentimiento de [emoción de depresión], que a su vez se convirtió en el detonante para [comportamiento adictivo]".
+            2. "coreBelief": ¿Qué creencia subyacente parece conectar estos problemas?
+            3. "holisticInsight": ¿Cuál es el insight más importante que une todo?
+            4. "integrativeStrategy": Una sugerencia que aborde los problemas de forma conectada, no aislada.
+        `;
+    } else if (focuses.includes('addiction')) {
+        analysisPrompt = `
+            Eres Kai, un terapeuta experto en adicciones y TCC. Analiza la siguiente transcripción de una situación social de alto riesgo.
+            TRANSCRIPCIÓN: "${transcript}"
+            Analiza y extrae un objeto JSON con: "trigger" (detonante principal), "socialPressure" (presión social), "justification" (pensamientos permisivos), "turningPoint" (punto de inflexión), y "escapeStrategy" (estrategia de evitación).
+        `;
+    } else if (focuses.includes('depression') || focuses.includes('grief')) {
+        const isDepression = focuses.includes('depression');
+        const mainFocus = isDepression ? 'depresión/ansiedad' : 'duelo';
+        analysisPrompt = `
+            Eres Kai, un terapeuta compasivo experto en ${mainFocus}. Analiza la siguiente transcripción.
+            TRANSCRIPCIÓN: "${transcript}"
+            Genera un objeto JSON con 4 claves:
+            1. "coreEmotion": ¿Cuál fue la emoción central no expresada?
+            2. "thoughtPattern": Identifica un patrón de pensamiento (ej: rumiación, catastrofismo, culpa).
+            3. "compassionOpportunity": ¿En qué momento podría el usuario haberse ofrecido más autocompasión?
+            4. "gentleAction": Una pequeña y gentil acción que podría haber ayudado.
+        `;
+    }
+    // --- END OF DYNAMIC PROMPT LOGIC ---
+
+
     try {
-        const response = await getGeminiResponse(apiKey, prompt);
+        const response = await getGeminiResponse(apiKey, analysisPrompt);
         const cleanedResponse = response.replace(/```json\n|```/g, '').trim();
         const parsedAnalysis: IGuardianAnalysis = JSON.parse(cleanedResponse);
         dispatchGuardian({ type: 'SET_ANALYSIS', payload: parsedAnalysis });
-        const summary = `[MODO GUARDIÁN] Acabo de usar el Modo Guardián. Kai analizó la situación. El detonante principal fue: "${parsedAnalysis.trigger}".`;
+        const summary = `[MODO GUARDIÁN] Acabo de usar el Modo Guardián. Kai analizó la situación.`;
         handleNewConversationTurn({ role: 'user', text: summary });
     } catch(error) {
         console.error("Error parsing guardian analysis:", error);
@@ -925,7 +946,7 @@ const App: React.FC = () => {
                   onboardingData={onboardingData}
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
-                  onStopGuardian={handleStopGuardian}
+                  onStopGuardian={() => handleStopGuardian(guardianTranscriptRef.current)}
                   dopamineHits={dopamineHits}
                   onLogDopamineHit={handleLogDopamineHit}
                   guardianTriggerWords={guardianTriggerWords}
@@ -1005,7 +1026,7 @@ const App: React.FC = () => {
                   onboardingData={onboardingData}
                   guardianState={guardianState}
                   onStartGuardian={handleStartGuardian}
-                  onStopGuardian={handleStopGuardian}
+                  onStopGuardian={() => handleStopGuardian(guardianTranscriptRef.current)}
                   dopamineHits={dopamineHits}
                   onLogDopamineHit={handleLogDopamineHit}
                   guardianTriggerWords={guardianTriggerWords}
