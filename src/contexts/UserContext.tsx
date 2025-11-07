@@ -4,7 +4,7 @@ import { auth, googleProvider, db } from '../services/firebase';
 import { createUserProfileDocument, getUserProfile, updateUserProfile } from '../services/firestoreService';
 import { GeminiService } from '../services/geminiService';
 import { ICraving, IConversationTurn, IUserProfile, FeatureID, UsageTracker, IGoal, GoalType, IWellnessActivity, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal, ITherapySession, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData } from '../types';
-import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/ai/generativelanguage';
+import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 
 // --- Guardian Mode Types (kept with context as it's complex state) ---
 type GuardianState = {
