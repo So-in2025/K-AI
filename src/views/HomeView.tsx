@@ -15,38 +15,30 @@ export const HomeView: React.FC = () => {
     if (!userData || !userData.onboardingData) return null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 animate-fade-in">
            
-            {/* Column 1 */}
-            <div className="space-y-6">
+            {/* Main Content Area (3/5 width on large screens) */}
+            <div className="lg:col-span-3 space-y-6">
+                <JournalCard />
+                <DopamineSanctuaryCard />
+                <GuardianModeCard />
+            </div>
+
+            {/* Sidebar Area (2/5 width on large screens) */}
+            <div className="lg:col-span-2 space-y-6">
                  {userData.onboardingData.focuses.includes('addiction') && (
                      <ProgressCard />
                  )}
                 <DailyQuoteCard />
                 <InnerGardenCard />
-            </div>
-
-            {/* Column 2 */}
-            <div className="space-y-6">
-                <JournalCard />
-                <GuardianModeCard />
-            </div>
-            
-            {/* Column 3 */}
-            <div className="space-y-6">
-                <DopamineSanctuaryCard />
+                <GoalsCard />
                 <WellnessSummaryCard />
             </div>
-
-            {/* Column 4 */}
-            <div className="space-y-6">
-                <GoalsCard />
-                {/* Other cards can be placed here */}
-            </div>
+            
             <style>{`
                 @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
             `}</style>

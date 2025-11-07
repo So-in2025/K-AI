@@ -94,7 +94,7 @@ export const HabitLoopCard: React.FC = () => {
             {!isCreating ? (
                 <>
                     <p className="text-slate-400 mb-4 text-sm">Deconstruye un hábito (Señal → Rutina → Recompensa) y diseña un nuevo bucle constructivo.</p>
-                    <button onClick={handleStart} disabled={!canStart} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 rounded-lg hover:bg-teal-600/30 disabled:opacity-50">{canStart ? 'Analizar un Hábito' : 'Usos gratuitos agotados'}</button>
+                    <button onClick={handleStart} disabled={!canStart} className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:bg-slate-500">{canStart ? 'Analizar un Hábito' : 'Usos gratuitos agotados'}</button>
                     {!userData.isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
                 </>
             ) : (

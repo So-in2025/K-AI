@@ -46,7 +46,7 @@ export const SoundtrackCard: React.FC = () => {
             <div className="flex items-center space-x-3 mb-3"><MusicIcon /><h2 className="text-xl font-bold text-slate-100">Banda Sonora para Sanar</h2></div>
 
             {!preferences ? (
-                <button onClick={() => setIsModalOpen(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg">Configurar mis gustos</button>
+                <button onClick={() => setIsModalOpen(true)} className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Configurar mis gustos</button>
             ) : isLoading ? (
                 <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div></div>
             ) : recommendations.length > 0 ? (
@@ -56,7 +56,7 @@ export const SoundtrackCard: React.FC = () => {
                  </div>
             ) : (
                 <>
-                    <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg disabled:opacity-50">{canGenerate ? 'Generar mi Banda Sonora' : 'Usos gratuitos agotados'}</button>
+                    <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:bg-slate-500">{canGenerate ? 'Generar mi Banda Sonora' : 'Usos gratuitos agotados'}</button>
                     {!userData.isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
                 </>
             )}

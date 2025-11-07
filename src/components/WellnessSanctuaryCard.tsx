@@ -679,7 +679,26 @@ export const WellnessSanctuaryCard: React.FC = () => {
     }
     
     const renderActiveBreathing = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedExercise?.name}</h3> <div className="flex items-center justify-center my-4 h-40"> <div className="relative w-36 h-36"><div className={`absolute inset-0 bg-teal-400 rounded-full ${currentStepInfo.animationClass}`} /><div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white">{currentStepInfo.name}</div></div> </div> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-teal-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
-    const renderActiveMeditation = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3> <p className="text-slate-400 mb-4">Escucha la guía de Kai...</p> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
+    const renderActiveMeditation = () => (
+        <div className="text-center">
+            <button onClick={() => cleanup()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver'}</button>
+            <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3>
+            
+            <div className="flex items-center justify-center my-4 h-40">
+                <div
+                    className="w-36 h-36 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xl font-semibold shadow-2xl"
+                    style={{ animation: 'breathing-pulse 5s infinite ease-in-out' }}
+                >
+                    Meditando
+                </div>
+            </div>
+    
+            <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4">
+                <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} />
+            </div> 
+            <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener Práctica</button> 
+        </div> 
+    );
     const renderActiveMovement = () => ( <> <button onClick={() => cleanup()} className="text-sm text-slate-400 mb-2 hover:underline">{'< Volver a la lista'}</button> <h3 className="font-bold text-slate-100 text-lg mb-2">{selectedVideo?.name}</h3> <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden"><iframe className="w-full h-full" src={`https://www.youtube.com/embed/${selectedVideo?.youtubeId}?autoplay=1`} title={selectedVideo?.name} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen></iframe></div> <button onClick={() => completePractice({ date: new Date().toISOString(), exerciseName: selectedVideo!.name, durationMinutes: selectedVideo!.duration, category: 'Movement' })} className="w-full mt-4 bg-lime-600 text-white font-semibold py-3 px-5 rounded-lg">He completado esta rutina</button> </> );
     const renderActiveQuest = () => ( <div className="p-3 bg-slate-700/50 rounded-lg"> <h3 className="text-md font-semibold mb-2 text-center text-yellow-300">{activeQuest?.name}</h3> <p className="text-sm text-slate-300 mb-3 text-center">{activeQuest?.script.find(s=>s.step===questStep)?.text}</p> {questStep === 'reflection' && <textarea value={questTextInput} onChange={(e) => setQuestTextInput(e.target.value)} placeholder="Escribe tu reflexión..." className="w-full h-24 p-2 bg-slate-700 rounded-lg"/>} <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={() => completeDopamineHit({ id: crypto.randomUUID(), date: new Date().toISOString(), activity: activeQuest!.activityLogName, category: activeQuest!.category })} disabled={questStep !== 'reflection' || questTextInput.trim().length < 10} className="flex-1 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg disabled:bg-slate-500">Completar</button> </div> </div> );
     const renderShamanicJourney = () => { 
@@ -727,6 +746,11 @@ export const WellnessSanctuaryCard: React.FC = () => {
                 .animate-inhale { animation-name: inhale; } .animate-exhale { animation-name: exhale; }
                 .aspect-w-16 { position: relative; padding-bottom: 56.25%; } .aspect-h-9 { height: 0; }
                 .aspect-w-16 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+                @keyframes breathing-pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.8; }
+                    50% { transform: scale(1.05); opacity: 1; }
+                }
 
                 .journey-visual { position: relative; width: 140px; height: 140px; margin: 1rem auto; display: flex; align-items: center; justify-content: center; }
                 .heart, .energy-ring, .particle { position: absolute; transition: all 2s ease-in-out; }

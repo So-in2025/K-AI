@@ -128,9 +128,30 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ onStartTherapySess
 
     return (
         <div className="bg-slate-800/50 border border-slate-700 rounded-2xl flex flex-col h-full">
+            <style>{`
+                @keyframes pulse-glow {
+                    0%, 100% {
+                        transform: scale(1);
+                        box-shadow: 0 0 20px 5px rgba(45, 212, 191, 0.3), 0 0 40px 10px rgba(45, 212, 191, 0.2);
+                    }
+                    50% {
+                        transform: scale(1.05);
+                        box-shadow: 0 0 30px 8px rgba(45, 212, 191, 0.4), 0 0 50px 15px rgba(45, 212, 191, 0.3);
+                    }
+                }
+            `}</style>
             {/* --- Avatar and Header --- */}
             <div className="p-4 flex flex-col items-center justify-center">
-                <div className="text-xl font-bold text-slate-100 mt-2">Kai</div>
+                 <div 
+                    className="w-24 h-24 rounded-full flex items-center justify-center mb-2"
+                    style={{
+                        background: 'radial-gradient(circle, rgba(107,235,221,1) 0%, rgba(20,184,166,1) 60%)',
+                        animation: 'pulse-glow 4s infinite ease-in-out'
+                    }}
+                >
+                    <div className="w-8 h-8 bg-white rounded-full opacity-90" style={{ boxShadow: '0 0 15px 5px white' }}/>
+                </div>
+                <div className="text-xl font-bold text-slate-100">Kai</div>
                 <div className="flex items-center space-x-2 mt-2">
                     <button 
                         onClick={onStartTherapySession} 

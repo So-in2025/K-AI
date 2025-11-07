@@ -51,7 +51,7 @@ export const CravingTrackerCard: React.FC = () => {
             </div>
             <div className="border-t border-slate-700 my-4"></div>
 
-            <button onClick={() => setIsModalOpen(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30">
+            <button onClick={() => setIsModalOpen(true)} className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">
                 Registrar un Antojo
             </button>
 

@@ -37,7 +37,7 @@ export const TrustCircleCard: React.FC = () => {
                 <TtsInfoButton explanation="La sanación es más fuerte en comunidad. Configura a una persona de tu confianza para compartir tu progreso. KIA preparará un borrador para que tú revises y envíes el informe desde tu email." />
                 <div className="flex items-center space-x-3 mb-3"><UsersIcon /><h2 className="text-xl font-bold">Círculo de Confianza</h2></div>
                 <p className="text-slate-400 mb-4 text-sm">Invita a alguien de confianza para compartir tu progreso de forma segura.</p>
-                <button onClick={() => setIsEditing(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 rounded-lg">Configurar mi Círculo</button>
+                <button onClick={() => setIsEditing(true)} className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Configurar mi Círculo</button>
             </div>
         );
     }
