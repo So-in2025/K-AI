@@ -65,13 +65,14 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                     onUpdateMoodJournal={props.onUpdateMoodJournal}
                 />
                 <div className={props.onboardingData.focuses.includes('addiction') ? "lg:col-span-2" : ""}>
-                    <DailyQuoteCard />
+                    <DailyQuoteCard onboardingData={props.onboardingData} />
                 </div>
                 <div className="lg:col-span-2">
                     <WellnessSanctuaryCard 
                         onLogActivity={props.onLogWellnessActivity}
                         onLogDopamineHit={props.onLogDopamineHit}
                         isSubscribed={props.isSubscribed}
+                        onboardingData={props.onboardingData}
                     />
                 </div>
             </div>

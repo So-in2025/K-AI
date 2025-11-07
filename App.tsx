@@ -84,6 +84,27 @@ function guardianReducer(state: GuardianState, action: GuardianAction): Guardian
   }
 }
 
+// --- Toast Notification Component ---
+interface Toast {
+  id: number;
+  message: string;
+}
+
+const ToastNotification: React.FC<{ toast: Toast, onDismiss: (id: number) => void }> = ({ toast, onDismiss }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onDismiss(toast.id);
+    }, 3000); // Disappear after 3 seconds
+    return () => clearTimeout(timer);
+  }, [toast, onDismiss]);
+
+  return (
+    <div className="bg-green-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg animate-toast-in-out">
+      {toast.message}
+    </div>
+  );
+};
+
 
 const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -123,6 +144,9 @@ const App: React.FC = () => {
   const [usageTracker, setUsageTracker] = useState<UsageTracker | null>(null);
   const [therapyTrialUsed, setTherapyTrialUsed] = useState(false);
 
+  // Toast notifications for gamification
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
 
   // MODAL STATES
   const [isTherapyModalOpen, setIsTherapyModalOpen] = useState(false);
@@ -145,10 +169,20 @@ const App: React.FC = () => {
     localStorage.setItem(LAST_INTERACTION_KEY, new Date().toISOString());
   }, []);
 
+  const showToast = (message: string) => {
+    setToasts(prevToasts => [...prevToasts, { id: Date.now(), message }]);
+  };
+
+  const dismissToast = (id: number) => {
+    setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
+  };
+
+
   const updateGardenGrowth = useCallback((points: number) => {
     setGardenGrowthPoints(prev => {
         const newPoints = prev + points;
         localStorage.setItem(GARDEN_GROWTH_POINTS_KEY, String(newPoints));
+        showToast(`+${points} Puntos de Crecimiento! 🌱`);
         return newPoints;
     });
   }, []);
@@ -1011,7 +1045,24 @@ const App: React.FC = () => {
 
       {isApiKeyModalOpen && <ApiKeyModal onClose={() => { if(getApiKey()) setIsApiKeyModalOpen(false) }} onSave={handleSaveApiKey} />}
       {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
-
+      
+      {/* Toast Container */}
+      <div className="fixed bottom-24 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <ToastNotification key={toast.id} toast={toast} onDismiss={dismissToast} />
+        ))}
+      </div>
+       <style>{`
+        @keyframes toast-in-out {
+          0% { transform: translateX(100%); opacity: 0; }
+          20% { transform: translateX(0); opacity: 1; }
+          80% { transform: translateX(0); opacity: 1; }
+          100% { transform: translateX(100%); opacity: 0; }
+        }
+        .animate-toast-in-out {
+          animation: toast-in-out 3s ease-in-out forwards;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
-import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
+import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest, OnboardingData, UserFocus } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
 
@@ -60,10 +58,39 @@ const INDIVIDUAL_PRACTICE_EXPLANATIONS: Record<string, string> = {
     'journey-nature-connect': "Base Científica: Emplea drones de baja frecuencia (87 Hz) y ruido filtrado que imita sonidos de la naturaleza (viento, agua). Estos sonidos reducen la actividad de la amígdala y promueven un estado de 'fascinación suave', que restaura la capacidad de atención y reduce el estrés."
 };
 
+const RECOMMENDATIONS: Record<UserFocus, Record<SanctuaryTab, string[]>> = {
+  addiction: {
+    breathing: ['box', 'wim-hof'],
+    meditation: ['rain', 'body-scan'],
+    movement: [],
+    rest: [],
+    neuro: ['victory', 'savoring'],
+    journey: ['journey-shamanic'],
+  },
+  depression: {
+    breathing: ['coherent', 'wim-hof'],
+    meditation: ['metta', 'body-scan'],
+    movement: ['mov-yoga-energia'],
+    rest: [],
+    neuro: ['gratitude', 'sunlight', 'positive-memory'],
+    journey: [],
+  },
+  grief: {
+    breathing: ['478', 'box'],
+    meditation: ['self-compassion', 'metta', 'rain'],
+    movement: [],
+    rest: ['des-yoga-caderas'],
+    neuro: ['self-massage', 'positive-memory'],
+    journey: ['journey-trauma-release'],
+  },
+};
+
+
 interface WellnessSanctuaryCardProps {
     onLogActivity: (activity: IWellnessActivity) => void;
     onLogDopamineHit: (hit: IDopamineHit) => void;
     isSubscribed: boolean;
+    onboardingData: OnboardingData;
 }
 
 type SanctuaryTab = 'breathing' | 'meditation' | 'movement' | 'rest' | 'neuro' | 'journey';
@@ -79,7 +106,7 @@ const mentalDumpPrompts = [
 ];
 
 
-export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit, isSubscribed }) => {
+export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit, isSubscribed, onboardingData }) => {
     const [activeTab, setActiveTab] = useState<SanctuaryTab>('breathing');
     const [view, setView] = useState<View>('tabs');
     const [selectedExercise, setSelectedExercise] = useState<IExercise | null>(null);
@@ -413,205 +440,244 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         { id: 'journey', name: 'Viaje Sonoro', icon: FeatherIcon, color: 'text-slate-400' },
     ];
 
-    const renderTabContent = () => (
-        <div className="mt-4 space-y-3">
-            {activeTab === 'breathing' && (
-                <>
-                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton explanation="La respiración consciente es la forma más rápida de regular tu sistema nervioso. Al controlar tu respiración, activas el nervio vago y pasas de un estado de 'lucha o huida' a uno de 'descanso y digestión', reduciendo el cortisol y la ansiedad." className="!text-slate-400 hover:!text-teal-400" />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas técnicas calman tu sistema nervioso para reducir el estrés y la ansiedad de forma inmediata.</p>
+    const getRecommendedItems = (tabId: SanctuaryTab, allItems: any[]) => {
+      const recommendedIds = onboardingData.focuses.flatMap(focus => RECOMMENDATIONS[focus]?.[tabId] || []);
+      return recommendedIds.length > 0
+        ? allItems.filter(item => recommendedIds.includes(item.id))
+        : [];
+    };
+
+
+    const renderTabContent = () => {
+        const recommendedBreathing = getRecommendedItems('breathing', BREATHING_EXERCISES);
+        const recommendedMeditations = getRecommendedItems('meditation', GUIDED_MEDITATIONS);
+        const recommendedMovements = getRecommendedItems('movement', MOVEMENT_VIDEOS);
+        const recommendedRests = getRecommendedItems('rest', MOVEMENT_VIDEOS);
+        const recommendedNeuro = getRecommendedItems('neuro', NEURO_QUESTS);
+        const recommendedJourneys = getRecommendedItems('journey', [{id: 'journey-shamanic'}, {id: 'journey-solfeggio'}, {id: 'journey-binaural'}, {id: 'journey-trauma-release'}, {id: 'journey-manifestation'}, {id: 'journey-nature-connect'}]); // Simplified for matching
+
+        const renderRecommendations = (items: any[], onClickHandler: (item: any) => void) => (
+            items.length > 0 && (
+                <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-yellow-300 mb-2">Recomendado para ti:</h3>
+                    <div className="space-y-2">
+                        {items.map(item => (
+                             <button key={item.id} onClick={() => onClickHandler(item)} className="w-full text-left p-2 rounded-lg bg-yellow-900/30 hover:bg-yellow-900/50">
+                                <h4>{item.name}</h4>
+                                <p className="text-xs text-slate-400">{item.description}</p>
+                             </button>
+                        ))}
                     </div>
-                    {BREATHING_EXERCISES.map(ex => {
-                        const isLocked = ex.isPremium && !isSubscribed;
-                        return (
-                            <div key={ex.id} className="relative">
+                </div>
+            )
+        );
+
+        return (
+            <div className="mt-4 space-y-3">
+                {activeTab === 'breathing' && (
+                    <>
+                        <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton explanation="La respiración consciente es la forma más rápida de regular tu sistema nervioso. Al controlar tu respiración, activas el nervio vago y pasas de un estado de 'lucha o huida' a uno de 'descanso y digestión', reduciendo el cortisol y la ansiedad." className="!text-slate-400 hover:!text-teal-400" />
+                            <p><strong className="text-slate-200">¿Cómo funciona?</strong> Estas técnicas calman tu sistema nervioso para reducir el estrés y la ansiedad de forma inmediata.</p>
+                        </div>
+                        {renderRecommendations(recommendedBreathing, startBreathingExercise)}
+                        {BREATHING_EXERCISES.map(ex => {
+                            const isLocked = ex.isPremium && !isSubscribed;
+                            return (
+                                <div key={ex.id} className="relative">
+                                    <TtsInfoButton 
+                                        explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[ex.id]}
+                                        className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
+                                    />
+                                    <button 
+                                        onClick={() => !isLocked && startBreathingExercise(ex)} 
+                                        disabled={isLocked}
+                                        className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                    >
+                                        <div className="flex-grow pr-8">
+                                            <h4>{ex.name}</h4>
+                                            <p className="text-xs text-slate-400">{ex.description}</p>
+                                        </div>
+                                        {isLocked && <LockIcon />}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </>
+                )}
+    
+                {activeTab === 'meditation' && (
+                    <>
+                        <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton explanation="La meditación es un entrenamiento para tu cerebro. Prácticas como el escaneo corporal fortalecen la corteza prefrontal, mejorando tu enfoque y control emocional, y reducen la actividad en la 'Red Neuronal por Defecto', lo que disminuye la rumiación y los pensamientos ansiosos." className="!text-slate-400 hover:!text-teal-400" />
+                            <p><strong className="text-slate-200">¿Cómo funciona?</strong> Entrena tu mente para enfocarse en el presente, reduciendo el ruido mental y fomentando la claridad.</p>
+                        </div>
+                        {renderRecommendations(recommendedMeditations, startMeditation)}
+                        {GUIDED_MEDITATIONS.map(med => {
+                            const isLocked = med.isPremium && !isSubscribed;
+                            return (
+                                 <div key={med.id} className="relative">
+                                    <TtsInfoButton 
+                                        explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[med.id]}
+                                        className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
+                                    />
+                                    <button 
+                                        onClick={() => !isLocked && startMeditation(med)}
+                                        disabled={isLocked}
+                                        className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                    >
+                                        <div className="flex-grow pr-8">
+                                            <h4>{med.name}</h4>
+                                            <p className="text-xs text-slate-400">{med.description}</p>
+                                        </div>
+                                        {isLocked && <LockIcon />}
+                                    </button>
+                                 </div>
+                            )
+                        })}
+                    </>
+                )}
+                
+                {activeTab === 'movement' && (
+                     <>
+                        <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton explanation="El movimiento consciente, como el yoga suave, libera endorfinas, los analgésicos naturales de tu cuerpo, y reduce las hormonas del estrés. Además, mejora la interocepción, que es tu capacidad de sentir las señales internas de tu cuerpo, fortaleciendo la conexión mente-cuerpo." className="!text-slate-400 hover:!text-teal-400" />
+                            <p><strong className="text-slate-200">¿Cómo funciona?</strong> Libera endorfinas y reduce las hormonas del estrés a través de prácticas corporales conscientes.</p>
+                        </div>
+                        {renderRecommendations(recommendedMovements, (vid) => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; })}
+                        {MOVEMENT_VIDEOS.filter(v=>v.category === 'movement').map(vid => (
+                            <div key={vid.id} className="relative">
                                 <TtsInfoButton 
-                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[ex.id]}
+                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
                                     className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                                 />
-                                <button 
-                                    onClick={() => !isLocked && startBreathingExercise(ex)} 
-                                    disabled={isLocked}
-                                    className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                >
-                                    <div className="flex-grow pr-8">
-                                        <h4>{ex.name}</h4>
-                                        <p className="text-xs text-slate-400">{ex.description}</p>
+                                <button onClick={() => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                    <div className="pr-8">
+                                        <h4>{vid.name}</h4>
+                                        <p className="text-xs text-slate-400">{vid.description}</p>
                                     </div>
-                                    {isLocked && <LockIcon />}
                                 </button>
                             </div>
-                        );
-                    })}
-                </>
-            )}
-
-            {activeTab === 'meditation' && (
-                <>
-                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton explanation="La meditación es un entrenamiento para tu cerebro. Prácticas como el escaneo corporal fortalecen la corteza prefrontal, mejorando tu enfoque y control emocional, y reducen la actividad en la 'Red Neuronal por Defecto', lo que disminuye la rumiación y los pensamientos ansiosos." className="!text-slate-400 hover:!text-teal-400" />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Entrena tu mente para enfocarse en el presente, reduciendo el ruido mental y fomentando la claridad.</p>
-                    </div>
-                    {GUIDED_MEDITATIONS.map(med => {
-                        const isLocked = med.isPremium && !isSubscribed;
-                        return (
-                             <div key={med.id} className="relative">
+                        ))}
+                     </>
+                )}
+    
+                {activeTab === 'rest' && (
+                    <>
+                        <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton explanation="El descanso activo, como el Yoga Nidra o el vaciado mental, es crucial para la recuperación neuronal. Facilita la consolidación de la memoria y permite que tu sistema nervioso parasimpático se active, lo que es esencial para la reparación celular y la reducción de la inflamación sistémica." className="!text-slate-400 hover:!text-teal-400" />
+                            <p><strong className="text-slate-200">¿Cómo funciona?</strong> Prepara tu mente y cuerpo para una recuperación profunda, calmando el sistema nervioso antes de dormir.</p>
+                        </div>
+                        {renderRecommendations(recommendedRests, (vid) => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; })}
+                        {MOVEMENT_VIDEOS.filter(v=>v.category === 'rest').map(vid => (
+                            <div key={vid.id} className="relative">
                                 <TtsInfoButton 
-                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[med.id]}
+                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
                                     className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                                 />
-                                <button 
-                                    onClick={() => !isLocked && startMeditation(med)}
-                                    disabled={isLocked}
-                                    className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                                >
-                                    <div className="flex-grow pr-8">
-                                        <h4>{med.name}</h4>
-                                        <p className="text-xs text-slate-400">{med.description}</p>
+                                <button onClick={() => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                    <div className="pr-8">
+                                        <h4>{vid.name}</h4>
+                                        <p className="text-xs text-slate-400">{vid.description}</p>
                                     </div>
-                                    {isLocked && <LockIcon />}
                                 </button>
-                             </div>
-                        )
-                    })}
-                </>
-            )}
-            
-            {activeTab === 'movement' && (
-                 <>
-                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton explanation="El movimiento consciente, como el yoga suave, libera endorfinas, los analgésicos naturales de tu cuerpo, y reduce las hormonas del estrés. Además, mejora la interocepción, que es tu capacidad de sentir las señales internas de tu cuerpo, fortaleciendo la conexión mente-cuerpo." className="!text-slate-400 hover:!text-teal-400" />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Libera endorfinas y reduce las hormonas del estrés a través de prácticas corporales conscientes.</p>
-                    </div>
-                    {MOVEMENT_VIDEOS.filter(v=>v.category === 'movement').map(vid => (
-                        <div key={vid.id} className="relative">
-                            <TtsInfoButton 
-                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
-                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
-                            />
-                            <button onClick={() => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
-                                <div className="pr-8">
-                                    <h4>{vid.name}</h4>
-                                    <p className="text-xs text-slate-400">{vid.description}</p>
-                                </div>
-                            </button>
-                        </div>
-                    ))}
-                 </>
-            )}
-
-            {activeTab === 'rest' && (
-                <>
-                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton explanation="El descanso activo, como el Yoga Nidra o el vaciado mental, es crucial para la recuperación neuronal. Facilita la consolidación de la memoria y permite que tu sistema nervioso parasimpático se active, lo que es esencial para la reparación celular y la reducción de la inflamación sistémica." className="!text-slate-400 hover:!text-teal-400" />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Prepara tu mente y cuerpo para una recuperación profunda, calmando el sistema nervioso antes de dormir.</p>
-                    </div>
-                    {MOVEMENT_VIDEOS.filter(v=>v.category === 'rest').map(vid => (
-                        <div key={vid.id} className="relative">
-                            <TtsInfoButton 
-                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[vid.id]}
-                                className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
-                            />
-                            <button onClick={() => { cleanup(); setSelectedVideo(vid); setView('active_movement'); activePracticeRef.current = vid.name; }} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
-                                <div className="pr-8">
-                                    <h4>{vid.name}</h4>
-                                    <p className="text-xs text-slate-400">{vid.description}</p>
-                                </div>
-                            </button>
-                        </div>
-                    ))}
-                    <div className="relative">
-                        <TtsInfoButton 
-                            explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['mental-dump']}
-                            className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
-                        />
-                        <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
-                            <div className="pr-8">
-                                <h4>Vaciado Mental Guiado</h4>
-                                <p className="text-xs text-slate-400">Escribe y suelta tus preocupaciones para un descanso reparador.</p>
                             </div>
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {activeTab === 'neuro' && (
-                 <>
-                    <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton explanation="Los Neuro-Rituales aprovechan la neuroplasticidad de tu cerebro. Al realizar acciones cortas y conscientes, como practicar la gratitud o celebrar un logro, activas intencionadamente las vías de recompensa de dopamina y serotonina. Repetir estos rituales fortalece estas conexiones neuronales, re-cableando tu cerebro para encontrar satisfacción en fuentes saludables y sostenibles." className="!text-slate-400 hover:!text-teal-400" />
-                        <p><strong className="text-slate-200">¿Cómo funciona?</strong> Utiliza la neuroplasticidad para re-cablear tu cerebro. Pequeñas acciones conscientes para generar dopamina y serotonina de forma natural.</p>
-                    </div>
-                    {NEURO_QUESTS.map(q => (
-                        <div key={q.id} className="relative">
-                             <TtsInfoButton 
-                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[q.id]}
+                        ))}
+                        <div className="relative">
+                            <TtsInfoButton 
+                                explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['mental-dump']}
                                 className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
                             />
-                            <button onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                            <button onClick={handleStartMentalDump} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
                                 <div className="pr-8">
-                                    <h4>{q.name}</h4>
-                                    <p className="text-xs text-slate-400">{q.description}</p>
+                                    <h4>Vaciado Mental Guiado</h4>
+                                    <p className="text-xs text-slate-400">Escribe y suelta tus preocupaciones para un descanso reparador.</p>
                                 </div>
                             </button>
                         </div>
-                    ))}
-                 </>
-            )}
-            
-            {activeTab === 'journey' && (
-                <>
-                     <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
-                        <TtsInfoButton 
-                            explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
-                            className="!text-slate-400 hover:!text-teal-400"
-                        />
-                        <p className="pr-6"><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
+                    </>
+                )}
+    
+                {activeTab === 'neuro' && (
+                     <>
+                        <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton explanation="Los Neuro-Rituales aprovechan la neuroplasticidad de tu cerebro. Al realizar acciones cortas y conscientes, como practicar la gratitud o celebrar un logro, activas intencionadamente las vías de recompensa de dopamina y serotonina. Repetir estos rituales fortalece estas conexiones neuronales, re-cableando tu cerebro para encontrar satisfacción en fuentes saludables y sostenibles." className="!text-slate-400 hover:!text-teal-400" />
+                            <p><strong className="text-slate-200">¿Cómo funciona?</strong> Utiliza la neuroplasticidad para re-cablear tu cerebro. Pequeñas acciones conscientes para generar dopamina y serotonina de forma natural.</p>
                         </div>
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
-                                {!isSubscribed && <LockIcon />}
-                            </button>
+                        {renderRecommendations(recommendedNeuro, handleStartQuest)}
+                        {NEURO_QUESTS.map(q => (
+                            <div key={q.id} className="relative">
+                                 <TtsInfoButton 
+                                    explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS[q.id]}
+                                    className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10"
+                                />
+                                <button onClick={() => handleStartQuest(q)} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700">
+                                    <div className="pr-8">
+                                        <h4>{q.name}</h4>
+                                        <p className="text-xs text-slate-400">{q.description}</p>
+                                    </div>
+                                </button>
+                            </div>
+                        ))}
+                     </>
+                )}
+                
+                {activeTab === 'journey' && (
+                    <>
+                         <div className="p-3 bg-slate-900/50 rounded-lg text-sm text-slate-400 relative">
+                            <TtsInfoButton 
+                                explanation="El Viaje Sonoro utiliza principios de neurociencia para guiar tu cerebro hacia un estado de introspección profunda. El ritmo constante del tambor o las frecuencias binaurales inducen ondas cerebrales Theta, asociadas con la meditación y el acceso al subconsciente. Este proceso, llamado arrastre rítmico, calma la mente consciente y permite que emerjan insights más profundos. Es una tecnología ancestral para la exploración interior."
+                                className="!text-slate-400 hover:!text-teal-400"
+                            />
+                            <p className="pr-6"><strong className="text-slate-200">¿Cómo funciona?</strong> Estas experiencias utilizan el arrastre rítmico para inducir estados meditativos profundos a través del sonido, facilitando la introspección. Se recomienda realizarlos no más de 2-3 veces por semana para permitir una integración adecuada.</p>
                         </div>
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
-                                {!isSubscribed && <LockIcon />}
-                            </button>
+                        {/* {renderRecommendations(recommendedJourneys, (item) => startShamanicJourney(item.id.replace('journey-', '')))} */}
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-shamanic']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => startShamanicJourney('shamanic')} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700"><div className="pr-8"><h4>Viaje de Sonido Chamánico</h4><p className="text-xs text-slate-400">Una experiencia de inmersión profunda con tambor para la introspección.</p></div></button>
+                            </div>
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-solfeggio']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => isSubscribed && startShamanicJourney('solfeggio')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                    <div className="flex-grow pr-8"><h4>Viaje de Frecuencias Solfeggio (528 Hz)</h4><p className="text-xs text-slate-400">Una experiencia sanadora y armónica para la calma y la reparación.</p></div>
+                                    {!isSubscribed && <LockIcon />}
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-binaural']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => isSubscribed && startShamanicJourney('binaural')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                    <div className="flex-grow pr-8"><h4>Viaje de Sonido Binaural (Theta)</h4><p className="text-xs text-slate-400">Guía tus ondas cerebrales a un estado de meditación profunda y creatividad.</p></div>
+                                    {!isSubscribed && <LockIcon />}
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                    <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
+                                    {!isSubscribed && <LockIcon />}
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                    <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
+                                    {!isSubscribed && <LockIcon />}
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
+                                <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                                    <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
+                                    {!isSubscribed && <LockIcon />}
+                                </button>
+                            </div>
                         </div>
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-trauma-release']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => isSubscribed && startShamanicJourney('trauma-release')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                <div className="flex-grow pr-8"><h4>Viaje de Liberación Emocional</h4><p className="text-xs text-slate-400">Un espacio sonoro seguro para procesar y liberar traumas y emociones estancadas.</p></div>
-                                {!isSubscribed && <LockIcon />}
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-manifestation']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => isSubscribed && startShamanicJourney('manifestation')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                <div className="flex-grow pr-8"><h4>Viaje de Visualización y Manifestación</h4><p className="text-xs text-slate-400">Frecuencias para enfocar tu intención y alinear tu energía con tus objetivos.</p></div>
-                                {!isSubscribed && <LockIcon />}
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <TtsInfoButton explanation={INDIVIDUAL_PRACTICE_EXPLANATIONS['journey-nature-connect']} className="!top-3 !right-3 !text-slate-500 hover:!text-teal-400 z-10" />
-                            <button onClick={() => isSubscribed && startShamanicJourney('nature-connect')} disabled={!isSubscribed} className="w-full text-left p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
-                                <div className="flex-grow pr-8"><h4>Viaje de Conexión con la Naturaleza</h4><p className="text-xs text-slate-400">Sonidos orgánicos y frecuencias terrestres para enraizarte y sentirte parte del todo.</p></div>
-                                {!isSubscribed && <LockIcon />}
-                            </button>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
+                    </>
+                )}
+            </div>
+        );
+    }
     
     const renderActiveBreathing = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedExercise?.name}</h3> <div className="flex items-center justify-center my-4 h-40"> <div className="relative w-36 h-36"><div className={`absolute inset-0 bg-teal-400 rounded-full ${currentStepInfo.animationClass}`} /><div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white">{currentStepInfo.name}</div></div> </div> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-teal-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );
     const renderActiveMeditation = () => ( <div className="text-center"> <h3 className="text-lg font-bold text-slate-100 mb-4">{selectedMeditation?.name}</h3> <p className="text-slate-400 mb-4">Escucha la guía de Kai...</p> <div className="w-full bg-slate-700 rounded-full h-2.5 mb-4"><div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }} /></div> <button onClick={() => cleanup()} className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg">Detener</button> </div> );

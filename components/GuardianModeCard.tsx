@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker } from '../types';
 import { UpgradeCard } from './UpgradeCard';
@@ -10,6 +8,13 @@ const ShieldIcon = () => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 22l9-1.056A12.02 12.02 0 0017.618 7.984z" />
     </svg>
 );
+
+// --- Analysis Icons ---
+const TriggerIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>);
+const SocialPressureIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>);
+const JustificationIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>);
+const TurningPointIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>);
+const EscapeStrategyIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m6 18h4a2 2 0 002-2v-5a2 2 0 00-2-2h-4v-1a2 2 0 00-2-2h-2a2 2 0 00-2 2v1H9a2 2 0 00-2 2v5a2 2 0 002 2h4" /></svg>);
 
 const ConsentModal: React.FC<{ onAccept: () => void; onDecline: () => void; }> = ({ onAccept, onDecline }) => (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
@@ -127,20 +132,20 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
             }
             const analysisData = analysis as IGuardianAnalysis;
             const analysisItems = [
-                { title: "Detonante Principal", content: analysisData.trigger },
-                { title: "Presión Social Identificada", content: analysisData.socialPressure },
-                { title: "Justificaciones o Pensamientos Permisivos", content: analysisData.justification },
-                { title: "Punto de Inflexión", content: analysisData.turningPoint },
-                { title: "Estrategia Sugerida para el Futuro", content: analysisData.escapeStrategy },
+                { title: "Detonante Principal", content: analysisData.trigger, icon: <TriggerIcon /> },
+                { title: "Presión Social", content: analysisData.socialPressure, icon: <SocialPressureIcon /> },
+                { title: "Justificaciones", content: analysisData.justification, icon: <JustificationIcon /> },
+                { title: "Punto de Inflexión", content: analysisData.turningPoint, icon: <TurningPointIcon /> },
+                { title: "Estrategia Sugerida", content: analysisData.escapeStrategy, icon: <EscapeStrategyIcon /> },
             ];
             return (
                 <div>
                      <p className="text-slate-400 mb-4 text-sm">Aquí tienes un análisis de la situación para ayudarte a reflexionar. Usa estos insights para fortalecerte.</p>
-                     <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+                     <div className="space-y-4 bg-slate-900/50 p-4 rounded-lg">
                         {analysisItems.map(item => (
                             <div key={item.title}>
-                                <h4 className="font-semibold text-teal-400 text-sm">{item.title}</h4>
-                                <p className="text-slate-300 text-sm">{item.content}</p>
+                                <h4 className="font-semibold text-teal-400 text-sm flex items-center">{item.icon}{item.title}</h4>
+                                <p className="text-slate-300 text-sm pl-7">{item.content}</p>
                             </div>
                         ))}
                      </div>
@@ -226,7 +231,16 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+        <div className={`bg-slate-800 p-6 rounded-2xl shadow-lg relative transition-all duration-500 ${status === 'active' ? 'ring-2 ring-red-500/50 animate-pulse-border' : ''}`}>
+             <style>{`
+                @keyframes pulse-border {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+                    50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+                }
+                .animate-pulse-border {
+                    animation: pulse-border 2s infinite;
+                }
+            `}</style>
             {showConsent && <ConsentModal onAccept={handleAcceptConsent} onDecline={() => setShowConsent(false)} />}
             <TtsInfoButton explanation="El Modo Guardián es una herramienta de autoconocimiento. Cuando lo activas en una situación de riesgo, como una reunión social, usa el micrófono para transcribir el ambiente. Después, Kai analiza la conversación para ayudarte a identificar detonantes, presión social y puntos de inflexión. Tu privacidad es clave: el audio nunca se guarda y la transcripción se elimina tras el análisis." />
             <div className="flex items-center space-x-3 mb-3">

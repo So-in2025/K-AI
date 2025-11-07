@@ -1,9 +1,8 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { EPIC_QUOTES } from '../constants';
 import { TtsInfoButton } from './TtsInfoButton';
 import ttsService from '../services/ttsService';
+import { OnboardingData, IQuote } from '../types';
 
 const QuoteIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -11,21 +10,48 @@ const QuoteIcon = () => (
     </svg>
 );
 
+interface DailyQuoteCardProps {
+    onboardingData: OnboardingData;
+}
 
-export const DailyQuoteCard: React.FC = () => {
-  const [quote, setQuote] = useState<{ text: string; author: string } | null>(null);
+export const DailyQuoteCard: React.FC<DailyQuoteCardProps> = ({ onboardingData }) => {
+  const [quote, setQuote] = useState<IQuote | null>(null);
 
   const getNewQuote = useCallback(() => {
     ttsService.stop();
+
+    const userFocuses = onboardingData.focuses;
     
+    // 1. Filtrar citas que coincidan con el enfoque del usuario
+    const relevantQuotes = EPIC_QUOTES.filter(q => 
+        q.tags && userFocuses.some(focus => q.tags?.includes(focus))
+    );
+
+    // 2. Filtrar citas genéricas (sin tags)
+    const genericQuotes = EPIC_QUOTES.filter(q => !q.tags || q.tags.length === 0);
+
+    let quotePool: IQuote[];
+
+    // Dar prioridad a las citas relevantes. Si no hay, usar las genéricas.
+    // Usar una probabilidad para mezclar algunas genéricas de vez en cuando.
+    if (relevantQuotes.length > 0 && Math.random() < 0.8) { // 80% de probabilidad de obtener una cita relevante
+        quotePool = relevantQuotes;
+    } else {
+        quotePool = genericQuotes;
+    }
+
+    if(quotePool.length === 0) { // Fallback si el pool primario está vacío
+      quotePool = EPIC_QUOTES;
+    }
+
     let randomIndex;
     let newQuote;
     
-    // Ensure we don't show the same quote twice in a row
+    // Asegurarse de no mostrar la misma cita dos veces seguidas
     do {
-      randomIndex = Math.floor(Math.random() * EPIC_QUOTES.length);
-      newQuote = EPIC_QUOTES[randomIndex];
-    } while (quote && newQuote.text === quote.text);
+      randomIndex = Math.floor(Math.random() * quotePool.length);
+      newQuote = quotePool[randomIndex];
+    } while (quote && newQuote.text === quote.text && quotePool.length > 1);
     
     setQuote(newQuote);
     
@@ -33,10 +59,10 @@ export const DailyQuoteCard: React.FC = () => {
         const textToSpeak = `Cita de ${newQuote.author}. ${newQuote.text}`;
         ttsService.speak(textToSpeak);
     }
-  }, [quote]);
+  }, [quote, onboardingData]);
 
   useEffect(() => {
-    // On first mount, get a quote without checking for duplicates
+    // Al montar, obtener una cita inicial (puede ser cualquiera)
     const firstQuoteIndex = Math.floor(Math.random() * EPIC_QUOTES.length);
     const firstQuote = EPIC_QUOTES[firstQuoteIndex];
     setQuote(firstQuote);
@@ -44,7 +70,7 @@ export const DailyQuoteCard: React.FC = () => {
     return () => {
         ttsService.stop();
     };
-  }, []); // Empty dependency array means it runs once on mount.
+  }, []); // El array de dependencias vacío asegura que se ejecute una sola vez al montar.
 
 
   return (

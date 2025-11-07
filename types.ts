@@ -254,4 +254,5 @@ export interface ITtsSettings {
 export interface IQuote {
     text: string;
     author: string;
+    tags?: UserFocus[];
 }
