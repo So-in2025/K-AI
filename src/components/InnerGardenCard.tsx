@@ -43,7 +43,27 @@ const GardenStage: React.FC<GardenStageProps> = ({ stage, points }) => {
     );
 };
 
-const GardenVisual: React.FC<{ stage: number }> = ({ stage }) => { /* ... SVG visual remains the same ... */ };
+const GardenVisual: React.FC<{ stage: number }> = ({ stage }) => {
+    // Stage 0: Seed, 1: Sprout, 2: Small Plant, 3: Bushy Plant, 4: Flower, 5: Small Tree, 6: Big Tree
+    const stages = [
+        <circle key="0" cx="12" cy="18" r="2" fill="#8B4513" />, // Seed
+        <g key="1"><circle cx="12" cy="18" r="2" fill="#8B4513" /><path d="M12 18 v-4 a2 2 0 0 1 2 2 a2 2 0 0 1 -2 2" fill="#34D399" /></g>, // Sprout
+        <g key="2"><path d="M12 18 v-6" stroke="#059669" strokeWidth="2"/><path d="M10 14 l2 -2 l2 2" stroke="#10B981" fill="none" strokeWidth="1.5"/><path d="M9 11 l3 -3 l3 3" stroke="#10B981" fill="none" strokeWidth="1.5"/></g>, // Small Plant
+        <g key="3"><path d="M12 18 v-7" stroke="#047857" strokeWidth="2.5"/><path d="M8 15 a4 4 0 0 1 8 0 Z" fill="#10B981" /><path d="M7 12 a5 5 0 0 1 10 0 Z" fill="#34D399" /></g>, // Bushy Plant
+        <g key="4"><path d="M12 18 v-7" stroke="#047857" strokeWidth="2.5"/><path d="M8 15 a4 4 0 0 1 8 0 Z" fill="#10B981" /><path d="M7 12 a5 5 0 0 1 10 0 Z" fill="#34D399" /><circle cx="12" cy="8" r="2" fill="#F472B6" /></g>, // Flower
+        <g key="5"><rect x="11" y="10" width="2" height="8" fill="#8B4513" /><circle cx="12" cy="7" r="4" fill="#10B981" /></g>, // Small Tree
+        <g key="6"><rect x="10.5" y="9" width="3" height="9" fill="#8B4513" /><circle cx="12" cy="6" r="6" fill="#10B981" /><circle cx="9" cy="7" r="4" fill="#34D399" /><circle cx="15" cy="7" r="4" fill="#34D399" /></g>, // Big Tree
+    ];
+
+    return (
+        <div className="h-40 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-32 h-32">
+                {stages[Math.min(stage, stages.length - 1)]}
+                <path d="M4 19 h16" stroke="#4A5568" strokeWidth="1" />
+            </svg>
+        </div>
+    );
+};
 
 export const InnerGardenCard: React.FC = () => {
     const { userData, daysSober } = useUser();

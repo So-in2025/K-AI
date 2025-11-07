@@ -43,7 +43,44 @@ export const ThoughtLabCard: React.FC = () => {
         resetState();
     };
     
-    const renderStepContent = () => { /* ... JSX for steps remains the same ... */ };
+    const renderStepContent = () => {
+        switch(step) {
+            case 1:
+                return (
+                    <div className="space-y-2">
+                        <label className="text-sm">1. La Situación: ¿Qué ocurrió?</label>
+                        <input type="text" value={currentEntry.situation || ''} onChange={e => setCurrentEntry(p => ({...p, situation: e.target.value}))} placeholder="Ej: Cometí un error en el trabajo" className="w-full p-2 bg-slate-700 rounded-md" />
+                        <label className="text-sm">2. El Pensamiento Automático: ¿Qué te dijiste a ti mismo?</label>
+                        <input type="text" value={currentEntry.automaticThought || ''} onChange={e => setCurrentEntry(p => ({...p, automaticThought: e.target.value}))} placeholder="Ej: 'Soy un inútil'" className="w-full p-2 bg-slate-700 rounded-md" />
+                    </div>
+                );
+            case 2:
+                return (
+                    <div>
+                        <p className="text-sm text-slate-400">Kai pregunta para reflexionar:</p>
+                        <p className="italic text-teal-300 whitespace-pre-wrap">{currentEntry.kaiAnalysis}</p>
+                    </div>
+                );
+            case 3:
+                return (
+                     <div className="space-y-2">
+                        <label className="text-sm">3. El Pensamiento Alternativo: ¿Cuál es una forma más equilibrada de ver esto?</label>
+                        <input type="text" value={currentEntry.alternativeThought || ''} onChange={e => setCurrentEntry(p => ({...p, alternativeThought: e.target.value}))} placeholder="Ej: 'Cometer errores es humano y una oportunidad para aprender'" className="w-full p-2 bg-slate-700 rounded-md" />
+                    </div>
+                );
+            case 4:
+                return (
+                     <div>
+                        <p className="text-sm text-slate-400">Resumen de Kai:</p>
+                        <p className="italic text-teal-300">{currentEntry.kaiSummary}</p>
+                    </div>
+                );
+            case 5:
+                return <p>¡Pensamiento re-evaluado! Guárdalo para tu registro.</p>;
+            default:
+                return null;
+        }
+    };
 
     const remainingUses = userData.isSubscribed ? -1 : (3 - (userData.usageTracker?.thought_lab?.count ?? 0));
     const canStart = userData.isSubscribed || remainingUses > 0;

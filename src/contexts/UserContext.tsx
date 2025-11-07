@@ -4,7 +4,7 @@ import { auth, googleProvider, db } from '../services/firebase';
 import { createUserProfileDocument, getUserProfile, updateUserProfile } from '../services/firestoreService';
 import { GeminiService } from '../services/geminiService';
 import { ICraving, IConversationTurn, IUserProfile, FeatureID, UsageTracker, IGoal, GoalType, IWellnessActivity, IReminder, IThoughtLabEntry, ITrustCircleConfig, IDopamineHit, IHabitLoop, IMoodJournal, ITherapySession, GuardianAnalysisResult, IGuardianAnalysis, OnboardingData } from '../types';
-import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/ai/generativelanguage';
 
 // --- Guardian Mode Types (kept with context as it's complex state) ---
 type GuardianState = {
@@ -113,6 +113,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const audioProcessorRef = React.useRef<ScriptProcessorNode | null>(null);
     const audioSourceRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
     const triggerWordTimeoutRef = React.useRef<number | null>(null);
+
+    // Fix: Move daysSober declaration before its usage in generateGoal
+    const daysSober = React.useMemo(() => {
+        if (!userData?.startDate) return 0;
+        const start = new Date(userData.startDate);
+        const today = new Date();
+        start.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const diffTime = today.getTime() - start.getTime();
+        if (diffTime < 0) return 0;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }, [userData?.startDate]);
 
     const updateUserData = useCallback(async (data: Partial<IUserProfile>) => {
         if (user && db) {
@@ -403,18 +416,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [userData, updateUserData]);
 
-    const daysSober = React.useMemo(() => {
-        if (!userData?.startDate) return 0;
-        const start = new Date(userData.startDate);
-        const today = new Date();
-        start.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-        const diffTime = today.getTime() - start.getTime();
-        if (diffTime < 0) return 0;
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    }, [userData?.startDate]);
-    
     // --- Guardian Mode Logic ---
     const startGuardian = async () => {
         if (!userData?.geminiApiKey) {

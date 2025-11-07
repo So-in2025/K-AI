@@ -5,7 +5,29 @@ import { TtsInfoButton } from './TtsInfoButton';
 import ttsService from '../services/ttsService';
 import { useUser } from '../contexts/UserContext';
 
-// ... Speech Recognition Types and Icons remain the same ...
+// Fix: Provide types for the Web Speech API to resolve 'SpeechRecognition' not found errors.
+interface SpeechRecognition {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onstart: () => void;
+    onend: () => void;
+    onresult: (event: any) => void;
+    onerror: (event: any) => void;
+}
+
+interface SpeechRecognitionStatic {
+    new(): SpeechRecognition;
+}
+  
+declare global {
+  interface Window {
+    SpeechRecognition: SpeechRecognitionStatic;
+    webkitSpeechRecognition: SpeechRecognitionStatic;
+  }
+}
 
 const MicIcon: React.FC<{className?: string}> = ({className}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg> );
 const colorMap: Record<string, { bg: string; text: string; border: string; }> = { verde: { bg: 'bg-green-900/50', text: 'text-green-300', border: 'border-green-500' }, naranja: { bg: 'bg-orange-900/50', text: 'text-orange-300', border: 'border-orange-500' }, azul: { bg: 'bg-blue-900/50', text: 'text-blue-300', border: 'border-blue-500' }, amarillo: { bg: 'bg-yellow-900/50', text: 'text-yellow-300', border: 'border-yellow-500' }, rojo: { bg: 'bg-red-900/50', text: 'text-red-300', border: 'border-red-500' }, violeta: { bg: 'bg-violet-900/50', text: 'text-violet-300', border: 'border-violet-500' }, default: { bg: 'bg-slate-700/50', text: 'text-slate-300', border: 'border-slate-500' }, };

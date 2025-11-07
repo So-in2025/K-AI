@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BREATHING_EXERCISES, GUIDED_MEDITATIONS, MOVEMENT_VIDEOS, NEURO_QUESTS } from '../constants';
-import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest, OnboardingData, UserFocus } from '../types';
+import { IExercise, IWellnessActivity, IMeditation, IMovementVideo, IDopamineHit, INeuroQuest } from '../types';
 import ttsService from '../services/ttsService';
 import { TtsInfoButton } from './TtsInfoButton';
+import { useUser } from '../contexts/UserContext';
 
 // --- ICONOS PARA PESTAÑAS Y BOTONES ---
 const LungsIcon = ({className = "h-6 w-6"}) => ( <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>);
@@ -58,7 +59,7 @@ const INDIVIDUAL_PRACTICE_EXPLANATIONS: Record<string, string> = {
     'journey-nature-connect': "Base Científica: Emplea drones de baja frecuencia (87 Hz) y ruido filtrado que imita sonidos de la naturaleza (viento, agua). Estos sonidos reducen la actividad de la amígdala y promueven un estado de 'fascinación suave', que restaura la capacidad de atención y reduce el estrés."
 };
 
-const RECOMMENDATIONS: Record<UserFocus, Record<SanctuaryTab, string[]>> = {
+const RECOMMENDATIONS: Record<string, Record<SanctuaryTab, string[]>> = {
   addiction: {
     breathing: ['box', 'wim-hof'],
     meditation: ['rain', 'body-scan'],
@@ -85,14 +86,6 @@ const RECOMMENDATIONS: Record<UserFocus, Record<SanctuaryTab, string[]>> = {
   },
 };
 
-
-interface WellnessSanctuaryCardProps {
-    onLogActivity: (activity: IWellnessActivity) => void;
-    onLogDopamineHit: (hit: IDopamineHit) => void;
-    isSubscribed: boolean;
-    onboardingData: OnboardingData;
-}
-
 type SanctuaryTab = 'breathing' | 'meditation' | 'movement' | 'rest' | 'neuro' | 'journey';
 type View = 'tabs' | 'active_breathing' | 'active_meditation' | 'active_movement' | 'active_quest' | 'active_journey' | 'active_dump';
 type JourneyStep = 'idle' | 'grounding' | 'descent' | 'deepening' | 'vision' | 'return' | 'integration' | 'finished';
@@ -106,7 +99,11 @@ const mentalDumpPrompts = [
 ];
 
 
-export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ onLogActivity, onLogDopamineHit, isSubscribed, onboardingData }) => {
+export const WellnessSanctuaryCard: React.FC = () => {
+    const { userData, logWellnessActivity: onLogActivity, logDopamineHit: onLogDopamineHit } = useUser();
+    const isSubscribed = userData?.isSubscribed || false;
+    const onboardingData = userData?.onboardingData;
+
     const [activeTab, setActiveTab] = useState<SanctuaryTab>('breathing');
     const [view, setView] = useState<View>('tabs');
     const [selectedExercise, setSelectedExercise] = useState<IExercise | null>(null);
@@ -240,7 +237,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                 const currentStep = exercise.steps[stepIndex];
                 const animationClass = currentStep.name.toLowerCase().includes('inhala') ? 'animate-inhale' : currentStep.name.toLowerCase().includes('exhala') ? 'animate-exhale' : 'animate-hold';
                 setCurrentStepInfo({ name: currentStep.name, duration: currentStep.duration, animationClass });
-                ttsService.speak(currentStep.name, 0.9, 1.2);
+                ttsService.speak(currentStep.name);
                 
                 setSafeTimeout(cycle, currentStep.duration);
             };
@@ -250,7 +247,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         if (exercise.setup) await ttsService.speakSequence(exercise.setup);
         if(activePracticeRef.current) runCycle();
         
-        const progressInterval = setSafeInterval(() => {
+        setSafeInterval(() => {
             elapsedTime += 100;
             const currentProgress = (elapsedTime / totalDuration) * 100;
             setProgress(currentProgress);
@@ -353,15 +350,15 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                     break;
                 case 'descent':
                     if (journeyType === 'shamanic') fade(drum.gainNode, 0.5, 10);
-                    await ttsService.speak("Permite que el sonido te guíe hacia adentro.", 0.9);
+                    await ttsService.speak("Permite que el sonido te guíe hacia adentro.");
                     setSafeTimeout(() => { if (activePracticeRef.current) setJourneyStep('deepening'); }, 120000);
                     break;
                 case 'deepening':
-                     await ttsService.speak("Más profundo...", 0.9);
+                     await ttsService.speak("Más profundo...");
                      setSafeTimeout(() => { if (activePracticeRef.current) setJourneyStep('vision'); }, 180000);
                      break;
                 case 'vision':
-                     await ttsService.speak("Permanece abierto. Observa sin juicio.", 0.9);
+                     await ttsService.speak("Permanece abierto. Observa sin juicio.");
                      setSafeTimeout(() => { if (activePracticeRef.current) setJourneyStep('return'); }, 300000);
                      break;
                 case 'return':
@@ -371,7 +368,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
                         setSafeInterval(() => audioElementsRef.current.playDrum?.(), 150);
                         fade(rattle.gainNode, 0, 5);
                     }
-                    await ttsService.speak("Es hora de volver. El ritmo te llama. Lentamente, trae tu conciencia de vuelta a tu cuerpo.", 0.9);
+                    await ttsService.speak("Es hora de volver. El ritmo te llama. Lentamente, trae tu conciencia de vuelta a tu cuerpo.");
                     setSafeTimeout(() => { if (activePracticeRef.current) setJourneyStep('integration'); }, 30000);
                     break;
                 case 'integration':
@@ -413,12 +410,13 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         runPractice();
     }, [questStep, activeQuest]);
 
-    const handleStartMentalDump = () => {
+    const handleStartMentalDump = async () => {
         cleanup(); // Start fresh
         setView('active_dump'); activePracticeRef.current = 'Vaciado Mental Guiado';
-        ttsService.speak("Bienvenido al Vaciado Mental. El objetivo es sacar de tu mente lo que preocupa para que puedas descansar.").then(() => {
-            if(activePracticeRef.current) ttsService.speak(mentalDumpPrompts[0].instruction);
-        });
+        await ttsService.speak("Bienvenido al Vaciado Mental. El objetivo es sacar de tu mente lo que preocupa para que puedas descansar.");
+        if (activePracticeRef.current) {
+            ttsService.speak(mentalDumpPrompts[0].instruction);
+        }
     };
     
     const handleNextDumpStep = () => {
@@ -441,6 +439,7 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
     ];
 
     const getRecommendedItems = (tabId: SanctuaryTab, allItems: any[]) => {
+      if (!onboardingData) return [];
       const recommendedIds = onboardingData.focuses.flatMap(focus => RECOMMENDATIONS[focus]?.[tabId] || []);
       return recommendedIds.length > 0
         ? allItems.filter(item => recommendedIds.includes(item.id))
@@ -716,6 +715,8 @@ export const WellnessSanctuaryCard: React.FC<WellnessSanctuaryCardProps> = ({ on
         ); 
     };
     const renderMentalDump = () => { const currentPrompt = mentalDumpPrompts[mentalDumpStep]; return ( <> <h3 className="font-bold text-slate-100 text-lg mb-2">Vaciado Mental Guiado</h3> <div className="bg-slate-700/50 p-4 rounded-lg"> <p className="font-semibold text-teal-300">{currentPrompt.title}</p> <p className="text-sm text-slate-300 mb-3">{currentPrompt.instruction}</p> <textarea key={mentalDumpStep} placeholder={currentPrompt.placeholder} className="w-full h-28 p-3 bg-slate-700 rounded-lg" autoFocus/> <div className="flex gap-2 mt-3"> <button onClick={() => cleanup()} className="flex-1 text-xs text-slate-400 hover:underline">Cancelar</button> <button onClick={handleNextDumpStep} className="flex-1 bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg">{mentalDumpStep < 2 ? 'Siguiente' : 'Finalizar'}</button> </div> </div> </> ); };
+
+    if (!onboardingData) return null;
 
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">

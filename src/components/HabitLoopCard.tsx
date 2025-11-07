@@ -43,7 +43,46 @@ export const HabitLoopCard: React.FC = () => {
         resetState();
     };
     
-    const renderStepContent = () => { /* ... JSX for steps remains the same ... */ };
+    const renderStepContent = () => {
+        switch (step) {
+            case 1:
+                return (
+                    <div className="space-y-2">
+                        <label className="text-sm">1. La Señal: ¿Qué acaba de pasar?</label>
+                        <input type="text" value={currentLoop.cue || ''} onChange={e => setCurrentLoop(p => ({ ...p, cue: e.target.value }))} placeholder="Ej: Me senté en el sofá" className="w-full p-2 bg-slate-700 rounded-md" />
+                        <label className="text-sm">2. La Rutina Antigua: ¿Qué hiciste?</label>
+                        <input type="text" value={currentLoop.oldRoutine || ''} onChange={e => setCurrentLoop(p => ({ ...p, oldRoutine: e.target.value }))} placeholder="Ej: Abrí Instagram" className="w-full p-2 bg-slate-700 rounded-md" />
+                    </div>
+                );
+            case 2:
+                return (
+                    <div>
+                        <p className="text-sm text-slate-400">Kai pregunta:</p>
+                        <p className="italic text-teal-300">"{currentLoop.craving}"</p>
+                    </div>
+                );
+            case 3:
+                return (
+                    <div className="space-y-2">
+                        <label className="text-sm">3. La Nueva Rutina: ¿Qué harás en su lugar?</label>
+                        <input type="text" value={currentLoop.newRoutine || ''} onChange={e => setCurrentLoop(p => ({ ...p, newRoutine: e.target.value }))} placeholder="Ej: Leeré 2 páginas de un libro" className="w-full p-2 bg-slate-700 rounded-md" />
+                        <label className="text-sm">4. La Recompensa: ¿Cómo te sentirás?</label>
+                        <input type="text" value={currentLoop.reward || ''} onChange={e => setCurrentLoop(p => ({ ...p, reward: e.target.value }))} placeholder="Ej: Satisfecho y tranquilo" className="w-full p-2 bg-slate-700 rounded-md" />
+                    </div>
+                );
+            case 4:
+                return (
+                    <div>
+                        <p className="text-sm text-slate-400">Resumen de Kai:</p>
+                        <p className="italic text-teal-300">"{currentLoop.kaiSummary}"</p>
+                    </div>
+                );
+            case 5:
+                return <p>¡Bucle rediseñado! Guárdalo para recordarlo.</p>;
+            default:
+                return null;
+        }
+    };
 
     const remainingUses = userData.isSubscribed ? -1 : (3 - (userData.usageTracker?.habit_architect?.count ?? 0));
     const canStart = userData.isSubscribed || remainingUses > 0;

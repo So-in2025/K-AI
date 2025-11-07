@@ -23,16 +23,45 @@ export const WeeklyAnalysisCard: React.FC = () => {
         isSubscribed: userData.isSubscribed || false,
     };
 
-    const canGenerateWithData = useMemo(() => { /* ... memo logic ... */ }, [cravings, daysSober, journalEntry, userFocus]);
+    const canGenerateWithData = useMemo(() => {
+        const hasFocus = userFocus.length > 0;
+        const hasProgress = daysSober > 0;
+        const hasCravings = cravings.length > 0;
+        const hasJournal = journalEntry.trim().length > 50;
+        // Require at least two data points to be present
+        return hasFocus && ([hasProgress, hasCravings, hasJournal].filter(Boolean).length >= 2);
+    }, [cravings, daysSober, journalEntry, userFocus]);
 
     const handleGenerateAnalysis = async () => {
         if (!checkAndConsumeUsage('weekly_analysis')) return;
         setIsLoading(true);
-        // ... prompt generation and API call logic ...
+        setError('');
+        setAnalysis(null);
+        
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const cravingsThisWeek = cravings.filter(c => new Date(c.date) >= oneWeekAgo);
+        const wellnessThisWeek = wellnessLog.filter(w => new Date(w.date) >= oneWeekAgo);
+
+        const prompt = `Actúa como Kai, un terapeuta de IA compasivo y perspicaz. Analiza los datos de la última semana de un usuario y genera un resumen en formato JSON con cuatro claves: "celebration" (un logro o fortaleza a celebrar), "pattern" (un patrón interesante que hayas notado), "connection" (una conexión entre diferentes datos, ej. antojos y diario), y "suggestion" (una sugerencia amable y accionable para la próxima semana).
+        
+        DATOS DEL USUARIO:
+        - Enfoque principal: ${userFocus.join(', ')}
+        - Días de progreso total: ${daysSober}
+        - Antojos esta semana (${cravingsThisWeek.length}): ${cravingsThisWeek.map(c => `Intensidad ${c.intensity} por ${c.triggers.join(', ')}`).join('; ') || 'Ninguno.'}
+        - Actividades de bienestar esta semana (${wellnessThisWeek.length}): ${wellnessThisWeek.map(w => w.exerciseName).join(', ') || 'Ninguna.'}
+        - Dopamine hits esta semana (${dopamineHits.length}): ${dopamineHits.map(h => h.activity).join(', ') || 'Ninguno.'}
+        - Última entrada del diario: "${journalEntry.substring(0, 200)}..."
+        
+        Responde SÓLO con el objeto JSON. Sé conciso y empático.`;
+
         try {
-            const response = await geminiService.generateContent("...", undefined, true);
+            const response = await geminiService.generateContent(prompt, undefined, true);
             setAnalysis(JSON.parse(response));
-        } catch(e) { setError("Error al generar análisis"); }
+        } catch(e) { 
+            console.error("Error generating weekly analysis:", e);
+            setError("No se pudo generar el análisis. Inténtalo de nuevo.");
+        }
         finally { setIsLoading(false); }
     };
     

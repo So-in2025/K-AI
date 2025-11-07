@@ -1,4 +1,3 @@
-
 import { ITtsSettings } from '/src/types.ts';
 import { TTS_SETTINGS_KEY } from '/src/constants.ts';
 
@@ -51,48 +50,55 @@ class TtsService {
         return [];
     }
 
-    speak(text: string, customSettings?: ITtsSettings) {
-        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-            console.warn("Speech Synthesis not supported.");
-            return;
-        }
-
-        // Stop any ongoing speech, unless it's a sequence
-        if (!this.isSequenceRunning) {
-            this.stop();
-        } else {
-             window.speechSynthesis.cancel();
-        }
-
-        this.utterance = new SpeechSynthesisUtterance(text);
-        const settings = customSettings || this.getSettings();
-        
-        const voices = this.getAvailableVoices();
-        if (settings.voiceName) {
-            const selectedVoice = voices.find(v => v.name === settings.voiceName);
-            if (selectedVoice) {
-                this.utterance.voice = selectedVoice;
+    speak(text: string, customSettings?: ITtsSettings): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+                console.warn("Speech Synthesis not supported.");
+                resolve();
+                return;
             }
-        } else {
-            const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
-            const defaultSpanishVoice = spanishVoices.find(v => v.lang === 'es-ES') || spanishVoices[0];
-            if (defaultSpanishVoice) {
-                this.utterance.voice = defaultSpanishVoice;
+    
+            // Stop any ongoing speech, unless it's a sequence
+            if (!this.isSequenceRunning) {
+                this.stop();
+            } else {
+                 window.speechSynthesis.cancel();
             }
-        }
-
-        this.utterance.rate = settings.rate;
-        this.utterance.pitch = settings.pitch;
-        this.utterance.lang = this.utterance.voice?.lang || 'es-ES';
-
-        this.utterance.onstart = () => { this.isSpeaking = true; };
-        this.utterance.onerror = (event) => {
-            console.error("SpeechSynthesisUtterance.onerror", event);
-            this.isSpeaking = false;
-        };
-        // onend is handled by the caller (speakSequence) if needed
-
-        window.speechSynthesis.speak(this.utterance);
+    
+            this.utterance = new SpeechSynthesisUtterance(text);
+            const settings = customSettings || this.getSettings();
+            
+            const voices = this.getAvailableVoices();
+            if (settings.voiceName) {
+                const selectedVoice = voices.find(v => v.name === settings.voiceName);
+                if (selectedVoice) {
+                    this.utterance.voice = selectedVoice;
+                }
+            } else {
+                const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+                const defaultSpanishVoice = spanishVoices.find(v => v.lang === 'es-ES') || spanishVoices[0];
+                if (defaultSpanishVoice) {
+                    this.utterance.voice = defaultSpanishVoice;
+                }
+            }
+    
+            this.utterance.rate = settings.rate;
+            this.utterance.pitch = settings.pitch;
+            this.utterance.lang = this.utterance.voice?.lang || 'es-ES';
+    
+            this.utterance.onstart = () => { this.isSpeaking = true; };
+            this.utterance.onerror = (event) => {
+                console.error("SpeechSynthesisUtterance.onerror", event);
+                this.isSpeaking = false;
+                reject(event);
+            };
+            this.utterance.onend = () => {
+                this.isSpeaking = false;
+                resolve();
+            };
+    
+            window.speechSynthesis.speak(this.utterance);
+        });
     }
     
     speakSequence(script: { text: string; pause: number }[]) {
@@ -103,27 +109,24 @@ class TtsService {
         this.playNextInSequence();
     }
     
-    private playNextInSequence() {
+    private async playNextInSequence() {
         if (!this.isSequenceRunning || this.sequenceIndex >= this.sequenceQueue.length) {
             this.stop();
             return;
         }
 
         const currentItem = this.sequenceQueue[this.sequenceIndex];
-        this.speak(currentItem.text);
-
-        if (this.utterance) {
-            this.utterance.onend = () => {
-                this.isSpeaking = false;
-                if (this.isSequenceRunning) { // Check if stop() was called
-                    setTimeout(() => {
-                        this.sequenceIndex++;
-                        this.playNextInSequence();
-                    }, currentItem.pause);
-                }
-            };
-        } else {
-            // If utterance failed to create, stop the sequence.
+        
+        try {
+            await this.speak(currentItem.text);
+            if (this.isSequenceRunning) {
+                setTimeout(() => {
+                    this.sequenceIndex++;
+                    this.playNextInSequence();
+                }, currentItem.pause);
+            }
+        } catch(error) {
+            console.error("Error during speech sequence", error);
             this.stop();
         }
     }

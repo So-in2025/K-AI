@@ -57,7 +57,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
         if (!ttsSettings) return;
         const newSettings = { ...ttsSettings, ...change };
         setTtsSettings(newSettings);
-        ttsService.updateSettings(newSettings);
+        // Fix: Corrected method name from updateSettings to saveSettings
+        ttsService.saveSettings(newSettings);
     };
 
     const handleTestVoice = () => {
