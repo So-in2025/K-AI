@@ -1,14 +1,17 @@
+# Configuración de construcción para tu proyecto Vite.
 [build]
   command = "npm run build"
   publish = "dist"
-  
-  # Esta es la instrucción clave que soluciona el error.
-  # Le dice a Netlify que ignore esta clave específica durante el escaneo de secretos.
-  [build.environment]
-    SECRETS_SCAN_OMIT_KEYS = "VITE_FIREBASE_API_KEY"
 
+# Le dice a Netlify dónde encontrar tus funciones de backend.
 [functions]
   directory = "netlify/functions"
 
+# Activa la base de datos de Netlify (Blobs) para los códigos de activación.
 [blobs]
   store = "activation-codes"
+
+# Soluciona el error de despliegue "Secrets scanning found secrets".
+# Le dice al escáner de seguridad que la clave de Firebase es pública y es seguro ignorarla.
+[secrets_scan]
+  keys_to_ignore = ["VITE_FIREBASE_API_KEY"]
