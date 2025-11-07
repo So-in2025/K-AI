@@ -1,10 +1,11 @@
 
 
+
 import React, { useState } from 'react';
 // Fix: Corrected import paths from '../' to './' as App.tsx is in the src root and these modules are in subdirectories.
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
-import { SettingsModal } from './components/SettingsModal';
+import SettingsModal from './components/SettingsModal';
 import { NavigationBar, View } from './components/NavigationBar';
 import { HomeView } from './views/HomeView';
 import { KaiView } from './views/KaiView';
