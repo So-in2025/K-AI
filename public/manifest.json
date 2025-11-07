@@ -1,0 +1,16 @@
+{
+  "short_name": "KIA",
+  "name": "KIA: Kindness, Introspection, Awareness",
+  "description": "KIA es tu santuario digital y compañero de sanación. Un ecosistema completo para cultivar Amabilidad, Introspección y Conciencia.",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a"
+}
