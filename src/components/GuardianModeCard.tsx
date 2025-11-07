@@ -66,8 +66,32 @@ export const GuardianModeCard: React.FC = () => {
     const isSubscribed = userData.isSubscribed || false;
     const canUseGuardian = isSubscribed || (userData.usageTracker?.guardian?.count || 0) < 1;
 
-    const renderConfig = () => ( /* ... JSX for config ... */ );
-    const renderAnalysisContent = (analysisData: IGuardianAnalysis) => ( /* ... JSX for analysis ... */ );
+    const renderConfig = () => (
+        <div className="mt-4">
+            <label className="text-sm text-slate-300">Palabras de Alerta (separadas por coma)</label>
+            <input 
+                type="text" 
+                value={localTriggers}
+                onChange={(e) => setLocalTriggers(e.target.value)}
+                className="w-full p-2 bg-slate-700 rounded-md mt-1"
+                placeholder="Ej: beber, consumir, recaída"
+            />
+            <div className="flex gap-2 mt-2">
+                <button onClick={() => setIsEditingConfig(false)} className="flex-1 bg-slate-600 py-1 rounded-md text-sm">Cancelar</button>
+                <button onClick={handleSaveConfig} className="flex-1 bg-teal-600 text-white py-1 rounded-md text-sm">Guardar</button>
+            </div>
+        </div>
+    );
+
+    const renderAnalysisContent = (analysisData: IGuardianAnalysis) => (
+        <div className="space-y-3">
+            <div className="flex items-start"><TriggerIcon /><p className="text-sm"><strong>Detonante:</strong> {analysisData.trigger}</p></div>
+            <div className="flex items-start"><SocialPressureIcon /><p className="text-sm"><strong>Presión Social:</strong> {analysisData.socialPressure}</p></div>
+            <div className="flex items-start"><JustificationIcon /><p className="text-sm"><strong>Justificación:</strong> {analysisData.justification}</p></div>
+            <div className="flex items-start"><TurningPointIcon /><p className="text-sm"><strong>Punto de Inflexión:</strong> {analysisData.turningPoint}</p></div>
+            <div className="flex items-start"><EscapeStrategyIcon /><p className="text-sm"><strong>Estrategia de Evitación:</strong> {analysisData.escapeStrategy}</p></div>
+        </div>
+    );
 
     const renderContent = () => {
         if (showAnalysis && analysis) {
@@ -98,7 +122,7 @@ export const GuardianModeCard: React.FC = () => {
                     <p className="text-slate-400 mb-4 text-sm">Activa este modo en situaciones de alto riesgo. Kai escuchará para ayudarte a analizar los detonantes después.</p>
                     <button onClick={handleStartClick} disabled={!canUseGuardian} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-3 rounded-lg disabled:opacity-50">Activar Modo Guardián</button>
                     {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te queda {(1 - (userData.usageTracker?.guardian?.count || 0))} análisis gratuito este mes.</p>}
-                </>
+                 </>
             );
         }
     };
