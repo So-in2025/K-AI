@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { useUser } from '../contexts/UserContext';
-import { IHabitLoop } from '../types';
+import { useUser } from '/src/contexts/UserContext.tsx';
+import { IHabitLoop } from '/src/types.ts';
 import { v4 as uuidv4 } from 'uuid';
-import { TtsInfoButton } from './TtsInfoButton';
+import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
 
 const LoopIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

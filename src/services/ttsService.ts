@@ -1,6 +1,6 @@
 
-import { ITtsSettings } from '../types';
-import { TTS_SETTINGS_KEY } from '../constants';
+import { ITtsSettings } from '/src/types.ts';
+import { TTS_SETTINGS_KEY } from '/src/constants.ts';
 
 class TtsService {
     private utterance: SpeechSynthesisUtterance | null = null;

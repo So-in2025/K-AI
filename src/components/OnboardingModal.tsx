@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { OnboardingData, UserFocus, USER_FOCUS_OPTIONS } from '../types';
+import { OnboardingData, UserFocus, USER_FOCUS_OPTIONS } from '/src/types.ts';
 
 interface OnboardingModalProps {
   onSave: (data: OnboardingData) => void;

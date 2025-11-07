@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUser } from '../contexts/UserContext';
-import ttsService from '../services/ttsService';
-import { ITtsSettings } from '../types';
+import { useUser } from '/src/contexts/UserContext.tsx';
+import ttsService from '/src/services/ttsService.ts';
+import { ITtsSettings } from '/src/types.ts';
 
 interface SettingsModalProps {
   onClose: () => void;

@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BREATHING_EXERCISES } from '../constants';
-import { IExercise } from '../types';
-import ttsService from '../services/ttsService';
-import { useUser } from '../contexts/UserContext';
+import { BREATHING_EXERCISES } from '/src/constants.ts';
+import { IExercise } from '/src/types.ts';
+import ttsService from '/src/services/ttsService.ts';
+import { useUser } from '/src/contexts/UserContext.tsx';
 
 const LungsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

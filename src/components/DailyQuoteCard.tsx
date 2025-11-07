@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { EPIC_QUOTES } from '../constants';
-import { useUser } from '../contexts/UserContext';
-import { TtsInfoButton } from './TtsInfoButton';
+import { EPIC_QUOTES } from '/src/constants.ts';
+import { useUser } from '/src/contexts/UserContext.tsx';
+import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
 
 export const DailyQuoteCard: React.FC = () => {
     const { userData } = useUser();
