@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kia-cache-v4';
+const CACHE_NAME = 'kia-cache-v5';
 // Lista de archivos a cachear. Se ha limpiado para incluir solo lo esencial.
 const urlsToCache = [
   '/',
