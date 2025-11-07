@@ -27,8 +27,13 @@ export const LoginView: React.FC = () => {
           // Clean the URL
           window.history.replaceState({}, document.title, window.location.pathname);
       }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login failed:", error);
+        if (error.code === 'auth/configuration-not-found') {
+            alert('Error de Configuración de Firebase:\n\n1. Asegúrate de haber habilitado la autenticación con Google en tu proyecto de Firebase.\n2. Asegúrate de haber añadido este dominio a la lista de "Dominios autorizados" en la configuración de Authentication.\n\nEste error debe solucionarse en la consola de Firebase, no en el código.');
+        } else {
+            alert('Ocurrió un error durante el inicio de sesión. Por favor, revisa la consola para más detalles.');
+        }
     }
   };
 

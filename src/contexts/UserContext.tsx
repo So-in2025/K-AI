@@ -101,6 +101,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await signInWithPopup(auth, googleProvider);
         } catch (error) {
             console.error("Error during sign-in:", error);
+            throw error; // Propaga el error para que la UI pueda manejarlo
         }
     };
 

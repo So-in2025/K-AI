@@ -1,13 +1,11 @@
-
 const CACHE_NAME = 'kia-cache-v8';
 // Lista de archivos a cachear. Se ha limpiado para incluir solo lo esencial.
 const urlsToCache = [
   '/',
   '/index.html',
-  '/index.tsx',
   '/manifest.json',
   '/favicon.svg',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display.swap'
 ];
 
 self.addEventListener('install', event => {
