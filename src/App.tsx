@@ -9,7 +9,6 @@ import { ToolsView } from './views/ToolsView.tsx';
 import { ProgressView } from './views/ProgressView.tsx';
 import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { ApiKeyModal } from './components/ApiKeyModal.tsx';
-import { useAppContext } from './contexts/AppContext.tsx';
 import { OnboardingData } from './types.ts';
 import { useUser } from './contexts/UserContext.tsx'; // Import useUser
 import { LoginView } from './views/LoginView.tsx'; // Import LoginView
