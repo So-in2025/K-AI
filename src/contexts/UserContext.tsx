@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
-import { auth, googleProvider } from '../services/firebase.ts';
+import { auth, googleProvider, db } from '../services/firebase.ts';
 import { createUserProfileDocument, getUserProfile, updateUserProfile } from '../services/firestoreService.ts';
 import { GeminiService } from '../services/geminiService.ts';
 import { IConversationTurn, IUserProfile, FeatureID, UsageTracker } from '../types.ts';
@@ -27,7 +27,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [geminiService, setGeminiService] = useState<GeminiService | null>(null);
 
     const updateUserData = useCallback(async (data: Partial<IUserProfile>) => {
-        if (user) {
+        if (user && db) {
             const currentApiKey = userData?.geminiApiKey;
             // Optimistic update
             setUserData(prev => prev ? { ...prev, ...data } : null);
@@ -61,8 +61,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         alert("¡Felicidades! KIA Plus ha sido activado en tu cuenta.");
                     } else {
                         console.log("Activation code not valid or already used.");
-                        // Optionally remove invalid code
-                        // localStorage.removeItem('activationCode');
                     }
                 }
             } catch (error) {
@@ -73,9 +71,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
     useEffect(() => {
+        if (!auth) {
+            setLoading(false);
+            return;
+        }
         const unsubscribe = onAuthStateChanged(auth, async (userAuth) => {
             setLoading(true);
-            if (userAuth) {
+            if (userAuth && db) {
                 await createUserProfileDocument(userAuth);
                 const profile = await getUserProfile(userAuth.uid);
                 setUser(userAuth);
@@ -105,15 +107,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [user, userData, checkSubscriptionActivation]);
 
     const login = async () => {
+        if (!auth || !googleProvider) {
+            throw new Error("Firebase Auth no está inicializado.");
+        }
         try {
             await signInWithPopup(auth, googleProvider);
         } catch (error) {
             console.error("Error during sign-in:", error);
-            throw error; // Propaga el error para que la UI pueda manejarlo
+            throw error;
         }
     };
 
     const logout = async () => {
+        if (!auth) return;
         try {
             await signOut(auth);
         } catch (error) {

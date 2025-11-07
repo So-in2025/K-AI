@@ -16,12 +16,11 @@ declare global {
     }
 }
 
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
-// These variables are populated by Vite from your .env file
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -32,10 +31,23 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+let db: Firestore | null = null;
+let firebaseInitializationError: string | null = null;
 
-// Export the necessary Firebase services
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+try {
+  if (!firebaseConfig.apiKey) {
+    throw new Error("La variable de entorno VITE_FIREBASE_API_KEY no está definida. Revisa tu configuración en Netlify.");
+  }
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+  db = getFirestore(app);
+} catch (error: any) {
+  console.error("Error al inicializar Firebase:", error);
+  firebaseInitializationError = `Error de Configuración de Firebase: ${error.message}. Asegúrate de que todas las variables de entorno VITE_FIREBASE_* estén correctamente configuradas en tu proveedor de hosting (ej. Netlify).`;
+}
+
+export { app, auth, googleProvider, db, firebaseInitializationError };
