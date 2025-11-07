@@ -6,7 +6,8 @@ import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard
 import { RemindersCard } from '../components/RemindersCard';
 import { ThoughtLabCard } from '../components/ThoughtLabCard';
 import { HabitLoopCard } from '../components/HabitLoopCard';
-import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop } from '../types';
+import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop, OnboardingData } from '../types';
+import { SoundtrackCard } from '../components/SoundtrackCard';
 
 
 interface ToolsViewProps {
@@ -27,6 +28,7 @@ interface ToolsViewProps {
     habitLoops: IHabitLoop[];
     onAddHabitLoop: (loop: IHabitLoop) => void;
     isSubscribed: boolean;
+    onboardingData: OnboardingData;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = (props) => {
@@ -54,6 +56,10 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                         reminders={props.reminders}
                         onAddReminder={props.onAddReminder}
                         onDeleteReminder={props.onDeleteReminder}
+                    />
+                    <SoundtrackCard
+                        apiKey={props.apiKey}
+                        onboardingData={props.onboardingData}
                     />
                 </div>
             </div>

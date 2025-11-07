@@ -982,6 +982,7 @@ const App: React.FC = () => {
                   habitLoops={habitLoops}
                   onAddHabitLoop={handleAddHabitLoop}
                   isSubscribed={hasPremiumAccess}
+                  onboardingData={onboardingData}
                 />;
       case 'progress':
         return <ProgressView 

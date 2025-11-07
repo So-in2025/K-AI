@@ -256,3 +256,14 @@ export interface IQuote {
     author: string;
     tags?: UserFocus[];
 }
+
+export interface IMusicPreferences {
+    genres: string[];
+    artists: string;
+}
+
+export interface ISongRecommendation {
+    title: string;
+    artist: string;
+    reason: string;
+}

@@ -20,6 +20,7 @@ export const MOOD_JOURNAL_KEY = 'moodJournalData';
 export const KAI_CONVERSATION_KEY = 'kaiConversationHistory';
 export const THERAPY_SESSIONS_KEY = 'kiaTherapySessions';
 export const TTS_SETTINGS_KEY = 'kiaTtsSettings';
+export const MUSIC_PREFERENCES_KEY = 'kiaMusicPreferences';
 
 // Monetization Keys
 export const FEATURE_USAGE_KEY = 'kiaFeatureUsage';
@@ -496,4 +497,9 @@ export const EPIC_QUOTES: IQuote[] = [
     { text: "Tu calma es tu superpoder.", author: "Anónimo" },
     { text: "La introspección no es un lujo, es una necesidad para una vida con propósito.", author: "Anónimo" },
     { text: "No puedes detener las olas, pero puedes aprender a surfear.", author: "Jon Kabat-Zinn", tags: ['depression', 'grief'] },
+];
+
+export const MUSIC_GENRES: string[] = [
+    'Rock', 'Pop', 'Indie/Alternativo', 'Electrónica', 'Hip-Hop/Rap', 'R&B/Soul',
+    'Clásica', 'Jazz/Blues', 'Folk/Acústico', 'Latina', 'Reggae', 'Metal', 'Ambiental'
 ];
