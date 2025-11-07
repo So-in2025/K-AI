@@ -101,12 +101,14 @@ export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ apiKey, moodJo
                 plan: {
                     type: Type.OBJECT,
                     properties: {
-                        nutrition: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, color: { type: Type.STRING, description: 'Una sola palabra de color en español (ej: verde, naranja, azul).' } } },
-                        attire: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } } },
-                        routine: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } } }
-                    }
+                        nutrition: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, color: { type: Type.STRING, description: 'Una sola palabra de color en español (ej: verde, naranja, azul).' } }, required: ["title", "description", "color"] },
+                        attire: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["title", "description"] },
+                        routine: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["title", "description"] }
+                    },
+                     required: ["nutrition", "attire", "routine"]
                 }
-            }
+            },
+            required: ["detectedMood", "plan"]
         };
 
         const prompt = `Actúa como Kai, un coach de bienestar holístico y empático con conocimientos en neurociencia, cromoterapia y mindfulness. El usuario acaba de depositar su estado de ánimo a través de la voz. Su transcripción es: "${transcript}". Tu tarea es analizar este texto y generar un 'Plan de Sintonía Anímica' en formato JSON. El plan debe ser potente, eficiente y tangible. Debe contener tres secciones: Nutrición por Color (sugiere alimentos y una receta simple basada en un color que equilibre el ánimo detectado), Vestimenta Consciente (una sugerencia de ropa o texturas para apoyar el estado emocional), y una Micro-Rutina Sanadora (una acción corta y específica para el día). Responde únicamente con el objeto JSON estructurado según el schema provisto.`;
@@ -114,7 +116,7 @@ export const MoodJournalCard: React.FC<MoodJournalCardProps> = ({ apiKey, moodJo
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents: [{ parts: [{ text: prompt }] }],
+                contents: prompt,
                 config: { responseMimeType: "application/json", responseSchema: schema },
             });
             const parsedResponse = JSON.parse(response.text);

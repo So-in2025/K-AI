@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ITherapySession, THERAPY_MODES } from '../types';
 
@@ -48,7 +47,7 @@ export const TherapyHistoryCard: React.FC<TherapyHistoryCardProps> = ({ sessions
                 <h2 className="text-xl font-bold text-slate-100">Historial de Sesiones</h2>
             </div>
             
-            {sessions.length > 0 ? (
+            {sessions && sessions.length > 0 ? (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                     {sessions.map(session => (
                         <div key={session.id} className="bg-slate-700/50 rounded-lg p-3">
@@ -91,7 +90,7 @@ export const TherapyHistoryCard: React.FC<TherapyHistoryCardProps> = ({ sessions
                 </p>
             )}
 
-             {sessions.length > 0 && (
+             {sessions && sessions.length > 0 && (
                 <button onClick={onDeleteHistory} className="w-full text-center text-xs text-red-500 hover:underline mt-4">
                     Borrar todo el historial de sesiones
                 </button>

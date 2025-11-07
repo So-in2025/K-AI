@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getGeminiResponse } from '../services/geminiService';
 import ttsService from '../services/ttsService';
 
 const SOSIcon = () => (

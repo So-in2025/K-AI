@@ -1,5 +1,44 @@
+import { User as FirebaseUser } from 'firebase/auth';
+
+// --- USER & PROFILE TYPES ---
+export type User = FirebaseUser;
+
+export interface IUserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  createdAt: any; // serverTimestamp
+  
+  geminiApiKey?: string;
+  onboardingData?: OnboardingData;
+  isSubscribed?: boolean;
+  
+  // Data previously in localStorage
+  cravings?: ICraving[];
+  startDate?: string; // Storing date as ISO string
+  journalEntry?: string;
+  kaiConversation?: IConversationTurn[];
+  wellnessLog?: IWellnessActivity[];
+  reminders?: IReminder[];
+  gardenGrowthPoints?: number;
+  thoughtLabEntries?: IThoughtLabEntry[];
+  trustCircleConfig?: ITrustCircleConfig;
+  kaiMemory?: string;
+  dopamineHits?: IDopamineHit[];
+  habitLoops?: IHabitLoop[];
+  moodJournal?: IMoodJournal;
+  therapySessions?: ITherapySession[];
+  goals?: IGoal[]; // Fix: Add goals to user profile
+  
+  // Monetization
+  usageTracker?: UsageTracker;
+  therapyTrialUsed?: boolean;
+  musicPreferences?: IMusicPreferences;
+}
 
 
+// --- EXISTING TYPES ---
 export enum MessageCategory {
   Morning = 'morning',
   Afternoon = 'afternoon',

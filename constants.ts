@@ -1,32 +1,33 @@
+
 import { IMessage, IResource, MessageCategory, IExercise, IMeditation, IMovementVideo, INeuroQuest, IQuote, UserFocus } from './types';
 
-// STORAGE KEYS
-export const CRAVINGS_STORAGE_KEY = 'cravingsHistory';
-export const PROGRESS_STORAGE_KEY = 'sobrietyStartDate';
+// STORAGE KEYS (DEVICE-SPECIFIC)
+export const TTS_SETTINGS_KEY = 'kiaTtsSettings';
+
+// Las siguientes claves ahora se gestionan en Firestore y se dejan aquí como referencia de los nombres de campo.
+/*
+export const CRAVINGS_STORAGE_KEY = 'cravings';
+export const PROGRESS_STORAGE_KEY = 'startDate';
 export const JOURNAL_STORAGE_KEY = 'journalEntry';
 export const WELLNESS_LOG_STORAGE_KEY = 'wellnessLog';
-export const REMINDERS_STORAGE_KEY = 'remindersList';
-export const LAST_INTERACTION_KEY = 'lastInteractionTimestamp';
+export const REMINDERS_STORAGE_KEY = 'reminders';
 export const ONBOARDING_DATA_STORAGE_KEY = 'onboardingData';
-export const SUBSCRIPTION_STORAGE_KEY = 'isKiaSubscribed';
-export const ACTIVATION_CODE_KEY = 'activationCode';
+export const SUBSCRIPTION_STORAGE_KEY = 'isSubscribed';
 export const GARDEN_GROWTH_POINTS_KEY = 'gardenGrowthPoints';
 export const THOUGHT_LAB_STORAGE_KEY = 'thoughtLabEntries';
 export const TRUST_CIRCLE_STORAGE_KEY = 'trustCircleConfig';
 export const KAI_MEMORY_KEY = 'kaiMemory';
-export const DOPAMINE_DIET_KEY = 'dopamineDiet';
+export const DOPAMINE_DIET_KEY = 'dopamineHits';
 export const HABIT_LOOPS_KEY = 'habitLoops';
-export const MOOD_JOURNAL_KEY = 'moodJournalData';
-export const KAI_CONVERSATION_KEY = 'kaiConversationHistory';
-export const THERAPY_SESSIONS_KEY = 'kiaTherapySessions';
-export const TTS_SETTINGS_KEY = 'kiaTtsSettings';
-export const MUSIC_PREFERENCES_KEY = 'kiaMusicPreferences';
+export const MOOD_JOURNAL_KEY = 'moodJournal';
+export const KAI_CONVERSATION_KEY = 'kaiConversation';
+export const THERAPY_SESSIONS_KEY = 'therapySessions';
+export const MUSIC_PREFERENCES_KEY = 'musicPreferences';
+export const FEATURE_USAGE_KEY = 'usageTracker';
+export const THERAPY_TRIAL_USED_KEY = 'therapyTrialUsed';
+*/
 
-// Monetization Keys
-export const FEATURE_USAGE_KEY = 'kiaFeatureUsage';
-export const THERAPY_TRIAL_USED_KEY = 'kiaTherapyTrialUsed';
-
-
+// CONSTANTS
 export const MESSAGES: Record<MessageCategory, IMessage[]> = {
   [MessageCategory.Morning]: [
     { id: 1, category: MessageCategory.Morning, title: 'Un Nuevo Comienzo', content: 'Hoy es una nueva oportunidad. Elige la recuperación. Tu futuro yo te lo agradecerá. Respira hondo y enfócate en el ahora.' },

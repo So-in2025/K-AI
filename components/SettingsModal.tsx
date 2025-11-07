@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import ttsService from '../services/ttsService';
 import { ITtsSettings } from '../types';
+import { useUser } from '../contexts/UserContext';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -15,6 +17,7 @@ const CloseIcon = () => (
 
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal }) => {
+    const { logout } = useUser();
     const [ttsSettings, setTtsSettings] = useState<ITtsSettings | null>(null);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -31,27 +34,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
             return false;
         };
 
-        // 1. Intento inmediato
         if (populateVoices()) return;
-
-        // 2. Escuchar el evento (método preferido)
         speechSynthesis.onvoiceschanged = () => {
             populateVoices();
         };
 
-        // 3. Usar un intervalo como fallback para navegadores problemáticos
         const voiceInterval = setInterval(() => {
             if (populateVoices()) {
                 clearInterval(voiceInterval);
             }
         }, 250);
 
-        // Limpieza al desmontar el componente
         return () => {
             clearInterval(voiceInterval);
             speechSynthesis.onvoiceschanged = null;
         };
-    }, [ttsSettings]); // Depend on ttsSettings to avoid re-running if it's already set
+    }, [ttsSettings]);
 
     const handleTtsChange = (change: Partial<ITtsSettings>) => {
         if (!ttsSettings) return;
@@ -62,6 +60,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
 
     const handleTestVoice = () => {
         ttsService.speak("Hola, esta es una prueba de mi voz.");
+    };
+
+    const handleLogout = () => {
+        if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
+            logout();
+            onClose();
+        }
     };
 
     return (
@@ -79,15 +84,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
                     </p>
                     <button 
                         onClick={() => {
-                            onClose(); // Close this modal first
-                            onOpenApiKeyModal(); // Then open the other
+                            onClose();
+                            onOpenApiKeyModal();
                         }}
                         className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-500"
                     >
                         Cambiar API Key
                     </button>
                 </div>
-
 
                 {ttsSettings && (
                     <div className="mb-6">
@@ -120,14 +124,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
                         </div>
                     </div>
                 )}
-
-
-                <button
-                    onClick={onClose}
-                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors"
-                >
-                    Cerrar
-                </button>
+                
+                <div className="border-t border-slate-700 pt-6 mt-6">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full bg-red-600/20 border border-red-500 text-red-300 font-semibold py-2 px-4 rounded-lg hover:bg-red-600/30"
+                    >
+                        Cerrar Sesión
+                    </button>
+                </div>
             </div>
             <style>{`
                 @keyframes fade-in-up {

@@ -1,5 +1,5 @@
+
 import React, { useState } from 'react';
-import { saveApiKey } from '../services/geminiService';
 
 interface ApiKeyModalProps {
     onClose: () => void;
@@ -15,9 +15,8 @@ const CloseIcon = () => (
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose, onSave }) => {
     const [key, setKey] = useState('');
 
-    const handleSave = (forSession: boolean) => {
+    const handleSave = () => {
         if (key.trim()) {
-            saveApiKey(key, forSession);
             onSave(key);
             onClose();
         }
@@ -32,7 +31,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose, onSave }) => 
                 </div>
 
                 <p className="text-sm text-slate-400 mb-4">
-                    KIA necesita tu propia API Key de Google Gemini para funcionar. Esto asegura que tu uso sea privado y no dependa de la clave del desarrollador.
+                    KIA necesita tu propia API Key de Google Gemini para funcionar. Esto asegura que tu uso sea privado. Se guardará de forma segura en tu cuenta para que no tengas que volver a introducirla.
                 </p>
                 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-sm text-teal-400 hover:underline mb-4 block">
                     Obtén tu API Key gratuita aquí &rarr;
@@ -50,22 +49,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose, onSave }) => 
                     />
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-3">
-                     <button
-                        onClick={() => handleSave(false)}
-                        disabled={!key.trim()}
-                        className="flex-1 bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 disabled:bg-slate-500"
-                    >
-                        Guardar en este dispositivo
-                    </button>
-                    <button
-                        onClick={() => handleSave(true)}
-                        disabled={!key.trim()}
-                        className="flex-1 bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-slate-500 disabled:bg-slate-500"
-                    >
-                        Guardar solo para esta sesión
-                    </button>
-                </div>
+                <button
+                    onClick={handleSave}
+                    disabled={!key.trim()}
+                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 disabled:bg-slate-500"
+                >
+                    Guardar y Continuar
+                </button>
             </div>
             <style>{`
                 @keyframes fade-in-up {

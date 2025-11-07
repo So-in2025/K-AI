@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { OnboardingData, IMusicPreferences, ISongRecommendation, UserFocus, UsageTracker, FeatureID } from '../types';
-import { MUSIC_PREFERENCES_KEY } from '../constants';
 import { getGeminiResponse } from '../services/geminiService';
 import { MusicPreferencesModal } from './MusicPreferencesModal';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -18,27 +17,18 @@ interface SoundtrackCardProps {
     isSubscribed: boolean;
     usageTracker: UsageTracker | null;
     checkAndConsumeUsage: (featureId: FeatureID, limit?: number) => boolean;
+    musicPreferences: IMusicPreferences | null;
+    onUpdateMusicPreferences: (prefs: IMusicPreferences) => void;
 }
 
-export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardingData, isSubscribed, usageTracker, checkAndConsumeUsage }) => {
-    const [preferences, setPreferences] = useState<IMusicPreferences | null>(null);
+export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardingData, isSubscribed, usageTracker, checkAndConsumeUsage, musicPreferences, onUpdateMusicPreferences }) => {
     const [recommendations, setRecommendations] = useState<ISongRecommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [expandedSongIndex, setExpandedSongIndex] = useState<number | null>(null);
 
-    useEffect(() => {
-        try {
-            const storedPrefs = localStorage.getItem(MUSIC_PREFERENCES_KEY);
-            if (storedPrefs) {
-                setPreferences(JSON.parse(storedPrefs));
-            }
-        } catch (e) { console.error("Failed to load music preferences", e); }
-    }, []);
-
     const handleSavePreferences = (prefs: IMusicPreferences) => {
-        setPreferences(prefs);
-        localStorage.setItem(MUSIC_PREFERENCES_KEY, JSON.stringify(prefs));
+        onUpdateMusicPreferences(prefs);
         setIsModalOpen(false);
         handleGenerate(prefs); // Generate immediately after saving
     };
@@ -80,7 +70,7 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
         `;
 
         try {
-            const response = await getGeminiResponse(apiKey, prompt);
+            const response = await getGeminiResponse(apiKey, prompt, undefined, true);
             const jsonMatch = response.match(/\[.*\]/s);
             if (jsonMatch) {
                 const parsedRecs = JSON.parse(jsonMatch[0]);
@@ -110,7 +100,7 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
                 <h2 className="text-xl font-bold text-slate-100">Banda Sonora para Sanar</h2>
             </div>
 
-            {!preferences ? (
+            {!musicPreferences ? (
                  <>
                     <p className="text-slate-400 mb-4 text-sm">Configura tus gustos para que Kai pueda crear una banda sonora personalizada para tu camino.</p>
                     <button onClick={() => setIsModalOpen(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30">
@@ -142,7 +132,7 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
                             )}
                         </div>
                     ))}
-                    <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full text-center text-sm text-teal-400 hover:underline mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button disabled={!canGenerate} onClick={() => handleGenerate(musicPreferences)} className="w-full text-center text-sm text-teal-400 hover:underline mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
                         {canGenerate ? 'Generar nueva lista' : 'Usos gratuitos agotados'}
                     </button>
                     {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
@@ -150,7 +140,7 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
             ) : (
                 <>
                     <p className="text-slate-400 mb-4 text-sm">Tu banda sonora está lista para ser creada.</p>
-                     <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                     <button disabled={!canGenerate} onClick={() => handleGenerate(musicPreferences)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
                         {canGenerate ? 'Generar mi Banda Sonora' : 'Usos gratuitos agotados'}
                     </button>
                     {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
@@ -160,7 +150,7 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
                 </>
             )}
 
-            {isModalOpen && <MusicPreferencesModal onClose={() => setIsModalOpen(false)} onSave={handleSavePreferences} initialPreferences={preferences} />}
+            {isModalOpen && <MusicPreferencesModal onClose={() => setIsModalOpen(false)} onSave={handleSavePreferences} initialPreferences={musicPreferences} />}
         </div>
     );
 };

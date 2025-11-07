@@ -114,7 +114,7 @@ export const TherapySessionModal: React.FC<TherapySessionModalProps> = ({ apiKey
             [ACTIONABLE]Aquí la sugerencia accionable.[END_ACTIONABLE]
         `;
 
-        const response = await getGeminiResponse(apiKey, prompt);
+        const response = await getGeminiResponse(apiKey, prompt, undefined, false);
 
         const insightsMatch = response.match(/\[INSIGHTS\](.*?)\[END_INSIGHTS\]/s);
         const patternsMatch = response.match(/\[PATTERNS\](.*?)\[END_PATTERNS\]/s);
