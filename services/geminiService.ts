@@ -33,7 +33,7 @@ export class GeminiService {
                 model: 'gemini-2.5-flash',
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
                 config: {
-                    ...(systemInstruction && { systemInstruction: { role: "model", parts: [{ text: systemInstruction }] } }),
+                    ...(systemInstruction && { systemInstruction: systemInstruction }),
                     ...(isJson && { responseMimeType: "application/json" }),
                 }
             });
