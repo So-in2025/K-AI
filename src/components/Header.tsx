@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { UserFocus, USER_FOCUS_OPTIONS, OnboardingData } from '../types.ts';
+import { UserFocus, USER_FOCUS_OPTIONS } from '../types.ts';
 import { KiaIcon } from './KiaIcon.tsx';
 import { useUser } from '../contexts/UserContext.tsx';
 
@@ -13,7 +12,6 @@ const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 interface HeaderProps {
     onSettingsClick: () => void;
-    onNavigateToProgress: () => void;
 }
 
 const getTitle = (focuses: UserFocus[]): string => {
@@ -33,37 +31,37 @@ const getTitle = (focuses: UserFocus[]): string => {
 }
 
 
-export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onNavigateToProgress }) => {
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
   const { user, userData } = useUser();
   const title = getTitle(userData?.onboardingData?.focuses || []);
-  const isSubscribed = userData?.isSubscribed || false;
 
   return (
     <header className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
-             {user?.photoURL ? (
-                <img src={user.photoURL} alt={user.displayName || 'User'} className="h-10 w-10 rounded-full" />
-             ) : (
-                <KiaIcon className="h-8 w-8 text-teal-400"/>
-             )}
+             <KiaIcon className="h-10 w-10 text-teal-400"/>
              <div>
                  <h1 className="text-xl md:text-2xl font-bold text-slate-100 tracking-wider">
-                  {user?.displayName?.split(' ')[0] || 'KIA'}
+                  KIA
                 </h1>
                 <p className="text-xs text-teal-300 -mt-1">{title}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {!isSubscribed && (
-              <button 
-                onClick={onNavigateToProgress}
-                className="text-sm font-semibold text-yellow-300 hover:text-yellow-200 transition-colors"
+            {userData?.isSubscribed === false && (
+              <a 
+                href="https://kia-plus.hotmart.com/purchase"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-yellow-500 text-slate-900 font-bold text-xs px-3 py-1.5 rounded-full hover:bg-yellow-400 transition-colors"
               >
-                Activar KIA Plus ✨
-              </button>
+                Activar KIA Plus
+              </a>
             )}
+             {user && user.photoURL && (
+                <img src={user.photoURL} alt={user.displayName || 'User'} className="h-8 w-8 rounded-full" />
+             )}
             <button onClick={onSettingsClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Configuración">
                 <SettingsIcon />
             </button>
