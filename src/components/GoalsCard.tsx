@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { IGoal, GoalType } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
+import { useUser } from '../contexts/UserContext';
 
 const TargetIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -10,13 +10,17 @@ const TargetIcon = () => (
     </svg>
 );
 
-interface GoalsCardProps {
-    goals: IGoal[];
-    onGenerateGoal: (type: GoalType) => void;
-    isLoading: boolean;
-}
+export const GoalsCard: React.FC = () => {
+    const { userData, generateGoal } = useUser();
+    const [isLoading, setIsLoading] = useState(false);
+    const goals = userData?.goals || [];
 
-export const GoalsCard: React.FC<GoalsCardProps> = ({ goals, onGenerateGoal, isLoading }) => {
+    const handleGenerate = async (type: GoalType) => {
+        setIsLoading(true);
+        await generateGoal(type);
+        setIsLoading(false);
+    };
+
     const renderGoal = (type: GoalType) => {
         const goal = goals.find(g => g.type === type);
         const typeLabel = type === 'daily' ? 'Diaria' : type === 'weekly' ? 'Semanal' : 'Mensual';
@@ -30,18 +34,15 @@ export const GoalsCard: React.FC<GoalsCardProps> = ({ goals, onGenerateGoal, isL
 
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
-            <TtsInfoButton explanation="Esta herramienta convierte tu progreso en un plan de acción. Kai analiza tus datos recientes para generar metas S.M.A.R.T.: específicas, medibles, alcanzables, relevantes y con un plazo. Usa estos objetivos para darte una dirección clara y enfocada cada día, semana y mes." />
+            <TtsInfoButton explanation="Esta herramienta convierte tu progreso en un plan de acción. Kai analiza tus datos recientes para generar metas S.M.A.R.T. para darte una dirección clara." />
             <div className="flex items-center space-x-3 mb-3">
                 <TargetIcon />
                 <h2 className="text-xl font-bold text-slate-100">Mis Metas con IA</h2>
             </div>
-            <p className="text-slate-400 mb-4 text-sm">Pide a Kai que genere metas personalizadas basadas en tu progreso para darte un camino claro.</p>
+            <p className="text-slate-400 mb-4 text-sm">Pide a Kai que genere metas personalizadas basadas en tu progreso.</p>
 
             {isLoading ? (
-                <div className="h-40 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
-                    <p className="ml-3 text-slate-400">Kai está creando tus metas...</p>
-                </div>
+                <div className="h-40 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div><p className="ml-3 text-slate-400">Creando metas...</p></div>
             ) : (
                 <div className="space-y-3">
                     {renderGoal('daily')}
@@ -51,9 +52,9 @@ export const GoalsCard: React.FC<GoalsCardProps> = ({ goals, onGenerateGoal, isL
             )}
             
             <div className="flex justify-between gap-2 mt-4">
-                <button onClick={() => onGenerateGoal('daily')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-slate-600 transition disabled:opacity-50">Diaria</button>
-                <button onClick={() => onGenerateGoal('weekly')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-slate-600 transition disabled:opacity-50">Semanal</button>
-                <button onClick={() => onGenerateGoal('monthly')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-slate-600 transition disabled:opacity-50">Mensual</button>
+                <button onClick={() => handleGenerate('daily')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 rounded-lg hover:bg-slate-600 disabled:opacity-50">Diaria</button>
+                <button onClick={() => handleGenerate('weekly')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 rounded-lg hover:bg-slate-600 disabled:opacity-50">Semanal</button>
+                <button onClick={() => handleGenerate('monthly')} disabled={isLoading} className="flex-1 bg-slate-700 text-slate-200 text-sm font-semibold py-2 rounded-lg hover:bg-slate-600 disabled:opacity-50">Mensual</button>
             </div>
         </div>
     );

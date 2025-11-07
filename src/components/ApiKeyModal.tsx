@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { saveApiKey } from '../services/geminiService';
 
 interface ApiKeyModalProps {
     onClose: () => void;
@@ -15,11 +14,9 @@ const CloseIcon = () => (
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose, onSave }) => {
     const [key, setKey] = useState('');
 
-    const handleSave = (forSession: boolean) => {
+    const handleSave = () => {
         if (key.trim()) {
-            saveApiKey(key, forSession);
             onSave(key);
-            onClose();
         }
     };
     
@@ -52,18 +49,11 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onClose, onSave }) => 
                 
                 <div className="flex flex-col sm:flex-row gap-3">
                      <button
-                        onClick={() => handleSave(false)}
+                        onClick={handleSave}
                         disabled={!key.trim()}
                         className="flex-1 bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 disabled:bg-slate-500"
                     >
-                        Guardar en este dispositivo
-                    </button>
-                    <button
-                        onClick={() => handleSave(true)}
-                        disabled={!key.trim()}
-                        className="flex-1 bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-slate-500 disabled:bg-slate-500"
-                    >
-                        Guardar solo para esta sesión
+                        Guardar en mi cuenta
                     </button>
                 </div>
             </div>

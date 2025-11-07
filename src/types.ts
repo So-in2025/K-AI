@@ -1,4 +1,6 @@
+import { User as FirebaseUser } from 'firebase/auth';
 
+export type User = FirebaseUser;
 
 export enum MessageCategory {
   Morning = 'morning',
@@ -60,7 +62,7 @@ export interface IExercise {
   id: string;
   name: string;
   description: string;
-  setup?: { text: string; pause: number }[]; // <-- ADDED FOR PREPARATION PHASE
+  setup?: { text: string; pause: number }[];
   steps: { name: string; duration: number; instruction?: string }[];
   isPremium?: boolean;
 }
@@ -102,22 +104,28 @@ export interface IGuardianAnalysis {
   justification: string;
   turningPoint: string;
   escapeStrategy: string;
+  // Also support integrated analysis fields
+  chainReaction?: string;
+  coreBelief?: string;
+  holisticInsight?: string;
+  integrativeStrategy?: string;
+  // Also support depression/grief fields
+  coreEmotion?: string;
+  thoughtPattern?: string;
+  compassionOpportunity?: string;
+  gentleAction?: string;
 }
 
 export type GuardianAnalysisResult = IGuardianAnalysis | { isLocked: true };
 
 export interface OnboardingData {
     focuses: UserFocus[];
-    // Addiction
     addictionFrequency?: string;
     addictionGoal?: string;
-    // Depression
     depressionManifestation?: string;
     depressionMotivation?: string;
-    // Grief
     griefRecency?: string;
     griefFeeling?: string;
-    // Open question
     mainChallenge: string;
 }
 
@@ -138,7 +146,6 @@ export interface ITrustCircleConfig {
     sendCravingAlerts: boolean;
 }
 
-// NEWEST TYPES FOR NEWEST FEATURES
 export interface IDopamineHit {
     id: string;
     date: string; // ISO string
@@ -149,15 +156,14 @@ export interface IDopamineHit {
 export interface IHabitLoop {
     id: string;
     date: string; // ISO string
-    cue: string;      // The trigger
-    craving: string;  // The underlying need
+    cue: string;
+    craving: string;
     oldRoutine: string;
     newRoutine: string;
     reward: string;
     kaiSummary?: string;
 }
 
-// Fix: Add missing IFreedomVaultConfig interface.
 export interface IFreedomVaultConfig {
     weeklySpending: number;
     goalAmount: number;
@@ -165,9 +171,9 @@ export interface IFreedomVaultConfig {
     lastDepositDate?: string;
 }
 
-export interface INeuroQuest { // RENAMED
+export interface INeuroQuest {
     id: 'gratitude' | 'victory' | 'savoring' | 'sunlight' | 'positive-memory' | 'self-massage';
-    neurotransmitter: 'dopamine' | 'serotonin'; // <-- ADDED
+    neurotransmitter: 'dopamine' | 'serotonin';
     name: string;
     description: string;
     activityLogName: string;
@@ -175,21 +181,10 @@ export interface INeuroQuest { // RENAMED
     script: { step: 'intention' | 'practice' | 'reflection'; text: string; pauseAfter: number }[];
 }
 
-// Mood Journal Types
 export interface IMoodPlan {
-    nutrition: {
-        title: string;
-        description: string;
-        color: string;
-    };
-    attire: {
-        title: string;
-        description: string;
-    };
-    routine: {
-        title: string;
-        description: string;
-    };
+    nutrition: { title: string; description: string; color: string; };
+    attire: { title: string; description: string; };
+    routine: { title: string; description: string; };
 }
 
 export interface IMoodJournal {
@@ -199,7 +194,6 @@ export interface IMoodJournal {
     plan: IMoodPlan;
 }
 
-// Oraculo Interior
 export type Archetype = 'coach' | 'sabio' | 'guerrero' | 'nino' | 'sanador';
 
 export const ARCHETYPE_NAMES: Record<Archetype, string> = {
@@ -210,7 +204,6 @@ export const ARCHETYPE_NAMES: Record<Archetype, string> = {
   sanador: 'El Sanador',
 };
 
-// Modo Terapeuta
 export type TherapyMode = 'cbt' | 'act' | 'narrative';
 
 export const THERAPY_MODES: Record<TherapyMode, { name: string; description: string }> = {
@@ -233,18 +226,16 @@ export interface ITherapySession {
     summary: ITherapySummary;
 }
 
-// Monetization - Usage Tracking
 export type FeatureID = 'guardian' | 'weekly_analysis' | 'oracle' | 'thought_lab' | 'habit_architect' | 'affirmation_generator' | 'soundtrack';
 
 export interface FeatureUsage {
     count: number;
-    month: number; // e.g., 6 for July
-    year: number; // e.g., 2024
+    month: number;
+    year: number;
 }
 
 export type UsageTracker = Record<FeatureID, FeatureUsage>;
 
-// TTS Settings
 export interface ITtsSettings {
     voiceName: string | null;
     rate: number; // 0.1 to 10
@@ -266,4 +257,41 @@ export interface ISongRecommendation {
     title: string;
     artist: string;
     reason: string;
+}
+
+// --- Main User Profile Data Structure for Firestore ---
+export interface IUserProfile {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    createdAt: any; // Firestore ServerTimestamp
+
+    geminiApiKey?: string | null;
+    onboardingData?: OnboardingData | null;
+    isSubscribed?: boolean;
+    
+    cravings?: ICraving[];
+    startDate?: string | null; // ISO string
+    journalEntry?: string;
+    kaiConversation?: IConversationTurn[];
+    goals?: IGoal[];
+    wellnessLog?: IWellnessActivity[];
+    reminders?: IReminder[];
+    
+    gardenGrowthPoints?: number;
+    thoughtLabEntries?: IThoughtLabEntry[];
+    trustCircleConfig?: ITrustCircleConfig | null;
+    kaiMemory?: string;
+
+    dopamineHits?: IDopamineHit[];
+    habitLoops?: IHabitLoop[];
+    moodJournal?: IMoodJournal | null;
+    therapySessions?: ITherapySession[];
+
+    usageTracker?: UsageTracker | null;
+    therapyTrialUsed?: boolean;
+    guardianTriggerWords?: string[];
+    
+    musicPreferences?: IMusicPreferences;
 }

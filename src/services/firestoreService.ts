@@ -1,9 +1,9 @@
-
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase.ts';
 import { User, IUserProfile } from '../types.ts';
 
 export const createUserProfileDocument = async (userAuth: User): Promise<void> => {
+    if (!db) return;
     const userDocRef = doc(db, 'users', userAuth.uid);
     const snapshot = await getDoc(userDocRef);
 
@@ -16,8 +16,28 @@ export const createUserProfileDocument = async (userAuth: User): Promise<void> =
             displayName,
             photoURL,
             createdAt,
-            // Add a welcome message from Kai for new users
-            kaiConversation: [{ role: 'model', text: 'Hola, soy Kai. Estoy aquí para escucharte y apoyarte en tu camino. ¿Cómo te sientes hoy?' }]
+            geminiApiKey: null,
+            onboardingData: null,
+            isSubscribed: false,
+            cravings: [],
+            startDate: null,
+            journalEntry: '',
+            kaiConversation: [{ role: 'model', text: 'Hola, soy Kai. Estoy aquí para escucharte y apoyarte en tu camino. ¿Cómo te sientes hoy?' }],
+            goals: [],
+            wellnessLog: [],
+            reminders: [],
+            gardenGrowthPoints: 0,
+            thoughtLabEntries: [],
+            trustCircleConfig: null,
+            kaiMemory: '',
+            dopamineHits: [],
+            habitLoops: [],
+            moodJournal: null,
+            therapySessions: [],
+            usageTracker: null,
+            therapyTrialUsed: false,
+            guardianTriggerWords: [],
+            musicPreferences: null,
         };
 
         try {
@@ -29,6 +49,7 @@ export const createUserProfileDocument = async (userAuth: User): Promise<void> =
 };
 
 export const getUserProfile = async (uid: string): Promise<IUserProfile | null> => {
+    if (!db) return null;
     const userDocRef = doc(db, 'users', uid);
     try {
         const docSnap = await getDoc(userDocRef);
@@ -45,9 +66,9 @@ export const getUserProfile = async (uid: string): Promise<IUserProfile | null> 
 };
 
 export const updateUserProfile = async (uid: string, data: Partial<IUserProfile>): Promise<void> => {
+    if (!db) return;
     const userDocRef = doc(db, 'users', uid);
     try {
-        // Use setDoc with merge: true to handle both creation and update, which is more robust
         await setDoc(userDocRef, data, { merge: true });
     } catch (error) {
         console.error("Error updating user profile:", error);

@@ -1,81 +1,47 @@
-
 import React from 'react';
-import { useUser } from '../contexts/UserContext.tsx';
-import { ProgressCard } from '../components/ProgressCard.tsx';
-import { JournalCard } from '../components/JournalCard.tsx';
-import { CompanionCard } from '../components/CompanionCard.tsx';
-import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard.tsx';
-import { FreedomVaultCard } from '../components/FreedomVaultCard.tsx';
-import { InnerGardenCard } from '../components/InnerGardenCard.tsx';
-import { WellnessSummaryCard } from '../components/WellnessSummaryCard.tsx';
-import { DailyQuoteCard } from '../components/DailyQuoteCard.tsx';
-import { ScheduledMessageCard } from '../components/ScheduledMessageCard.tsx';
-import { GoalsCard } from '../components/GoalsCard.tsx';
-import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard.tsx';
-import { GuardianModeCard } from '../components/GuardianModeCard.tsx';
+import { useUser } from '../contexts/UserContext';
+import { ProgressCard } from '../components/ProgressCard';
+import { JournalCard } from '../components/JournalCard';
+import { DailyQuoteCard } from '../components/DailyQuoteCard';
+import { GuardianModeCard } from '../components/GuardianModeCard';
+import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard';
+import { InnerGardenCard } from '../components/InnerGardenCard';
+import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
+import { GoalsCard } from '../components/GoalsCard';
 
 export const HomeView: React.FC = () => {
-    const { userData, daysSober, updateUserData } = useUser();
+    const { userData } = useUser();
 
-    if (!userData) return null;
-
-    const handleStartDate = () => {
-        const today = new Date().toISOString();
-        updateUserData({ startDate: today });
-    };
-
-    const handleResetProgress = () => {
-        if (window.confirm('¿Estás seguro de que quieres reiniciar tu progreso? Esta acción no se puede deshacer.')) {
-            updateUserData({ startDate: new Date().toISOString() });
-        }
-    };
-
-    const handleJournalSave = () => {
-      // Kai memory update logic is handled by a separate cloud function or triggered elsewhere
-      console.log('Journal saved, Kai will reflect on this.');
-    };
+    if (!userData || !userData.onboardingData) return null;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
            
             {/* Column 1 */}
             <div className="space-y-6">
-                 {userData.onboardingData?.focuses.includes('addiction') && (
-                     <ProgressCard
-                        startDate={userData.startDate ? new Date(userData.startDate) : null}
-                        daysSober={daysSober}
-                        onStartDate={handleStartDate}
-                        onReset={handleResetProgress}
-                        userFocus={userData.onboardingData?.focuses || []}
-                    />
+                 {userData.onboardingData.focuses.includes('addiction') && (
+                     <ProgressCard />
                  )}
-                <ScheduledMessageCard />
-                <CompanionCard />
+                <DailyQuoteCard />
+                <InnerGardenCard />
             </div>
 
             {/* Column 2 */}
             <div className="space-y-6">
-                <JournalCard
-                    entry={userData.journalEntry || ''}
-                    onEntryChange={(entry) => updateUserData({ journalEntry: entry })}
-                    onSave={handleJournalSave}
-                />
-                 <DopamineSanctuaryCard />
-                 <GuardianModeCard />
+                <JournalCard />
+                <GuardianModeCard />
             </div>
             
             {/* Column 3 */}
             <div className="space-y-6">
-                <DailyQuoteCard />
-                <FreedomVaultCard />
+                <DopamineSanctuaryCard />
                 <WellnessSummaryCard />
             </div>
 
             {/* Column 4 */}
             <div className="space-y-6">
-                <InnerGardenCard />
                 <GoalsCard />
-                <AffirmationGeneratorCard />
+                {/* Other cards can be placed here */}
             </div>
             <style>{`
                 @keyframes fade-in {

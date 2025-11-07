@@ -15,7 +15,7 @@ interface TtsInfoButtonProps {
 export const TtsInfoButton: React.FC<TtsInfoButtonProps> = ({ explanation, className }) => {
     const handlePlayExplanation = (e: React.MouseEvent) => {
         e.stopPropagation();
-        ttsService.speakSimple(explanation);
+        ttsService.speak(explanation);
     };
 
     return (

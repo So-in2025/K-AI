@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS, OnboardingData } from '../types';
 import { KiaIcon } from './KiaIcon';
+import { useUser } from '../contexts/UserContext';
 
 const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
@@ -11,12 +12,9 @@ const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 interface HeaderProps {
     onSettingsClick: () => void;
-    onboardingData: OnboardingData;
-    isSubscribed: boolean;
-    onNavigateToProgress: () => void;
 }
 
-const getTitle = (focuses: UserFocus[]): string => {
+const getTitle = (focuses: UserFocus[] = []): string => {
     if (focuses.length === 0) return 'Kindness, Introspection, Awareness';
     if (focuses.length === 1) return USER_FOCUS_OPTIONS[focuses[0]];
     
@@ -33,8 +31,10 @@ const getTitle = (focuses: UserFocus[]): string => {
 }
 
 
-export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onboardingData, isSubscribed, onNavigateToProgress }) => {
-  const title = getTitle(onboardingData.focuses);
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
+  const { userData } = useUser();
+  const title = getTitle(userData?.onboardingData?.focuses);
+  const isSubscribed = userData?.isSubscribed || false;
 
   return (
     <header className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
@@ -51,12 +51,14 @@ export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onboardingData,
           </div>
           <div className="flex items-center space-x-2">
             {!isSubscribed && (
-              <button 
-                onClick={onNavigateToProgress}
+              <a 
+                href="https://pay.hotmart.com/F102777841D?off=yx1yoozm"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm font-semibold text-yellow-300 hover:text-yellow-200 transition-colors"
               >
                 Activar KIA Plus ✨
-              </button>
+              </a>
             )}
             <button onClick={onSettingsClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Configuración">
                 <SettingsIcon />

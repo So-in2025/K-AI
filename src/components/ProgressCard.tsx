@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserFocus } from '../types';
+import { FireworksEffect } from './FireworksEffect';
 import { TtsInfoButton } from './TtsInfoButton';
-import { FireworksEffect } from './FireworksEffect'; // Import the new component
+import { useUser } from '../contexts/UserContext';
 
 const CalendarIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -9,19 +9,16 @@ const CalendarIcon = () => (
     </svg>
 );
 
-interface ProgressCardProps {
-    startDate: Date | null;
-    daysSober: number;
-    onStartDate: () => void;
-    onReset: () => void;
-    userFocus: UserFocus[];
-}
 
 const MILESTONES = [7, 14, 30, 60, 90, 180, 365];
 const CELEBRATED_MILESTONES_KEY = 'celebratedMilestones';
 
-export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober, onStartDate, onReset, userFocus }) => {
+export const ProgressCard: React.FC = () => {
+  const { userData, daysSober, startProgress, resetProgress } = useUser();
   const [showFireworks, setShowFireworks] = useState(false);
+  
+  const startDate = userData?.startDate ? new Date(userData.startDate) : null;
+  const userFocus = userData?.onboardingData?.focuses || [];
 
   useEffect(() => {
       if (daysSober <= 0) return;
@@ -37,7 +34,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
                   setShowFireworks(true);
                   celebrated.push(milestone);
                   localStorage.setItem(CELEBRATED_MILESTONES_KEY, JSON.stringify(celebrated));
-                  hasCelebratedThisLoad = true; // Celebrate only one milestone per page load
+                  hasCelebratedThisLoad = true;
                   break; 
               }
           }
@@ -56,7 +53,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
         <h2 className="text-xl font-bold text-slate-100 mb-2">Bienvenido a tu viaje</h2>
         <p className="text-slate-400 mb-4">Empezar es el paso más valiente. Estamos aquí para apoyarte.</p>
         <button
-          onClick={onStartDate}
+          onClick={startProgress}
           className="bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-teal-700 transition-colors"
         >
           {buttonText}
@@ -81,7 +78,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
         </p>
       </div>
        <button 
-        onClick={onReset} 
+        onClick={resetProgress} 
         className="mt-4 text-center w-full text-white text-xs opacity-70 hover:opacity-100 transition">
         Reiniciar progreso
       </button>
