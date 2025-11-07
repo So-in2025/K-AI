@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserFocus } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
+import { FireworksEffect } from './FireworksEffect'; // Import the new component
 
 const CalendarIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -17,7 +17,35 @@ interface ProgressCardProps {
     userFocus: UserFocus[];
 }
 
+const MILESTONES = [7, 14, 30, 60, 90, 180, 365];
+const CELEBRATED_MILESTONES_KEY = 'celebratedMilestones';
+
 export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober, onStartDate, onReset, userFocus }) => {
+  const [showFireworks, setShowFireworks] = useState(false);
+
+  useEffect(() => {
+      if (daysSober <= 0) return;
+
+      try {
+          const celebratedRaw = localStorage.getItem(CELEBRATED_MILESTONES_KEY);
+          const celebrated: number[] = celebratedRaw ? JSON.parse(celebratedRaw) : [];
+          
+          let hasCelebratedThisLoad = false;
+          
+          for (const milestone of MILESTONES) {
+              if (daysSober >= milestone && !celebrated.includes(milestone) && !hasCelebratedThisLoad) {
+                  setShowFireworks(true);
+                  celebrated.push(milestone);
+                  localStorage.setItem(CELEBRATED_MILESTONES_KEY, JSON.stringify(celebrated));
+                  hasCelebratedThisLoad = true; // Celebrate only one milestone per page load
+                  break; 
+              }
+          }
+      } catch (e) {
+          console.error("Failed to process milestone celebration:", e);
+      }
+  }, [daysSober]);
+
   const hasAddictionFocus = userFocus.includes('addiction');
   const buttonText = hasAddictionFocus ? 'Comenzar mi recuperación' : 'Comenzar mi camino';
   const dayLabel = hasAddictionFocus ? (daysSober === 1 ? 'Día de sobriedad' : 'Días de sobriedad') : (daysSober === 1 ? 'Día de progreso' : 'Días de progreso');
@@ -39,6 +67,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ startDate, daysSober
 
   return (
     <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-6 rounded-2xl shadow-lg text-white h-full flex flex-col justify-between relative">
+      {showFireworks && <FireworksEffect onComplete={() => setShowFireworks(false)} />}
       <TtsInfoButton explanation="Esta tarjeta es tu ancla. Muestra el número de días que has avanzado en tu camino, un recordatorio constante de tu fuerza y compromiso." />
       <div>
         <div className="flex items-center space-x-4 mb-4">
