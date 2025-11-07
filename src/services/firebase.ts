@@ -2,7 +2,7 @@
 // By using `declare global`, we augment the global ImportMeta type instead of declaring a new one in this module's scope.
 declare global {
     interface ImportMetaEnv {
-        // THIS IS THE FIX: Renamed the variable to avoid confusion with user-specific Gemini keys.
+        // THIS IS THE FIX: Using the new, clearer variable name you requested.
         readonly VITE_FIREBASE_PUBLIC_KEY: string;
         readonly VITE_FIREBASE_AUTH_DOMAIN: string;
         readonly VITE_FIREBASE_PROJECT_ID: string;
