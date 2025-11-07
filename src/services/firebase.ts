@@ -2,7 +2,8 @@
 // By using `declare global`, we augment the global ImportMeta type instead of declaring a new one in this module's scope.
 declare global {
     interface ImportMetaEnv {
-        readonly VITE_FIREBASE_API_KEY: string;
+        // THIS IS THE FIX: Renamed the variable to avoid confusion with user-specific Gemini keys.
+        readonly VITE_FIREBASE_PUBLIC_KEY: string;
         readonly VITE_FIREBASE_AUTH_DOMAIN: string;
         readonly VITE_FIREBASE_PROJECT_ID: string;
         readonly VITE_FIREBASE_STORAGE_BUCKET: string;
@@ -22,7 +23,8 @@ import { getFirestore, Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  // THIS IS THE FIX: Using the new, clearer variable name.
+  apiKey: import.meta.env.VITE_FIREBASE_PUBLIC_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
@@ -39,11 +41,16 @@ let firebaseInitializationError: string | null = null;
 
 try {
   // Check if all required Firebase config keys are present.
-  const requiredKeys = ['apiKey', 'authDomain', 'projectId'];
-  const missingKeys = requiredKeys.filter(key => !(firebaseConfig as any)[key]);
+  const requiredConfig: Record<string, string | undefined> = {
+    VITE_FIREBASE_PUBLIC_KEY: firebaseConfig.apiKey,
+    VITE_FIREBASE_AUTH_DOMAIN: firebaseConfig.authDomain,
+    VITE_FIREBASE_PROJECT_ID: firebaseConfig.projectId,
+  };
+
+  const missingKeys = Object.keys(requiredConfig).filter(key => !requiredConfig[key]);
 
   if (missingKeys.length > 0) {
-    throw new Error(`Faltan las siguientes variables de entorno de Firebase: ${missingKeys.map(k => `VITE_FIREBASE_${k.toUpperCase()}`).join(', ')}.`);
+    throw new Error(`Faltan las siguientes variables de entorno de Firebase: ${missingKeys.join(', ')}.`);
   }
   
   app = initializeApp(firebaseConfig);
