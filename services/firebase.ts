@@ -3,15 +3,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// IMPORTANTE: Reemplaza esto con la configuración de tu propio proyecto de Firebase
-// La encontraste en el "Paso 2" de la guía.
+// Configuración del proyecto de Firebase del usuario.
 const firebaseConfig = {
-  apiKey: "TU_API_KEY_AQUI",
-  authDomain: "TU_AUTH_DOMAIN_AQUI",
-  projectId: "TU_PROJECT_ID_AQUI",
-  storageBucket: "TU_STORAGE_BUCKET_AQUI",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID_AQUI",
-  appId: "TU_APP_ID_AQUI"
+  apiKey: "AIzaSyAVEAnKo_Mhn6clvjEOBXqCddUViSej3ik",
+  authDomain: "kia-ia.firebaseapp.com",
+  projectId: "kia-ia",
+  storageBucket: "kia-ia.appspot.com",
+  messagingSenderId: "1049688942439",
+  appId: "1:1049688942439:web:0b777351804ea2bd71b1c2",
+  measurementId: "G-H625JY35NP"
 };
 
 const app = initializeApp(firebaseConfig);
