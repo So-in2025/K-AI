@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase.ts';
 import { createUserProfileDocument, getUserProfile, updateUserProfile } from '../services/firestoreService.ts';
@@ -25,21 +24,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [userData, setUserData] = useState<IUserProfile | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const geminiService = useMemo(() => {
-        if (userData?.geminiApiKey) {
-            return new GeminiService(userData.geminiApiKey);
-        }
-        return null;
-    }, [userData?.geminiApiKey]);
+    const [geminiService, setGeminiService] = useState<GeminiService | null>(null);
 
     const updateUserData = useCallback(async (data: Partial<IUserProfile>) => {
         if (user) {
+            const currentApiKey = userData?.geminiApiKey;
             // Optimistic update
             setUserData(prev => prev ? { ...prev, ...data } : null);
+            
+            // If API key changes, re-initialize the service
+            if (data.geminiApiKey && data.geminiApiKey !== currentApiKey) {
+                setGeminiService(new GeminiService(data.geminiApiKey));
+            }
+
             await updateUserProfile(user.uid, data);
         }
-    }, [user]);
+    }, [user, userData?.geminiApiKey]);
     
     const checkSubscriptionActivation = useCallback(async () => {
         const activationCode = localStorage.getItem('activationCode');
@@ -80,9 +80,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const profile = await getUserProfile(userAuth.uid);
                 setUser(userAuth);
                 setUserData(profile);
+                
+                if (profile?.geminiApiKey) {
+                    setGeminiService(new GeminiService(profile.geminiApiKey));
+                } else {
+                    setGeminiService(null);
+                }
+
             } else {
                 setUser(null);
                 setUserData(null);
+                setGeminiService(null);
             }
             setLoading(false);
         });
@@ -113,7 +121,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const daysSober = useMemo(() => {
+    const daysSober = React.useMemo(() => {
         if (!userData?.startDate) return 0;
         const start = new Date(userData.startDate);
         const today = new Date();

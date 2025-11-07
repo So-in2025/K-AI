@@ -1,18 +1,18 @@
-
 import { GoogleGenAI } from "@google/genai";
 
 export class GeminiService {
     private ai: GoogleGenAI | null = null;
 
-    constructor(apiKey?: string) {
+    constructor(apiKey: string) {
         if (apiKey) {
             try {
-                // Fix: Initialize GoogleGenAI with a named apiKey parameter as per the latest SDK guidelines.
                 this.ai = new GoogleGenAI({ apiKey });
             } catch (error) {
-                console.error("Error initializing GoogleGenAI:", error);
+                console.error("Error initializing GoogleGenAI with provided key:", error);
                 this.ai = null;
             }
+        } else {
+            console.warn("Attempted to initialize GeminiService without an API key.");
         }
     }
 
@@ -26,7 +26,7 @@ export class GeminiService {
         }
 
         if (!this.ai) {
-            return "Error: Tu API Key de Gemini no ha sido configurada. Por favor, ve a Configuración para añadirla.";
+            return "Error: Tu API Key de Gemini no ha sido configurada o no es válida. Por favor, ve a Configuración para añadirla o corregirla.";
         }
 
         try {
@@ -44,26 +44,14 @@ export class GeminiService {
             
             const errorMessage = error instanceof Error ? error.message : String(error);
             
+            if (errorMessage.includes('API key not valid')) {
+                 return "Error: La API Key de Gemini que proporcionaste no es válida. Por favor, revísala en Configuración.";
+            }
             if (errorMessage.includes('timed out') || errorMessage.includes('network')) {
                  return "Error: La conexión con el servicio de IA tardó demasiado en responder. Por favor, revisa tu conexión a internet e inténtalo de nuevo.";
-            }
-            if (errorMessage.includes('API key not valid')) {
-                 return "Error: Tu API Key no es válida o no tiene los permisos necesarios. Por favor, revísala en los ajustes o genera una nueva.";
             }
             
             return "Hubo un error al conectar con el servicio de IA. Por favor, inténtalo de nuevo más tarde.";
         }
     }
 }
-
-// Fix: Add the missing getGeminiResponse function to resolve import errors in multiple components.
-export const getGeminiResponse = async (apiKey: string | null, prompt: string, systemInstruction?: string, isJson: boolean = false): Promise<string> => {
-    if (!apiKey) {
-        return "Error: Tu API Key de Gemini no ha sido configurada. Por favor, ve a Configuración para añadirla.";
-    }
-    const service = new GeminiService(apiKey);
-    if (!service.isConfigured()) {
-        return "Error: Tu API Key de Gemini no ha sido configurada correctamente o es inválida. Por favor, ve a Configuración para añadirla.";
-    }
-    return service.generateContent(prompt, systemInstruction, isJson);
-};

@@ -10,8 +10,8 @@ import { ProgressView } from './views/ProgressView.tsx';
 import { OnboardingModal } from './components/OnboardingModal.tsx';
 import { ApiKeyModal } from './components/ApiKeyModal.tsx';
 import { OnboardingData } from './types.ts';
-import { useUser } from './contexts/UserContext.tsx'; // Import useUser
-import { LoginView } from './views/LoginView.tsx'; // Import LoginView
+import { useUser } from './contexts/UserContext.tsx';
+import { LoginView } from './views/LoginView.tsx';
 
 const LoadingSpinner: React.FC = () => (
     <div className="flex items-center justify-center h-screen bg-slate-900">
@@ -35,15 +35,22 @@ const App: React.FC = () => {
       }
   }, []);
 
+  useEffect(() => {
+    // This effect determines if the API key modal should be shown after login/onboarding
+    if (!loading && user && userData?.onboardingData && !userData.geminiApiKey) {
+        setIsApiKeyModalOpen(true);
+    }
+  }, [loading, user, userData]);
+
   const handleSaveOnboarding = (data: OnboardingData) => {
     updateUserData({ onboardingData: data });
   };
   
-  const handleSaveApiKey = (key: string) => {
-    updateUserData({ geminiApiKey: key });
+  const handleSaveApiKey = (apiKey: string) => {
+    updateUserData({ geminiApiKey: apiKey });
     setIsApiKeyModalOpen(false);
   };
-  
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -55,9 +62,10 @@ const App: React.FC = () => {
   if (!userData?.onboardingData) {
     return <OnboardingModal onSave={handleSaveOnboarding} />;
   }
-
-  if (!userData.geminiApiKey) {
-    return <ApiKeyModal onClose={() => { /* No-op, must save key */ }} onSave={handleSaveApiKey} />;
+  
+  // Show ApiKeyModal if onboarding is done but key is missing
+  if (isApiKeyModalOpen) {
+      return <ApiKeyModal onClose={() => setIsApiKeyModalOpen(false)} onSave={handleSaveApiKey} />;
   }
   
   const renderView = () => {
@@ -90,8 +98,7 @@ const App: React.FC = () => {
 
       <NavigationBar activeView={activeView} setActiveView={setActiveView} />
 
-      {isApiKeyModalOpen && <ApiKeyModal onClose={() => setIsApiKeyModalOpen(false)} onSave={handleSaveApiKey} />}
-      {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
+      {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} />}
     </div>
   );
 };

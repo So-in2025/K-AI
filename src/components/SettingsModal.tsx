@@ -5,7 +5,6 @@ import { ITtsSettings } from '../types.ts';
 
 interface SettingsModalProps {
   onClose: () => void;
-  onOpenApiKeyModal: () => void;
 }
 
 const CloseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -14,10 +13,12 @@ const CloseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal }) => {
-  const { user, logout, userData } = useUser();
+const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const { user, logout, userData, updateUserData, geminiService } = useUser();
   const [ttsSettings, setTtsSettings] = useState<ITtsSettings>(ttsService.getSettings());
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [apiKey, setApiKey] = useState(userData?.geminiApiKey || '');
+  const [isKeySaved, setIsKeySaved] = useState(false);
 
   useEffect(() => {
     const availableVoices = ttsService.getAvailableVoices();
@@ -38,6 +39,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModa
   
   const handleTestVoice = () => {
       ttsService.speak("Hola, esta es una prueba de mi voz.", ttsSettings);
+  };
+
+  const handleApiKeySave = () => {
+      if (apiKey.trim()) {
+          updateUserData({ geminiApiKey: apiKey.trim() });
+          setIsKeySaved(true);
+          setTimeout(() => setIsKeySaved(false), 2000);
+      }
   };
 
   const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
@@ -63,10 +72,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModa
 
             <div>
                 <h3 className="text-lg font-semibold mb-2">API Key de Gemini</h3>
-                <p className="text-sm text-slate-400 mb-2">Tu clave para activar las capacidades de IA de Kai.</p>
-                <button onClick={onOpenApiKeyModal} className="bg-slate-700 text-teal-400 font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">
-                    {userData?.geminiApiKey ? "Cambiar API Key" : "Añadir API Key"}
-                </button>
+                <p className="text-xs text-slate-400 mb-2">Kai necesita tu API key personal de Google AI Studio para funcionar. Es gratis y se guarda de forma segura en tu perfil.</p>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="Pega tu API Key aquí"
+                        className="w-full bg-slate-700 p-2 rounded border border-slate-600"
+                    />
+                    <button onClick={handleApiKeySave} className="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700">Guardar</button>
+                </div>
+                 {isKeySaved && <p className="text-xs text-green-400 mt-1">API Key guardada.</p>}
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-teal-400 hover:underline text-xs block mt-2"
+                >
+                  Obtener una API Key de Google AI Studio
+                </a>
+                <p className={`text-xs mt-2 ${geminiService?.isConfigured() ? 'text-green-400' : 'text-red-500'}`}>
+                    Estado de la IA: {geminiService?.isConfigured() ? 'Activo' : 'Inactivo (Se requiere API Key)'}
+                </p>
             </div>
 
             <div>
