@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { useUser } from '../contexts/UserContext';
-import { PatternsCard } from '../components/PatternsCard';
-import { DopamineRecalibrationSummaryCard } from '../components/DopamineRecalibrationSummaryCard';
-import { TherapyHistoryCard } from '../components/TherapyHistoryCard';
-import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
-import { UpgradeCard } from '../components/UpgradeCard';
+import { useUser } from '../contexts/UserContext.tsx';
+import { PatternsCard } from '../components/PatternsCard.tsx';
+import { DopamineRecalibrationSummaryCard } from '../components/DopamineRecalibrationSummaryCard.tsx';
+import { TherapyHistoryCard } from '../components/TherapyHistoryCard.tsx';
+import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard.tsx';
+import { UpgradeCard } from '../components/UpgradeCard.tsx';
 import { IGoal } from '../types';
 
 export const ProgressView: React.FC = () => {

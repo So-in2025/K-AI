@@ -1,18 +1,18 @@
 
 import React from 'react';
-import { useUser } from '../contexts/UserContext';
-import { ProgressCard } from '../components/ProgressCard';
-import { JournalCard } from '../components/JournalCard';
-import { CompanionCard } from '../components/CompanionCard';
-import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard';
-import { FreedomVaultCard } from '../components/FreedomVaultCard';
-import { InnerGardenCard } from '../components/InnerGardenCard';
-import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
-import { DailyQuoteCard } from '../components/DailyQuoteCard';
-import { ScheduledMessageCard } from '../components/ScheduledMessageCard';
-import { GoalsCard } from '../components/GoalsCard';
-import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard';
-import { GuardianModeCard } from '../components/GuardianModeCard';
+import { useUser } from '../contexts/UserContext.tsx';
+import { ProgressCard } from '../components/ProgressCard.tsx';
+import { JournalCard } from '../components/JournalCard.tsx';
+import { CompanionCard } from '../components/CompanionCard.tsx';
+import { DopamineSanctuaryCard } from '../components/DopamineSanctuaryCard.tsx';
+import { FreedomVaultCard } from '../components/FreedomVaultCard.tsx';
+import { InnerGardenCard } from '../components/InnerGardenCard.tsx';
+import { WellnessSummaryCard } from '../components/WellnessSummaryCard.tsx';
+import { DailyQuoteCard } from '../components/DailyQuoteCard.tsx';
+import { ScheduledMessageCard } from '../components/ScheduledMessageCard.tsx';
+import { GoalsCard } from '../components/GoalsCard.tsx';
+import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard.tsx';
+import { GuardianModeCard } from '../components/GuardianModeCard.tsx';
 
 export const HomeView: React.FC = () => {
     const { userData, daysSober, updateUserData } = useUser();

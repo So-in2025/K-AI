@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../contexts/UserContext.tsx';
 import ttsService from '../services/ttsService';
 import { KiaIcon } from '../components/KiaIcon.tsx';
 import { IConversationTurn } from '../types';
-import { TherapySessionModal } from '../components/TherapySessionModal';
+import { TherapySessionModal } from '../components/TherapySessionModal.tsx';
 
 const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>

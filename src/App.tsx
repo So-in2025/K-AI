@@ -1,17 +1,17 @@
 
 import React, { useState } from 'react';
-import { Header } from './components/Header';
-import { SOSCard } from './components/SOSCard';
-import SettingsModal from './components/SettingsModal';
-import { NavigationBar, View } from './components/NavigationBar';
-import { HomeView } from './views/HomeView';
-import { KaiView } from './views/KaiView';
-import { ToolsView } from './views/ToolsView';
-import { ProgressView } from './views/ProgressView';
-import { LoginView } from './views/LoginView';
-import { OnboardingModal } from './components/OnboardingModal';
-import { ApiKeyModal } from './components/ApiKeyModal';
-import { useUser } from './contexts/UserContext';
+import { Header } from './components/Header.tsx';
+import { SOSCard } from './components/SOSCard.tsx';
+import SettingsModal from './components/SettingsModal.tsx';
+import { NavigationBar, View } from './components/NavigationBar.tsx';
+import { HomeView } from './views/HomeView.tsx';
+import { KaiView } from './views/KaiView.tsx';
+import { ToolsView } from './views/ToolsView.tsx';
+import { ProgressView } from './views/ProgressView.tsx';
+import { LoginView } from './views/LoginView.tsx';
+import { OnboardingModal } from './components/OnboardingModal.tsx';
+import { ApiKeyModal } from './components/ApiKeyModal.tsx';
+import { useUser } from './contexts/UserContext.tsx';
 import { OnboardingData } from './types';
 
 const LoadingSpinner: React.FC = () => (

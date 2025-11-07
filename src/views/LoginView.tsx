@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../contexts/UserContext.tsx';
 import { KiaIcon } from '../components/KiaIcon.tsx';
 
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
