@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import ttsService from '../services/ttsService.ts';
+import { getGeminiResponse } from '../services/geminiService';
+import ttsService from '../services/ttsService';
 
 const SOSIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,140 +1,141 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '../contexts/UserContext.tsx';
-import ttsService from '../services/ttsService.ts';
-import { ITtsSettings } from '../types.ts';
+import ttsService from '../services/ttsService';
+import { ITtsSettings } from '../types';
 
 interface SettingsModalProps {
-  onClose: () => void;
+    onClose: () => void;
+    onOpenApiKeyModal: () => void;
 }
 
-const CloseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+const CloseIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
 );
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
-  const { user, logout, userData, updateUserData, geminiService } = useUser();
-  const [ttsSettings, setTtsSettings] = useState<ITtsSettings>(ttsService.getSettings());
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [apiKey, setApiKey] = useState(userData?.geminiApiKey || '');
-  const [isKeySaved, setIsKeySaved] = useState(false);
 
-  useEffect(() => {
-    const availableVoices = ttsService.getAvailableVoices();
-    if (availableVoices.length) {
-      setVoices(availableVoices);
-    } else if (window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        setVoices(ttsService.getAvailableVoices());
-      };
-    }
-  }, []);
-  
-  const handleTtsChange = (key: keyof ITtsSettings, value: string | number) => {
-      const newSettings = { ...ttsSettings, [key]: value };
-      setTtsSettings(newSettings);
-      ttsService.saveSettings(newSettings);
-  };
-  
-  const handleTestVoice = () => {
-      ttsService.speak("Hola, esta es una prueba de mi voz.", ttsSettings);
-  };
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal }) => {
+    const [ttsSettings, setTtsSettings] = useState<ITtsSettings | null>(null);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
-  const handleApiKeySave = () => {
-      if (apiKey.trim()) {
-          updateUserData({ geminiApiKey: apiKey.trim() });
-          setIsKeySaved(true);
-          setTimeout(() => setIsKeySaved(false), 2000);
-      }
-  };
+    useEffect(() => {
+        const populateVoices = () => {
+            const availableVoices = ttsService.getAvailableVoices();
+            if (availableVoices.length > 0) {
+                setVoices(availableVoices);
+                if (!ttsSettings) { // Set initial settings only once
+                    setTtsSettings(ttsService.getSettings());
+                }
+                return true;
+            }
+            return false;
+        };
 
-  const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+        // 1. Intento inmediato
+        if (populateVoices()) return;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 border border-slate-700 text-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-100">Configuración</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
-        </div>
-        
-        <div className="space-y-6">
-            {user && (
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="font-semibold">{user.displayName}</p>
-                        <p className="text-sm text-slate-400">{user.email}</p>
+        // 2. Escuchar el evento (método preferido)
+        speechSynthesis.onvoiceschanged = () => {
+            populateVoices();
+        };
+
+        // 3. Usar un intervalo como fallback para navegadores problemáticos
+        const voiceInterval = setInterval(() => {
+            if (populateVoices()) {
+                clearInterval(voiceInterval);
+            }
+        }, 250);
+
+        // Limpieza al desmontar el componente
+        return () => {
+            clearInterval(voiceInterval);
+            speechSynthesis.onvoiceschanged = null;
+        };
+    }, [ttsSettings]); // Depend on ttsSettings to avoid re-running if it's already set
+
+    const handleTtsChange = (change: Partial<ITtsSettings>) => {
+        if (!ttsSettings) return;
+        const newSettings = { ...ttsSettings, ...change };
+        setTtsSettings(newSettings);
+        ttsService.updateSettings(newSettings);
+    };
+
+    const handleTestVoice = () => {
+        ttsService.speak("Hola, esta es una prueba de mi voz.");
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md mx-auto animate-fade-in-up text-slate-200 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold text-slate-100">Configuración</h2>
+                     <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
+                </div>
+                
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-teal-300 mb-2">API Key de Gemini</h3>
+                    <p className="text-sm text-slate-400 mb-3">
+                        Tu clave personal para interactuar con la IA de Kai.
+                    </p>
+                    <button 
+                        onClick={() => {
+                            onClose(); // Close this modal first
+                            onOpenApiKeyModal(); // Then open the other
+                        }}
+                        className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-500"
+                    >
+                        Cambiar API Key
+                    </button>
+                </div>
+
+
+                {ttsSettings && (
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-teal-300 mb-2">Configuración de Voz (TTS)</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="voiceSelect" className="block text-sm font-medium text-slate-300 mb-1">Narrador</label>
+                                <select 
+                                    id="voiceSelect"
+                                    value={ttsSettings.voiceName || ''}
+                                    onChange={(e) => handleTtsChange({ voiceName: e.target.value })}
+                                    className="w-full p-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-lg"
+                                >
+                                    {voices.length > 0 ? voices.map(voice => (
+                                        <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>
+                                    )) : <option>Cargando voces...</option>}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="rate" className="block text-sm font-medium text-slate-300 mb-1">Velocidad: {ttsSettings.rate.toFixed(1)}</label>
+                                <input type="range" id="rate" min="0.5" max="2" step="0.1" value={ttsSettings.rate} onChange={e => handleTtsChange({ rate: parseFloat(e.target.value) })} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                            </div>
+                            <div>
+                                <label htmlFor="pitch" className="block text-sm font-medium text-slate-300 mb-1">Tono: {ttsSettings.pitch.toFixed(1)}</label>
+                                <input type="range" id="pitch" min="0" max="2" step="0.1" value={ttsSettings.pitch} onChange={e => handleTtsChange({ pitch: parseFloat(e.target.value) })} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                            </div>
+                            <button onClick={handleTestVoice} className="w-full bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-500">
+                                Probar Voz
+                            </button>
+                        </div>
                     </div>
-                    <button onClick={logout} className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Cerrar Sesión</button>
-                </div>
-            )}
+                )}
 
-            <div>
-                <h3 className="text-lg font-semibold mb-2">API Key de Gemini</h3>
-                <p className="text-xs text-slate-400 mb-2">Kai necesita tu API key personal de Google AI Studio para funcionar. Es gratis y se guarda de forma segura en tu perfil.</p>
-                <div className="flex items-center gap-2">
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Pega tu API Key aquí"
-                        className="w-full bg-slate-700 p-2 rounded border border-slate-600"
-                    />
-                    <button onClick={handleApiKeySave} className="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700">Guardar</button>
-                </div>
-                 {isKeySaved && <p className="text-xs text-green-400 mt-1">API Key guardada.</p>}
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-teal-400 hover:underline text-xs block mt-2"
+
+                <button
+                    onClick={onClose}
+                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors"
                 >
-                  Obtener una API Key de Google AI Studio
-                </a>
-                <p className={`text-xs mt-2 ${geminiService?.isConfigured() ? 'text-green-400' : 'text-red-500'}`}>
-                    Estado de la IA: {geminiService?.isConfigured() ? 'Activo' : 'Inactivo (Se requiere API Key)'}
-                </p>
+                    Cerrar
+                </button>
             </div>
-
-            <div>
-                <h3 className="text-lg font-semibold mb-2">Ajustes de Voz de Kai (TTS)</h3>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-slate-300 mb-1">Voz</label>
-                        <select
-                            value={ttsSettings.voiceName || ''}
-                            onChange={(e) => handleTtsChange('voiceName', e.target.value)}
-                            className="w-full bg-slate-700 p-2 rounded"
-                        >
-                            <option value="">Voz por defecto del navegador</option>
-                            {spanishVoices.map(voice => (
-                                <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="block text-sm text-slate-300 mb-1">Velocidad ({ttsSettings.rate})</label>
-                            <input type="range" min="0.5" max="2" step="0.1" value={ttsSettings.rate} onChange={e => handleTtsChange('rate', parseFloat(e.target.value))} className="w-full" />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-slate-300 mb-1">Tono ({ttsSettings.pitch})</label>
-                            <input type="range" min="0" max="2" step="0.1" value={ttsSettings.pitch} onChange={e => handleTtsChange('pitch', parseFloat(e.target.value))} className="w-full" />
-                        </div>
-                    </div>
-                    <button onClick={handleTestVoice} className="bg-slate-700 text-teal-400 text-sm font-semibold py-2 px-4 rounded-lg hover:bg-slate-600">Probar Voz</button>
-                </div>
-            </div>
-             {userData?.isSubscribed && (
-                <div>
-                    <h3 className="text-lg font-semibold text-yellow-400">KIA Plus Activado</h3>
-                    <p className="text-sm text-slate-400">¡Gracias por tu apoyo! Disfruta de todas las funciones sin límites.</p>
-                </div>
-            )}
+            <style>{`
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
+            `}</style>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
-export default SettingsModal;

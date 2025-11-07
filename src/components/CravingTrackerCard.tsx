@@ -1,51 +1,79 @@
 
-import React, { useState } from 'react';
-import { useUser } from '../contexts/UserContext.tsx';
-import { ICraving } from '../types.ts';
-import { LogCravingModal } from './LogCravingModal.tsx';
-import { TtsInfoButton } from './TtsInfoButton.tsx';
+import React, { useState, useMemo } from 'react';
+import { ICraving } from '../types';
+import { LogCravingModal } from './LogCravingModal';
+import { TtsInfoButton } from './TtsInfoButton';
 
-const BarChartIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2z" />
+const WaveIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8s4-4 8 0 8 4 8 4-4-4-8 0-8 4-8 4zM4 14s4-4 8 0 8 4 8 4-4-4-8 0-8 4-8 4z" />
     </svg>
 );
 
-export const CravingTrackerCard: React.FC = () => {
-    const { userData, updateUserData } = useUser();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const cravings = userData?.cravings || [];
+interface CravingTrackerCardProps {
+    cravings: ICraving[];
+    onLogCraving: (craving: ICraving) => void;
+}
 
-    const handleLogCraving = (craving: Omit<ICraving, 'date'>) => {
-        const newCraving = { ...craving, date: new Date().toISOString() };
-        updateUserData({ cravings: [...cravings, newCraving] });
+export const CravingTrackerCard: React.FC<CravingTrackerCardProps> = ({ cravings, onLogCraving }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const chartData = useMemo(() => {
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const data = days.map(day => {
+            const dayCravings = cravings.filter(c => c.date.startsWith(day));
+            return dayCravings.length;
+        });
+
+        const maxCraving = Math.max(...data, 1); // Avoid division by zero
+
+        return { 
+            labels: days.map(d => new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'short' }).charAt(0).toUpperCase()), 
+            data, 
+            maxCraving 
+        };
+    }, [cravings]);
+    
+    const handleLogSuccess = (craving: ICraving) => {
+        onLogCraving(craving);
         setIsModalOpen(false);
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative h-full flex flex-col">
-            <TtsInfoButton explanation="Entender tus deseos es clave. Esta herramienta te ayuda a registrar cuándo sientes un 'craving', qué lo disparó y cómo lo afrontaste. Con el tiempo, Kai usará estos datos para mostrarte tus patrones." />
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+            <TtsInfoButton explanation="El seguimiento de antojos es una herramienta poderosa para el autoconocimiento. Cada vez que registras un antojo, no estás fallando; estás recopilando datos valiosos sobre tus detonantes. Esta tarjeta te ayuda a visualizar la frecuencia de tus antojos a lo largo de la semana, para que puedas ver tu progreso y entender mejor tus patrones." />
             <div className="flex items-center space-x-3 mb-3">
-                <BarChartIcon />
-                <h2 className="text-xl font-bold text-slate-100">Registro de Deseos</h2>
+                <WaveIcon />
+                <h2 className="text-xl font-bold text-slate-100">Seguimiento de Antojos</h2>
             </div>
-            <p className="text-slate-400 text-sm mb-4">
-                Registra tus 'cravings' para entender sus patrones y detonantes.
-            </p>
+            <p className="text-slate-400 mb-4 text-sm">Registra los antojos para entender tus patrones. Cada registro es una victoria.</p>
 
-            <div className="flex-grow flex flex-col justify-center items-center bg-slate-700/50 rounded-lg p-4 mb-4">
-                <p className="text-4xl font-bold text-white">{cravings.length}</p>
-                <p className="text-sm text-slate-300">Deseos registrados</p>
+            <div className="h-32 flex items-end justify-around px-2 gap-2">
+                {chartData.data.map((value, index) => (
+                    <div key={index} className="flex flex-col items-center flex-1" title={`${value} antojo(s)`}>
+                        <div 
+                            className="w-4 bg-teal-500 rounded-t-sm transition-all duration-300"
+                            style={{ height: `${Math.max(2, (value / chartData.maxCraving) * 100)}%` }}
+                        ></div>
+                        <span className="text-xs text-slate-400 mt-1">{chartData.labels[index]}</span>
+                    </div>
+                ))}
             </div>
-            
-            <button
+            <div className="border-t border-slate-700 my-4"></div>
+
+            <button 
                 onClick={() => setIsModalOpen(true)}
-                className="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors"
+                className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 transition-colors"
             >
-                Registrar un Deseo
+                Registrar un Antojo
             </button>
 
-            {isModalOpen && <LogCravingModal onClose={() => setIsModalOpen(false)} onSave={handleLogCraving} />}
+            {isModalOpen && <LogCravingModal onClose={() => setIsModalOpen(false)} onLogCraving={handleLogSuccess} />}
         </div>
     );
 };

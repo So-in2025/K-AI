@@ -1,87 +1,120 @@
-
 import React, { useState } from 'react';
-import { CravingIntensity, ICraving } from '/src/types.ts';
-import { CRAVING_TRIGGERS, COPING_STRATEGIES } from '/src/constants.ts';
+import { ICraving, CravingIntensity } from '../types';
+import { CRAVING_TRIGGERS, COPING_STRATEGIES } from '../constants';
 
 interface LogCravingModalProps {
   onClose: () => void;
-  onSave: (craving: Omit<ICraving, 'date'>) => void;
+  onLogCraving: (craving: ICraving) => void;
 }
 
-export const LogCravingModal: React.FC<LogCravingModalProps> = ({ onClose, onSave }) => {
-    const [intensity, setIntensity] = useState<CravingIntensity>('Moderado');
+const CloseIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+);
+
+export const LogCravingModal: React.FC<LogCravingModalProps> = ({ onClose, onLogCraving }) => {
+    const [intensity, setIntensity] = useState<CravingIntensity | null>(null);
     const [triggers, setTriggers] = useState<string[]>([]);
-    const [copingStrategy, setCopingStrategy] = useState('');
+    const [copingStrategy, setCopingStrategy] = useState<string | null>(null);
     const [note, setNote] = useState('');
 
-    const handleTriggerToggle = (trigger: string) => {
+    const handleToggleTrigger = (trigger: string) => {
         setTriggers(prev => 
-            prev.includes(trigger) ? prev.filter(t => t !== trigger) : [...prev, trigger]
+            prev.includes(trigger) 
+                ? prev.filter(t => t !== trigger)
+                : [...prev, trigger]
         );
     };
 
-    const handleSave = () => {
-        if (triggers.length > 0 && copingStrategy) {
-            onSave({ intensity, triggers, copingStrategy, note });
-        } else {
-            alert('Por favor, selecciona al menos un detonante y una estrategia.');
+    const handleSubmit = () => {
+        if (!intensity || triggers.length === 0 || !copingStrategy) {
+            alert('Por favor, completa los campos de intensidad, detonantes y estrategia.');
+            return;
         }
+
+        const newCraving: ICraving = {
+            date: new Date().toISOString(),
+            intensity,
+            triggers,
+            copingStrategy,
+            note
+        };
+        onLogCraving(newCraving);
     };
 
+    const renderSection = (title: string, children: React.ReactNode) => (
+        <div className="mb-5">
+            <h3 className="text-md font-semibold text-slate-300 mb-3">{title}</h3>
+            <div className="flex flex-wrap gap-2">
+                {children}
+            </div>
+        </div>
+    );
+    
+    const renderButton = (label: string, isSelected: boolean, onClick: () => void) => (
+        <button
+            onClick={onClick}
+            className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors border ${
+                isSelected 
+                ? 'bg-teal-500 text-white border-teal-500' 
+                : 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
-                <h3 className="text-xl font-bold mb-4 text-slate-100 flex-shrink-0">Registrar un Deseo</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 border border-slate-700 text-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-auto animate-fade-in-up max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-bold text-teal-400">Registrar un Antojo</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
+                </div>
+
+                {renderSection('1. ¿Cuál fue la intensidad?', (
+                    (['Leve', 'Moderado', 'Intenso'] as CravingIntensity[]).map(level => 
+                        renderButton(level, intensity === level, () => setIntensity(level))
+                    )
+                ))}
+
+                {renderSection('2. ¿Qué crees que lo detonó? (elige uno o más)', (
+                    CRAVING_TRIGGERS.map(trigger => 
+                        renderButton(trigger, triggers.includes(trigger), () => handleToggleTrigger(trigger))
+                    )
+                ))}
                 
-                <div className="overflow-y-auto space-y-4 pr-2 -mr-2">
-                    {/* Intensity */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Intensidad</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {(['Leve', 'Moderado', 'Intenso'] as CravingIntensity[]).map(level => (
-                                <button key={level} onClick={() => setIntensity(level)} className={`p-2 rounded-lg text-sm transition-colors ${intensity === level ? 'bg-teal-600 text-white' : 'bg-slate-700 hover:bg-slate-600'}`}>
-                                    {level}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Triggers */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Detonantes (puedes elegir varios)</label>
-                        <div className="flex flex-wrap gap-2">
-                            {CRAVING_TRIGGERS.map(trigger => (
-                                <button key={trigger} onClick={() => handleTriggerToggle(trigger)} className={`px-3 py-1 rounded-full text-xs transition-colors ${triggers.includes(trigger) ? 'bg-teal-600 text-white' : 'bg-slate-700 hover:bg-slate-600'}`}>
-                                    {trigger}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Coping Strategy */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Estrategia de Afrontamiento</label>
-                         <select value={copingStrategy} onChange={e => setCopingStrategy(e.target.value)} className="w-full bg-slate-700 p-2 rounded text-sm border border-slate-600">
-                            <option value="">Selecciona una opción</option>
-                            {COPING_STRATEGIES.map(strategy => <option key={strategy} value={strategy}>{strategy}</option>)}
-                        </select>
-                    </div>
-                    
-                    {/* Note */}
-                    <div>
-                         <label className="block text-sm font-medium text-slate-300 mb-2">Nota (Opcional)</label>
-                         <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="¿Algo más que quieras añadir?" className="w-full h-20 bg-slate-700 p-2 rounded text-sm border border-slate-600"></textarea>
-                    </div>
+                {renderSection('3. ¿Qué estrategia usaste para superarlo?', (
+                    COPING_STRATEGIES.map(strategy => 
+                        renderButton(strategy, copingStrategy === strategy, () => setCopingStrategy(strategy))
+                    )
+                ))}
+                
+                <div className="mb-5">
+                    <h3 className="text-md font-semibold text-slate-300 mb-2">4. Notas adicionales (opcional)</h3>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Cualquier detalle extra es útil..."
+                        className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500"
+                    />
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6 flex-shrink-0">
-                    <button onClick={onClose} className="text-slate-400 hover:text-white px-4 py-2 rounded-lg">Cancelar</button>
-                    <button onClick={handleSave} className="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700">Guardar</button>
-                </div>
+                <button 
+                    onClick={handleSubmit}
+                    disabled={!intensity || triggers.length === 0 || !copingStrategy}
+                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-500 disabled:cursor-not-allowed"
+                >
+                    Guardar Registro
+                </button>
             </div>
             <style>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
             `}</style>
         </div>
     );

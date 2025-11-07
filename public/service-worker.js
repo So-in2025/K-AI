@@ -1,15 +1,14 @@
-const CACHE_NAME = 'kia-cache-v8';
-// Lista de archivos a cachear. Se ha limpiado para incluir solo lo esencial.
+const CACHE_NAME = 'kia-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display.swap'
+  '/index.js',
+  '/vite.svg',
+  'https://cdn.tailwindcss.com',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Forzar la activación del nuevo service worker
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -26,21 +25,15 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Borrando caché antigua:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Tomar control inmediato
+    })
   );
 });
 
 self.addEventListener('fetch', event => {
-  // Ignorar peticiones que no son GET
-  if (event.request.method !== 'GET') {
-    return;
-  }
-  
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -49,14 +42,17 @@ self.addEventListener('fetch', event => {
           return response;
         }
 
-        // Si no está en caché, ir a la red
         return fetch(event.request).then(
           response => {
-            // No cachear respuestas no válidas o de extensiones de Chrome
-            if (!response || response.status !== 200 || response.type !== 'basic' || event.request.url.startsWith('chrome-extension://')) {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
+            // IMPORTANT: Clone the response. A response is a stream
+            // and because we want the browser to consume the response
+            // as well as the cache consuming the response, we need
+            // to clone it so we have two streams.
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)

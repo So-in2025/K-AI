@@ -1,62 +1,83 @@
-
 import React from 'react';
-import { KiaIcon } from './KiaIcon.tsx';
-
-// --- SVG Icons ---
-
-const HomeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" />
-  </svg>
-);
-
-const ToolsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.153-.186.296-.375.449-.572l2.496-3.03c.153-.186.296-.375.449-.572a2.652 2.652 0 000-3.749 2.652 2.652 0 00-3.749 0l-5.877 5.877m-3.749 3.749a2.652 2.652 0 000 3.749 2.652 2.652 0 003.749 0l5.877-5.877" />
-  </svg>
-);
-
-const ProgressIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-  </svg>
-);
-
-
-// --- Component ---
 
 export type View = 'home' | 'kai' | 'tools' | 'progress';
 
 interface NavigationBarProps {
-  activeView: View;
-  setActiveView: (view: View) => void;
+    activeView: View;
+    setActiveView: (view: View) => void;
 }
 
-const navItems = [
-  { view: 'home', label: 'Inicio', Icon: HomeIcon },
-  { view: 'kai', label: 'Kai', Icon: KiaIcon },
-  { view: 'tools', label: 'Herramientas', Icon: ToolsIcon },
-  { view: 'progress', label: 'Progreso', Icon: ProgressIcon },
-] as const;
+// SVG Icons for the navigation bar
+const HomeIcon = ({ isActive }: { isActive: boolean }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+);
+
+const KaiIcon = ({ isActive }: { isActive: boolean }) => (
+   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+);
+
+const ToolsIcon = ({ isActive }: { isActive: boolean }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+);
+
+const ProgressIcon = ({ isActive }: { isActive: boolean }) => (
+   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+);
+
+
+const NavItem: React.FC<{
+    icon: React.ReactNode;
+    label: string;
+    isActive: boolean;
+    onClick: () => void;
+}> = ({ icon, label, isActive, onClick }) => {
+    const activeClass = isActive ? 'text-teal-400' : 'text-slate-400 hover:text-teal-300';
+    return (
+        <button onClick={onClick} className={`flex flex-col items-center justify-center space-y-1 transition-colors ${activeClass}`}>
+            {icon}
+            <span className="text-xs font-medium">{label}</span>
+        </button>
+    );
+};
 
 export const NavigationBar: React.FC<NavigationBarProps> = ({ activeView, setActiveView }) => {
-  return (
-    <nav className="bg-slate-800/70 backdrop-blur-sm border-t border-slate-700 sticky bottom-0 z-10">
-      <div className="max-w-screen-2xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="flex justify-around h-16">
-          {navItems.map(({ view, label, Icon }) => (
-            <button
-              key={view}
-              onClick={() => setActiveView(view)}
-              className={`flex flex-col items-center justify-center w-full transition-colors duration-200 p-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${activeView === view ? 'text-teal-400' : 'text-slate-400 hover:text-teal-400 hover:bg-slate-700/50'}`}
-              aria-current={activeView === view ? 'page' : undefined}
-            >
-              <Icon className="h-6 w-6 mb-1" />
-              <span className="text-xs font-medium tracking-wide">{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </nav>
-  );
+    return (
+        <nav className="bg-slate-800/80 backdrop-blur-sm border-t border-slate-700 z-20 flex-shrink-0">
+            <div className="max-w-screen-2xl mx-auto px-4 md:px-6 h-20 grid grid-cols-4 gap-4">
+                <NavItem 
+                    icon={<HomeIcon isActive={activeView === 'home'} />} 
+                    label="Hoy"
+                    isActive={activeView === 'home'}
+                    onClick={() => setActiveView('home')}
+                />
+                <NavItem 
+                    icon={<KaiIcon isActive={activeView === 'kai'} />} 
+                    label="Kai"
+                    isActive={activeView === 'kai'}
+                    onClick={() => setActiveView('kai')}
+                />
+                <NavItem 
+                    icon={<ToolsIcon isActive={activeView === 'tools'} />} 
+                    label="Herramientas"
+                    isActive={activeView === 'tools'}
+                    onClick={() => setActiveView('tools')}
+                />
+                <NavItem 
+                    icon={<ProgressIcon isActive={activeView === 'progress'} />} 
+                    label="Progreso"
+                    isActive={activeView === 'progress'}
+                    onClick={() => setActiveView('progress')}
+                />
+            </div>
+        </nav>
+    );
 };

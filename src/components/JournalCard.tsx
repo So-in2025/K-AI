@@ -1,8 +1,7 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { JOURNAL_PROMPTS } from '../constants.ts';
-import { TtsInfoButton } from './TtsInfoButton.tsx';
+import { JOURNAL_PROMPTS } from '../constants';
+import { TtsInfoButton } from './TtsInfoButton';
 
 const EditIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,8 +83,7 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry: initialEntry, o
         
         <div className="mb-4">
             <div className="flex flex-wrap gap-2">
-                {/* Fix: Replaced buggy Object.entries with Object.keys for improved type safety. */}
-                {(Object.keys(JOURNAL_PROMPTS) as CategoryKey[]).map((key) => (
+                {(Object.keys(JOURNAL_PROMPTS) as CategoryKey[]).map(key => (
                     <button 
                         key={key}
                         onClick={() => setSelectedCategory(prev => prev === key ? null : key)}
