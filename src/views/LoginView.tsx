@@ -30,7 +30,23 @@ export const LoginView: React.FC = () => {
     } catch (error: any) {
         console.error("Login failed:", error);
         if (error.code === 'auth/configuration-not-found') {
-            alert('Error de Configuración de Firebase:\n\n1. Asegúrate de haber habilitado la autenticación con Google en tu proyecto de Firebase.\n2. Asegúrate de haber añadido este dominio a la lista de "Dominios autorizados" en la configuración de Authentication.\n\nEste error debe solucionarse en la consola de Firebase, no en el código.');
+            alert(`Error de Configuración de Firebase (auth/configuration-not-found):
+
+Esto significa que tu app no puede encontrar tu proyecto de Firebase. Por favor, revisa CUIDADOSAMENTE los siguientes puntos:
+
+1. API Key Correcta: ¿La variable VITE_FIREBASE_API_KEY en Netlify es 100% idéntica a la 'apiKey' de la configuración de tu app web en la Consola de Firebase?
+
+2. Autenticación con Google Habilitada: En la Consola de Firebase -> Authentication -> Sign-in method, ¿está 'Google' HABILITADO?
+
+3. Dominio Autorizado: En la Consola de Firebase -> Authentication -> Settings, ¿has añadido tu dominio de Netlify (${window.location.origin}) a la lista de 'Dominios autorizados'?
+
+4. (MUY IMPORTANTE) API de Identity Toolkit:
+   a. Ve a la consola de Google Cloud: console.cloud.google.com
+   b. Asegúrate de seleccionar el proyecto correcto (el que está asociado a tu Firebase).
+   c. Busca 'Identity Toolkit API' en la barra de búsqueda.
+   d. Haz clic en 'HABILITAR' si no está habilitada. La autenticación de Firebase depende de esta API.
+
+Este error se soluciona en la configuración de la nube, no en el código de la app.`);
         } else {
             alert('Ocurrió un error durante el inicio de sesión. Por favor, revisa la consola para más detalles.');
         }
