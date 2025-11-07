@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAVEAnKo_Mhn6clvjEOBXqCddUVISej3ik",
   authDomain: "kia-ia.firebaseapp.com",
   projectId: "kia-ia",
-  storageBucket: "kia-ia.appspot.com",
+  storageBucket: "kia-ia.firebasestorage.app",
   messagingSenderId: "1049688942439",
   appId: "1:1049688942439:web:0b777351804ea2bd71b1c2",
   measurementId: "G-H625JY35NP"
