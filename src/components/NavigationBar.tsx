@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { KiaIcon } from './KiaIcon';
+import { KiaIcon } from './KiaIcon.tsx';
 
 // --- SVG Icons ---
 

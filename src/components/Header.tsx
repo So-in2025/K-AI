@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS, OnboardingData } from '../types';
-import { KiaIcon } from './KiaIcon';
+import { KiaIcon } from './KiaIcon.tsx';
 import { useUser } from '../contexts/UserContext';
 
 const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useUser } from '../contexts/UserContext';
-import { KiaIcon } from './KiaIcon';
+import { KiaIcon } from './KiaIcon.tsx';
 import ttsService from '../services/ttsService';
 
 export const CompanionCard: React.FC = () => {

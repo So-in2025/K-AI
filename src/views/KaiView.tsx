@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
 import ttsService from '../services/ttsService';
-import { KiaIcon } from '../components/KiaIcon';
+import { KiaIcon } from '../components/KiaIcon.tsx';
 import { IConversationTurn } from '../types';
 import { TherapySessionModal } from '../components/TherapySessionModal';
 

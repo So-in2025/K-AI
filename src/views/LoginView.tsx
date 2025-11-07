@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useUser } from '../contexts/UserContext';
-import { KiaIcon } from '../components/KiaIcon';
+import { KiaIcon } from '../components/KiaIcon.tsx';
 
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg className="w-6 h-6 mr-3" viewBox="0 0 48 48" {...props}>
