@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker } from '../types';
+import { GuardianAnalysisResult, IGuardianAnalysis, UsageTracker, OnboardingData, UserFocus } from '../types';
 import { UpgradeCard } from './UpgradeCard';
 import { TtsInfoButton } from './TtsInfoButton';
+import { getGeminiResponse } from '../services/geminiService';
 
 const ShieldIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -44,16 +45,18 @@ interface GuardianModeCardProps {
     analysis: GuardianAnalysisResult | null;
     error: string | null;
     onStart: () => void;
-    onStop: () => void;
+    onStop: (transcript: string, prompt: string) => void; // Pass transcript and prompt
     triggerWords: string[];
     onUpdateConfig: (words: string[]) => void;
     isSubscribed: boolean;
     usageTracker: UsageTracker | null;
+    onboardingData: OnboardingData;
+    apiKey: string | null;
 }
 
 const GUARDIAN_CONSENT_KEY = 'guardianConsentGiven';
 
-export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed, usageTracker }) => {
+export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, analysis, error, onStart, onStop, triggerWords, onUpdateConfig, isSubscribed, usageTracker, onboardingData, apiKey }) => {
     const [showConsent, setShowConsent] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [isEditingConfig, setIsEditingConfig] = useState(false);
@@ -174,7 +177,7 @@ export const GuardianModeCard: React.FC<GuardianModeCardProps> = ({ status, anal
                             </div>
                         </div>
                         <button
-                            onClick={onStop}
+                            onClick={() => onStop('', '')} // Let the App component handle the logic
                             disabled={status === 'stopping'}
                             className="w-full bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700 transition-colors disabled:bg-red-800"
                         >

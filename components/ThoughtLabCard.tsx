@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { IThoughtLabEntry } from '../types';
+import { IThoughtLabEntry, UsageTracker, FeatureID } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
 
@@ -14,9 +13,12 @@ interface ThoughtLabCardProps {
     apiKey: string | null;
     entries: IThoughtLabEntry[];
     onAddEntry: (entry: IThoughtLabEntry) => void;
+    isSubscribed: boolean;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID, limit?: number) => boolean;
 }
 
-export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ apiKey, entries, onAddEntry }) => {
+export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ apiKey, entries, onAddEntry, isSubscribed, usageTracker, checkAndConsumeUsage }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [step, setStep] = useState(1);
     const [currentEntry, setCurrentEntry] = useState<Partial<IThoughtLabEntry>>({});
@@ -27,6 +29,15 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ apiKey, entries,
         setStep(1);
         setCurrentEntry({});
         setIsLoading(false);
+    };
+
+    const handleStartSession = () => {
+        if (!isSubscribed) {
+            if (!checkAndConsumeUsage('thought_lab', 3)) {
+                return;
+            }
+        }
+        setIsCreating(true);
     };
 
     const handleNext = async () => {
@@ -112,6 +123,9 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ apiKey, entries,
             );
         }
     };
+
+    const remainingUses = isSubscribed ? -1 : (3 - (usageTracker?.thought_lab?.count ?? 0));
+    const canStart = isSubscribed || remainingUses > 0;
     
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
@@ -123,15 +137,10 @@ export const ThoughtLabCard: React.FC<ThoughtLabCardProps> = ({ apiKey, entries,
             {!isCreating ? (
                 <>
                     <p className="text-slate-400 mb-4 text-sm">Una herramienta de TCC para identificar y reformular pensamientos negativos. Cada sesión es un paso hacia la claridad mental.</p>
-                    <button onClick={() => setIsCreating(true)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30">
-                        Iniciar Nueva Sesión
+                    <button onClick={handleStartSession} disabled={!canStart} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {canStart ? 'Iniciar Nueva Sesión' : 'Usos gratuitos agotados'}
                     </button>
-                    {entries.length > 0 && (
-                        <div className="mt-4">
-                            <h3 className="text-sm font-semibold text-slate-300">Sesiones Recientes:</h3>
-                            <p className="text-xs text-slate-500">{entries[0].situation?.substring(0, 50)}...</p>
-                        </div>
-                    )}
+                    {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
                 </>
             ) : (
                 <div>

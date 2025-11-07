@@ -234,7 +234,7 @@ export interface ITherapySession {
 }
 
 // Monetization - Usage Tracking
-export type FeatureID = 'guardian' | 'weekly_analysis' | 'oracle';
+export type FeatureID = 'guardian' | 'weekly_analysis' | 'oracle' | 'thought_lab' | 'habit_architect' | 'affirmation_generator' | 'soundtrack';
 
 export interface FeatureUsage {
     count: number;

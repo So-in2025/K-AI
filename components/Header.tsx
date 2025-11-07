@@ -10,17 +10,12 @@ const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-const BeakerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a4 4 0 00-5.656 0M11 6a3 3 0 013 3v1m-3-4a3 3 0 00-3 3v1m6 0a3 3 0 013 3v1M6 12a3 3 0 013-3h0a3 3 0 013 3v1m-6 0a3 3 0 003 3h0a3 3 0 003-3v-1m-3 4v6m3-6v6" />
-    </svg>
-);
-
+// Fix: Update HeaderProps to match the props passed from App.tsx
 interface HeaderProps {
     onSettingsClick: () => void;
     onboardingData: OnboardingData;
-    onDevClick: () => void;
-    isDevMode: boolean;
+    isSubscribed: boolean;
+    onNavigateToProgress: () => void;
 }
 
 const getTitle = (focuses: UserFocus[]): string => {
@@ -40,7 +35,7 @@ const getTitle = (focuses: UserFocus[]): string => {
 }
 
 
-export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onboardingData, onDevClick, isDevMode }) => {
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onboardingData }) => {
   const title = getTitle(onboardingData.focuses);
 
   return (
@@ -57,14 +52,6 @@ export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onboardingData,
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button 
-                onClick={onDevClick} 
-                className={`p-2 rounded-full hover:bg-slate-800 transition-colors ${isDevMode ? 'text-teal-400' : 'text-slate-400'}`} 
-                aria-label="Modo Desarrollador"
-                title="Activar/Desactivar Modo Desarrollador"
-            >
-              <BeakerIcon />
-            </button>
             <button onClick={onSettingsClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Configuración">
                 <SettingsIcon />
             </button>

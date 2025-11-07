@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { OnboardingData, IMusicPreferences, ISongRecommendation, UserFocus } from '../types';
+import { OnboardingData, IMusicPreferences, ISongRecommendation, UserFocus, UsageTracker, FeatureID } from '../types';
 import { MUSIC_PREFERENCES_KEY } from '../constants';
 import { getGeminiResponse } from '../services/geminiService';
 import { MusicPreferencesModal } from './MusicPreferencesModal';
@@ -15,9 +15,12 @@ const MusicIcon = () => (
 interface SoundtrackCardProps {
     apiKey: string | null;
     onboardingData: OnboardingData;
+    isSubscribed: boolean;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID, limit?: number) => boolean;
 }
 
-export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardingData }) => {
+export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardingData, isSubscribed, usageTracker, checkAndConsumeUsage }) => {
     const [preferences, setPreferences] = useState<IMusicPreferences | null>(null);
     const [recommendations, setRecommendations] = useState<ISongRecommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +47,12 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
         if (!currentPrefs) {
             setIsModalOpen(true);
             return;
+        }
+
+        if (!isSubscribed) {
+            if (!checkAndConsumeUsage('soundtrack', 3)) {
+                return;
+            }
         }
         
         setIsLoading(true);
@@ -90,6 +99,9 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
         setExpandedSongIndex(prev => prev === index ? null : index);
     }
 
+    const remainingUses = isSubscribed ? -1 : (3 - (usageTracker?.soundtrack?.count ?? 0));
+    const canGenerate = isSubscribed || remainingUses > 0;
+
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
             <TtsInfoButton explanation="La música es una herramienta terapéutica poderosa. En esta sección, Kai actúa como tu musicoterapeuta personal. Basándose en tus gustos y tu enfoque de sanación, creará una 'Banda Sonora para Sanar' con 10 canciones. Cada una viene con una explicación de por qué fue elegida para ti, ya sea por su letra, su energía o su capacidad para calmar." />
@@ -130,16 +142,18 @@ export const SoundtrackCard: React.FC<SoundtrackCardProps> = ({ apiKey, onboardi
                             )}
                         </div>
                     ))}
-                    <button onClick={() => handleGenerate(preferences)} className="w-full text-center text-sm text-teal-400 hover:underline mt-4">
-                        Generar nueva lista
+                    <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full text-center text-sm text-teal-400 hover:underline mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {canGenerate ? 'Generar nueva lista' : 'Usos gratuitos agotados'}
                     </button>
+                    {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
                  </div>
             ) : (
                 <>
                     <p className="text-slate-400 mb-4 text-sm">Tu banda sonora está lista para ser creada.</p>
-                     <button onClick={() => handleGenerate(preferences)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30">
-                        Generar mi Banda Sonora
+                     <button disabled={!canGenerate} onClick={() => handleGenerate(preferences)} className="w-full bg-teal-600/20 border border-teal-500 text-teal-300 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {canGenerate ? 'Generar mi Banda Sonora' : 'Usos gratuitos agotados'}
                     </button>
+                    {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
                     <button onClick={() => setIsModalOpen(true)} className="w-full text-center text-xs text-slate-400 hover:underline mt-2">
                         Editar gustos musicales
                     </button>

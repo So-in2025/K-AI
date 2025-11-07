@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { Header } from './components/Header';
 import { SOSCard } from './components/SOSCard';
@@ -116,8 +117,7 @@ const App: React.FC = () => {
   const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isSubscribed, setIsSubscribed] = useState(false); // Monetization state
-  const [isDevMode, setIsDevMode] = useState(false); // Temporary dev mode state
-
+  
   const [cravings, setCravings] = useState<ICraving[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [daysSober, setDaysSober] = useState<number>(0);
@@ -163,7 +163,7 @@ const App: React.FC = () => {
   const triggerWordTimeoutRef = useRef<number | null>(null);
 
   // Derived state for premium access
-  const hasPremiumAccess = isSubscribed || isDevMode;
+  const hasPremiumAccess = isSubscribed;
 
   const updateLastInteraction = useCallback(() => {
     localStorage.setItem(LAST_INTERACTION_KEY, new Date().toISOString());
@@ -186,23 +186,9 @@ const App: React.FC = () => {
         return newPoints;
     });
   }, []);
-
-  // Dev mode effect
-  useEffect(() => {
-    const devModeActive = sessionStorage.getItem('isDevMode') === 'true';
-    if (devModeActive) {
-      setIsDevMode(true);
-    }
-  }, []);
-
-  const handleToggleDevMode = () => {
-    const newDevModeState = !isDevMode;
-    setIsDevMode(newDevModeState);
-    if (newDevModeState) {
-      sessionStorage.setItem('isDevMode', 'true');
-    } else {
-      sessionStorage.removeItem('isDevMode');
-    }
+  
+  const handleNavigateToProgress = () => {
+    setActiveView('progress');
   };
 
   useEffect(() => {
@@ -408,10 +394,15 @@ const App: React.FC = () => {
         try {
             const storedTracker = localStorage.getItem(FEATURE_USAGE_KEY);
             const now = new Date();
+            const monthlyReset = { count: 0, month: now.getMonth(), year: now.getFullYear() };
             const initialTracker: UsageTracker = {
-                guardian: { count: 0, month: now.getMonth(), year: now.getFullYear() },
-                weekly_analysis: { count: 0, month: now.getMonth(), year: now.getFullYear() },
-                oracle: { count: 0, month: now.getMonth(), year: now.getFullYear() },
+                guardian: { ...monthlyReset },
+                weekly_analysis: { ...monthlyReset },
+                oracle: { ...monthlyReset },
+                thought_lab: { ...monthlyReset },
+                habit_architect: { ...monthlyReset },
+                affirmation_generator: { ...monthlyReset },
+                soundtrack: { ...monthlyReset },
             };
 
             if (storedTracker) {
@@ -421,7 +412,9 @@ const App: React.FC = () => {
                      setUsageTracker(initialTracker);
                      localStorage.setItem(FEATURE_USAGE_KEY, JSON.stringify(initialTracker));
                 } else {
-                    setUsageTracker(parsed);
+                    // Ensure all keys exist
+                    const completeTracker = {...initialTracker, ...parsed};
+                    setUsageTracker(completeTracker);
                 }
             } else {
                 setUsageTracker(initialTracker);
@@ -465,7 +458,7 @@ const App: React.FC = () => {
   };
   
   // Monetization - Usage Check and Consume Logic
-    const checkAndConsumeUsage = useCallback((featureId: FeatureID): boolean => {
+    const checkAndConsumeUsage = useCallback((featureId: FeatureID, limit: number = 1): boolean => {
         if (hasPremiumAccess) {
             return true;
         }
@@ -474,7 +467,6 @@ const App: React.FC = () => {
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        // Create a new tracker object to avoid state mutation issues
         const newTracker = { ...usageTracker } as UsageTracker;
         let featureUsage = newTracker[featureId];
 
@@ -482,7 +474,7 @@ const App: React.FC = () => {
             featureUsage = { count: 0, month: currentMonth, year: currentYear };
         }
 
-        if (featureUsage.count < 1) {
+        if (featureUsage.count < limit) {
             featureUsage.count += 1;
             newTracker[featureId] = featureUsage;
             setUsageTracker(newTracker);
@@ -531,8 +523,6 @@ const App: React.FC = () => {
     });
     if(turn.role === 'user') {
         updateLastInteraction();
-        // Do not switch view automatically to allow background actions
-        // setActiveView('kai'); 
     }
   }, [updateLastInteraction]);
   
@@ -983,6 +973,8 @@ const App: React.FC = () => {
                   onAddHabitLoop={handleAddHabitLoop}
                   isSubscribed={hasPremiumAccess}
                   onboardingData={onboardingData}
+                  usageTracker={usageTracker}
+                  checkAndConsumeUsage={checkAndConsumeUsage}
                 />;
       case 'progress':
         return <ProgressView 
@@ -1031,8 +1023,8 @@ const App: React.FC = () => {
       <Header 
         onSettingsClick={() => setIsSettingsModalOpen(true)} 
         onboardingData={onboardingData} 
-        onDevClick={handleToggleDevMode}
-        isDevMode={isDevMode}
+        isSubscribed={hasPremiumAccess}
+        onNavigateToProgress={handleNavigateToProgress}
       />
       
       <main className="flex-grow overflow-y-auto max-w-screen-2xl w-full mx-auto p-4 md:p-6">

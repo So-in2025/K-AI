@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { getGeminiResponse } from '../services/geminiService';
 import { TtsInfoButton } from './TtsInfoButton';
+import { FeatureID, UsageTracker } from '../types';
 
 const SparklesIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -11,9 +11,12 @@ const SparklesIcon = () => (
 
 interface AffirmationGeneratorCardProps {
     apiKey: string | null;
+    isSubscribed: boolean;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID, limit?: number) => boolean;
 }
 
-export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> = ({ apiKey }) => {
+export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> = ({ apiKey, isSubscribed, usageTracker, checkAndConsumeUsage }) => {
     const [userInput, setUserInput] = useState('');
     const [affirmation, setAffirmation] = useState('');
     const [explanation, setExplanation] = useState('');
@@ -24,6 +27,12 @@ export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> =
         if (!userInput.trim()) {
             setError('Por favor, escribe cómo te sientes.');
             return;
+        }
+
+        if (!isSubscribed) {
+            if (!checkAndConsumeUsage('affirmation_generator', 3)) {
+                return;
+            }
         }
         
         setIsLoading(true);
@@ -60,6 +69,9 @@ export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> =
         }
     };
 
+    const remainingUses = isSubscribed ? -1 : (3 - (usageTracker?.affirmation_generator?.count ?? 0));
+    const canGenerate = isSubscribed || remainingUses > 0;
+
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
             <TtsInfoButton explanation="Las palabras tienen poder. Esta herramienta es tu alquimista personal. Escribe cómo te sientes, sin filtros, y Kai transformará esa energía en una afirmación positiva y personalizada en primera persona, dándote una frase de poder para anclar tu intención." />
@@ -80,13 +92,14 @@ export const AffirmationGeneratorCard: React.FC<AffirmationGeneratorCardProps> =
                 />
                 <button
                     onClick={handleGenerate}
-                    disabled={isLoading || !userInput.trim()}
-                    className="w-full bg-teal-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    disabled={isLoading || !userInput.trim() || !canGenerate}
+                    className="w-full bg-teal-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-slate-500 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? 'Creando...' : 'Crear mi Afirmación'}
+                    {isLoading ? 'Creando...' : canGenerate ? 'Crear mi Afirmación' : 'Usos gratuitos agotados'}
                 </button>
             </div>
 
+            {!isSubscribed && <p className="text-xs text-center text-slate-500 mt-2">Te quedan {remainingUses} usos gratuitos este mes.</p>}
             {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
 
             {isLoading && (

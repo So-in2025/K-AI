@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProgressCard } from '../components/ProgressCard';
 import { DailyQuoteCard } from '../components/DailyQuoteCard';
@@ -48,6 +49,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                 </div>
                 {props.onboardingData.focuses.includes('addiction') && (
                      <GuardianModeCard 
+                        apiKey={props.apiKey}
                         status={props.guardianState.status}
                         analysis={props.guardianState.analysis}
                         error={props.guardianState.error}
@@ -57,6 +59,7 @@ export const HomeView: React.FC<HomeViewProps> = (props) => {
                         onUpdateConfig={props.onUpdateGuardianConfig}
                         isSubscribed={props.isSubscribed}
                         usageTracker={props.usageTracker}
+                        onboardingData={props.onboardingData}
                      />
                 )}
                 <MoodJournalCard 

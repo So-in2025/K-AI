@@ -69,7 +69,7 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                         daysSober={props.daysSober}
                         wellnessLog={props.wellnessLog}
                     />
-                    {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} />}
+                    {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} isSubscribed={isSubscribed} />}
                     <ResourcesCard />
                 </div>
             </div>

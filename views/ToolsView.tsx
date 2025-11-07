@@ -6,7 +6,7 @@ import { AffirmationGeneratorCard } from '../components/AffirmationGeneratorCard
 import { RemindersCard } from '../components/RemindersCard';
 import { ThoughtLabCard } from '../components/ThoughtLabCard';
 import { HabitLoopCard } from '../components/HabitLoopCard';
-import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop, OnboardingData } from '../types';
+import { IGoal, GoalType, ICraving, IReminder, IThoughtLabEntry, IHabitLoop, OnboardingData, UsageTracker, FeatureID } from '../types';
 import { SoundtrackCard } from '../components/SoundtrackCard';
 
 
@@ -29,6 +29,8 @@ interface ToolsViewProps {
     onAddHabitLoop: (loop: IHabitLoop) => void;
     isSubscribed: boolean;
     onboardingData: OnboardingData;
+    usageTracker: UsageTracker | null;
+    checkAndConsumeUsage: (featureId: FeatureID, limit?: number) => boolean;
 }
 
 export const ToolsView: React.FC<ToolsViewProps> = (props) => {
@@ -41,13 +43,24 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                         apiKey={props.apiKey}
                         entries={props.thoughtLabEntries}
                         onAddEntry={props.onAddThoughtLabEntry}
+                        isSubscribed={props.isSubscribed}
+                        usageTracker={props.usageTracker}
+                        checkAndConsumeUsage={props.checkAndConsumeUsage}
                     />
                     <HabitLoopCard
                         apiKey={props.apiKey}
                         loops={props.habitLoops}
                         onAddLoop={props.onAddHabitLoop}
+                        isSubscribed={props.isSubscribed}
+                        usageTracker={props.usageTracker}
+                        checkAndConsumeUsage={props.checkAndConsumeUsage}
                     />
-                    <AffirmationGeneratorCard apiKey={props.apiKey} />
+                    <AffirmationGeneratorCard 
+                        apiKey={props.apiKey}
+                        isSubscribed={props.isSubscribed}
+                        usageTracker={props.usageTracker}
+                        checkAndConsumeUsage={props.checkAndConsumeUsage}
+                    />
                 </div>
                 <div className="space-y-6">
                     <CravingTrackerCard cravings={props.cravings} onLogCraving={props.onLogCraving} />
@@ -60,6 +73,9 @@ export const ToolsView: React.FC<ToolsViewProps> = (props) => {
                     <SoundtrackCard
                         apiKey={props.apiKey}
                         onboardingData={props.onboardingData}
+                        isSubscribed={props.isSubscribed}
+                        usageTracker={props.usageTracker}
+                        checkAndConsumeUsage={props.checkAndConsumeUsage}
                     />
                 </div>
             </div>

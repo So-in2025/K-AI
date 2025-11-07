@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { ICraving } from '../types';
 import { TtsInfoButton } from './TtsInfoButton';
@@ -10,9 +8,17 @@ const ChartIcon = () => (
     </svg>
 );
 
+const LockIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+  </svg>
+);
+
+
 interface PatternsCardProps {
     cravings: ICraving[];
     journalEntry: string;
+    isSubscribed: boolean;
 }
 
 const ProgressBar: React.FC<{ label: string; value: number; maxValue: number; }> = ({ label, value, maxValue }) => (
@@ -28,7 +34,7 @@ const ProgressBar: React.FC<{ label: string; value: number; maxValue: number; }>
 );
 
 
-export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEntry }) => {
+export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEntry, isSubscribed }) => {
     
     const analysis = useMemo(() => {
         if (cravings.length < 3) return null;
@@ -67,6 +73,16 @@ export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEnt
     }, [analysis, journalEntry]);
 
     const CardContent = () => {
+        if (!isSubscribed) {
+            return (
+                 <div className="absolute inset-0 bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-center p-4">
+                    <LockIcon />
+                    <h3 className="text-lg font-semibold text-white mt-2">Análisis Automático de Patrones</h3>
+                    <p className="text-slate-300 text-sm">Descubre tus detonantes y estrategias más efectivas. Disponible en KIA Plus.</p>
+                </div>
+            )
+        }
+        
         if (cravings.length < 3) {
             return (
                 <p className="text-slate-400 text-sm text-center italic mt-4">
@@ -109,7 +125,7 @@ export const PatternsCard: React.FC<PatternsCardProps> = ({ cravings, journalEnt
 
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative">
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative min-h-[200px]">
              <TtsInfoButton explanation="El conocimiento es poder. Esta tarjeta es tu espejo. Analiza los datos de tus antojos registrados para mostrarte, de forma clara y visual, cuáles son tus detonantes más frecuentes y qué estrategias de afrontamiento te están funcionando mejor. Usa esta información para ser más proactivo." />
             <div>
                 <div className="flex items-center space-x-3 mb-3">
