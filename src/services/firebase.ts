@@ -38,16 +38,27 @@ let db: Firestore | null = null;
 let firebaseInitializationError: string | null = null;
 
 try {
-  if (!firebaseConfig.apiKey) {
-    throw new Error("La variable de entorno VITE_FIREBASE_API_KEY no está definida. Revisa tu configuración en Netlify.");
+  // Check if all required Firebase config keys are present.
+  const requiredKeys = ['apiKey', 'authDomain', 'projectId'];
+  const missingKeys = requiredKeys.filter(key => !(firebaseConfig as any)[key]);
+
+  if (missingKeys.length > 0) {
+    throw new Error(`Faltan las siguientes variables de entorno de Firebase: ${missingKeys.map(k => `VITE_FIREBASE_${k.toUpperCase()}`).join(', ')}.`);
   }
+  
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   googleProvider = new GoogleAuthProvider();
   db = getFirestore(app);
+
 } catch (error: any) {
   console.error("Error al inicializar Firebase:", error);
-  firebaseInitializationError = `Error de Configuración de Firebase: ${error.message}. Asegúrate de que todas las variables de entorno VITE_FIREBASE_* estén correctamente configuradas en tu proveedor de hosting (ej. Netlify).`;
+  firebaseInitializationError = `Error de Configuración de Firebase: ${error.message} Asegúrate de que todas las variables de entorno VITE_FIREBASE_* estén correctamente configuradas en tu proveedor de hosting (ej. Netlify).`;
+  // Set services to null so the app can handle this state gracefully
+  app = null;
+  auth = null;
+  googleProvider = null;
+  db = null;
 }
 
 export { app, auth, googleProvider, db, firebaseInitializationError };

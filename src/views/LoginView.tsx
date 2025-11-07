@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { useUser } from '../contexts/UserContext.tsx';
 import { KiaIcon } from '../components/KiaIcon.tsx';
+import { firebaseInitializationError } from '../services/firebase.ts';
 
 const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg className="w-6 h-6 mr-3" viewBox="0 0 48 48" {...props}>
@@ -19,37 +19,10 @@ export const LoginView: React.FC = () => {
   const handleLogin = async () => {
     try {
       await login();
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const activationCode = urlParams.get('sck');
-      if (activationCode) {
-          localStorage.setItem('activationCode', activationCode);
-          // Clean the URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-      }
     } catch (error: any) {
         console.error("Login failed:", error);
-        if (error.code === 'auth/configuration-not-found') {
-            alert(`Error de Configuración de Firebase (auth/configuration-not-found):
-
-Esto significa que tu app no puede encontrar tu proyecto de Firebase. Por favor, revisa CUIDADOSAMENTE los siguientes puntos:
-
-1. API Key Correcta: ¿La variable VITE_FIREBASE_API_KEY en Netlify es 100% idéntica a la 'apiKey' de la configuración de tu app web en la Consola de Firebase?
-
-2. Autenticación con Google Habilitada: En la Consola de Firebase -> Authentication -> Sign-in method, ¿está 'Google' HABILITADO?
-
-3. Dominio Autorizado: En la Consola de Firebase -> Authentication -> Settings, ¿has añadido tu dominio de Netlify (${window.location.origin}) a la lista de 'Dominios autorizados'?
-
-4. (MUY IMPORTANTE) API de Identity Toolkit:
-   a. Ve a la consola de Google Cloud: console.cloud.google.com
-   b. Asegúrate de seleccionar el proyecto correcto (el que está asociado a tu Firebase).
-   c. Busca 'Identity Toolkit API' en la barra de búsqueda.
-   d. Haz clic en 'HABILITAR' si no está habilitada. La autenticación de Firebase depende de esta API.
-
-Este error se soluciona en la configuración de la nube, no en el código de la app.`);
-        } else {
-            alert('Ocurrió un error durante el inicio de sesión. Por favor, revisa la consola para más detalles.');
-        }
+        // User-facing errors for auth problems are now handled here
+        alert('Ocurrió un error durante el inicio de sesión. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -62,12 +35,18 @@ Este error se soluciona en la configuración de la nube, no en el código de la 
           Tu santuario digital y compañero de sanación. Un espacio para cultivar Amabilidad, Introspección y Conciencia.
         </p>
         
-        {loading ? (
+        {firebaseInitializationError ? (
+          <div className="bg-red-900/50 border border-red-500 p-4 rounded-lg text-left">
+            <h3 className="font-bold text-red-400">Acción Requerida (para el dueño de la app)</h3>
+            <p className="text-sm text-slate-300 mt-2">{firebaseInitializationError}</p>
+          </div>
+        ) : loading ? (
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto"></div>
         ) : (
           <button
             onClick={handleLogin}
-            className="bg-white text-slate-800 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-slate-200 transition-colors flex items-center justify-center mx-auto"
+            disabled={!!firebaseInitializationError}
+            className="bg-white text-slate-800 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-slate-200 transition-colors flex items-center justify-center mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed"
           >
             <GoogleIcon />
             <span>Iniciar Sesión con Google</span>
