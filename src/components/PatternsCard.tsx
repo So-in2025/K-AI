@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from '/src/contexts/UserContext.tsx';
 import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
@@ -31,8 +32,8 @@ export const PatternsCard: React.FC = () => {
                 return acc;
             }, {} as Record<string, number>);
 
-            // Fix: Used destructuring in the sort callback to make types explicit and fix the arithmetic operation error.
-            const sortedTriggers = Object.entries(triggerCounts).sort(([, aCount], [, bCount]) => bCount - aCount);
+            // Fix: Explicitly type the sort callback parameters to resolve the arithmetic operation error.
+            const sortedTriggers = Object.entries(triggerCounts).sort(([, aCount]: [string, number], [, bCount]: [string, number]) => bCount - aCount);
             
             if (sortedTriggers.length > 0) {
                 const trigger = sortedTriggers[0][0];

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { JOURNAL_PROMPTS } from '/src/constants.ts';
 import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
@@ -83,14 +84,14 @@ export const JournalCard: React.FC<JournalCardProps> = ({ entry: initialEntry, o
         
         <div className="mb-4">
             <div className="flex flex-wrap gap-2">
-                {/* Fix: Replaced Object.keys with Object.entries for improved type safety and to resolve a typing issue with the `key` prop. */}
-                {Object.entries(JOURNAL_PROMPTS).map(([key, value]) => (
+                {/* Fix: Replaced buggy Object.entries with Object.keys for improved type safety. */}
+                {(Object.keys(JOURNAL_PROMPTS) as CategoryKey[]).map((key) => (
                     <button 
                         key={key}
-                        onClick={() => setSelectedCategory(prev => prev === key ? null : key as CategoryKey)}
+                        onClick={() => setSelectedCategory(prev => prev === key ? null : key)}
                         className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${selectedCategory === key ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
                     >
-                        {value.title}
+                        {JOURNAL_PROMPTS[key].title}
                     </button>
                 ))}
             </div>
