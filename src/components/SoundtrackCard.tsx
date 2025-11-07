@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { useUser } from '/src/contexts/UserContext.tsx';
-import { MusicPreferencesModal } from '/src/components/MusicPreferencesModal.tsx';
-import { IMusicPreferences, ISongRecommendation } from '/src/types.ts';
-import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
+import { useUser } from '../contexts/UserContext.tsx';
+import { MusicPreferencesModal } from './MusicPreferencesModal.tsx';
+import { IMusicPreferences, ISongRecommendation } from '../types.ts';
+import { TtsInfoButton } from './TtsInfoButton.tsx';
 
 const MusicIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

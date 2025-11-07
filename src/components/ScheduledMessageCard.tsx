@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { MESSAGES } from '/src/constants.ts';
-import { MessageCategory, IMessage } from '/src/types.ts';
-import ttsService from '/src/services/ttsService.ts';
+import { MESSAGES } from '../constants.ts';
+import { MessageCategory, IMessage } from '../types.ts';
+import ttsService from '../services/ttsService.ts';
 
 const getMessageCategory = (): MessageCategory => {
     const hour = new Date().getHours();

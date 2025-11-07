@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { IMusicPreferences } from '/src/types.ts';
 import { MUSIC_GENRES } from '/src/constants.ts';

@@ -1,18 +1,18 @@
 
 import React, { useState } from 'react';
-import { Header } from '/src/components/Header.tsx';
-import { SOSCard } from '/src/components/SOSCard.tsx';
-import SettingsModal from '/src/components/SettingsModal.tsx';
-import { NavigationBar, View } from '/src/components/NavigationBar.tsx';
-import { HomeView } from '/src/views/HomeView.tsx';
-import { KaiView } from '/src/views/KaiView.tsx';
-import { ToolsView } from '/src/views/ToolsView.tsx';
-import { ProgressView } from '/src/views/ProgressView.tsx';
-import { LoginView } from '/src/views/LoginView.tsx';
-import { OnboardingModal } from '/src/components/OnboardingModal.tsx';
-import { ApiKeyModal } from '/src/components/ApiKeyModal.tsx';
-import { useUser } from '/src/contexts/UserContext.tsx';
-import { OnboardingData } from '/src/types.ts';
+import { Header } from './components/Header.tsx';
+import { SOSCard } from './components/SOSCard.tsx';
+import SettingsModal from './components/SettingsModal.tsx';
+import { NavigationBar, View } from './components/NavigationBar.tsx';
+import { HomeView } from './views/HomeView.tsx';
+import { KaiView } from './views/KaiView.tsx';
+import { ToolsView } from './views/ToolsView.tsx';
+import { ProgressView } from './views/ProgressView.tsx';
+import { LoginView } from './views/LoginView.tsx';
+import { OnboardingModal } from './components/OnboardingModal.tsx';
+import { ApiKeyModal } from './components/ApiKeyModal.tsx';
+import { useUser } from './contexts/UserContext.tsx';
+import { OnboardingData } from './types.ts';
 
 const LoadingSpinner: React.FC = () => (
     <div className="flex items-center justify-center h-screen bg-slate-900">

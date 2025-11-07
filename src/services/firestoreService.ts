@@ -1,6 +1,7 @@
+
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '/src/services/firebase.ts';
-import { User, IUserProfile } from '/src/types.ts';
+import { db } from './firebase.ts';
+import { User, IUserProfile } from '../types.ts';
 
 export const createUserProfileDocument = async (userAuth: User): Promise<void> => {
     const userDocRef = doc(db, 'users', userAuth.uid);

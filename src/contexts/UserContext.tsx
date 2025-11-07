@@ -1,10 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
-import { auth, googleProvider } from '/src/services/firebase.ts';
-import { createUserProfileDocument, getUserProfile, updateUserProfile } from '/src/services/firestoreService.ts';
-import { GeminiService } from '/src/services/geminiService.ts';
-import { IConversationTurn, IUserProfile, FeatureID, UsageTracker } from '/src/types.ts';
+import { auth, googleProvider } from '../services/firebase.ts';
+import { createUserProfileDocument, getUserProfile, updateUserProfile } from '../services/firestoreService.ts';
+import { GeminiService } from '../services/geminiService.ts';
+import { IConversationTurn, IUserProfile, FeatureID, UsageTracker } from '../types.ts';
 
 interface UserContextType {
     user: User | null;

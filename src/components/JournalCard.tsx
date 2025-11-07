@@ -1,8 +1,8 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { JOURNAL_PROMPTS } from '/src/constants.ts';
-import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
+import { JOURNAL_PROMPTS } from '../constants.ts';
+import { TtsInfoButton } from './TtsInfoButton.tsx';
 
 const EditIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

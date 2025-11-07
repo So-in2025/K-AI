@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CravingIntensity, ICraving } from '/src/types.ts';
 import { CRAVING_TRIGGERS, COPING_STRATEGIES } from '/src/constants.ts';

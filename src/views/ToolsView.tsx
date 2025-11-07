@@ -1,16 +1,16 @@
 
 import React from 'react';
-import { useUser } from '/src/contexts/UserContext.tsx';
-import { DopamineDietCard } from '/src/components/DopamineDietCard.tsx';
-import { ThoughtLabCard } from '/src/components/ThoughtLabCard.tsx';
-import { TrustCircleCard } from '/src/components/TrustCircleCard.tsx';
-import { HabitLoopCard } from '/src/components/HabitLoopCard.tsx';
-import { BreathingExercisesCard } from '/src/components/BreathingExercisesCard.tsx';
-import { MoodJournalCard } from '/src/components/MoodJournalCard.tsx';
-import { SoundtrackCard } from '/src/components/SoundtrackCard.tsx';
-import { RemindersCard } from '/src/components/RemindersCard.tsx';
-import { ResourcesCard } from '/src/components/ResourcesCard.tsx';
-import { CravingTrackerCard } from '/src/components/CravingTrackerCard.tsx';
+import { useUser } from '../contexts/UserContext.tsx';
+import { DopamineDietCard } from '../components/DopamineDietCard.tsx';
+import { ThoughtLabCard } from '../components/ThoughtLabCard.tsx';
+import { TrustCircleCard } from '../components/TrustCircleCard.tsx';
+import { HabitLoopCard } from '../components/HabitLoopCard.tsx';
+import { BreathingExercisesCard } from '../components/BreathingExercisesCard.tsx';
+import { MoodJournalCard } from '../components/MoodJournalCard.tsx';
+import { SoundtrackCard } from '../components/SoundtrackCard.tsx';
+import { RemindersCard } from '../components/RemindersCard.tsx';
+import { ResourcesCard } from '../components/ResourcesCard.tsx';
+import { CravingTrackerCard } from '../components/CravingTrackerCard.tsx';
 
 export const ToolsView: React.FC = () => {
   const { userData } = useUser();

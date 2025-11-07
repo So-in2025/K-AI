@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { useUser } from '/src/contexts/UserContext.tsx';
-import { KiaIcon } from '/src/components/KiaIcon.tsx';
-import ttsService from '/src/services/ttsService.ts';
+import { useUser } from '../contexts/UserContext.tsx';
+import { KiaIcon } from './KiaIcon.tsx';
+import ttsService from '../services/ttsService.ts';
 
 export const CompanionCard: React.FC = () => {
     const { userData } = useUser();

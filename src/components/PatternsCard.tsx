@@ -1,9 +1,9 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from '/src/contexts/UserContext.tsx';
-import { TtsInfoButton } from '/src/components/TtsInfoButton.tsx';
-import { ICraving } from '/src/types.ts';
+import { useUser } from '../contexts/UserContext.tsx';
+import { TtsInfoButton } from './TtsInfoButton.tsx';
+import { ICraving } from '../types.ts';
 
 const SearchIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>

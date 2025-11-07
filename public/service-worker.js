@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'kia-cache-v8';
 // Lista de archivos a cachear. Se ha limpiado para incluir solo lo esencial.
 const urlsToCache = [
