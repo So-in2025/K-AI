@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUser } from '../contexts/UserContext.tsx';
 import { KiaIcon } from '../components/KiaIcon.tsx';
 import { firebaseInitializationError } from '../services/firebase.ts';
@@ -15,14 +15,15 @@ const GoogleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 export const LoginView: React.FC = () => {
   const { login, loading } = useUser();
+  const [loginError, setLoginError] = useState<string>('');
 
   const handleLogin = async () => {
+    setLoginError('');
     try {
       await login();
     } catch (error: any) {
         console.error("Falló el inicio de sesión:", error);
-        // User-facing errors for auth problems are now handled here
-        alert('Ocurrió un error durante el inicio de sesión. Por favor, inténtalo de nuevo.');
+        setLoginError('No se pudo completar el inicio de sesión. Por favor, revisa tu conexión a internet e inténtalo de nuevo más tarde.');
     }
   };
 
@@ -36,21 +37,32 @@ export const LoginView: React.FC = () => {
         </p>
         
         {firebaseInitializationError ? (
-          <div className="bg-red-900/50 border border-red-500 p-4 rounded-lg text-left">
-            <h3 className="font-bold text-red-400">Acción Requerida (para el dueño de la app)</h3>
-            <p className="text-sm text-slate-300 mt-2">{firebaseInitializationError}</p>
+          <div className="bg-red-900/50 border border-red-500 p-4 rounded-lg text-left space-y-3">
+            <div>
+              <h3 className="font-bold text-red-400">Error de Conexión</h3>
+              <p className="text-sm text-slate-300 mt-1">No se pudo conectar con el servicio de autenticación. Por favor, inténtalo de nuevo más tarde.</p>
+            </div>
+            <div className="border-t border-red-500/30 pt-3">
+              <h3 className="font-bold text-red-400 text-xs">Información para el desarrollador:</h3>
+              <p className="text-xs text-slate-400 mt-1">{firebaseInitializationError}</p>
+            </div>
           </div>
         ) : loading ? (
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto"></div>
         ) : (
-          <button
-            onClick={handleLogin}
-            disabled={!!firebaseInitializationError}
-            className="bg-white text-slate-800 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-slate-200 transition-colors flex items-center justify-center mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed"
-          >
-            <GoogleIcon />
-            <span>Iniciar Sesión con Google</span>
-          </button>
+          <>
+            <button
+              onClick={handleLogin}
+              disabled={!!firebaseInitializationError}
+              className="bg-white text-slate-800 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-slate-200 transition-colors flex items-center justify-center mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed"
+            >
+              <GoogleIcon />
+              <span>Iniciar Sesión con Google</span>
+            </button>
+            {loginError && (
+                <p className="mt-4 text-sm text-red-400">{loginError}</p>
+            )}
+          </>
         )}
       </div>
     </div>

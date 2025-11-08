@@ -1,8 +1,7 @@
-const CACHE_NAME = 'kia-cache-v3';
+const CACHE_NAME = 'kia-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/favicon.svg',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
@@ -15,6 +14,9 @@ self.addEventListener('install', event => {
       .then(cache => {
         console.log('Cache abierto');
         return cache.addAll(urlsToCache);
+      })
+      .catch(error => {
+        console.error('Fallo al cachear durante la instalación:', error);
       })
   );
 });
