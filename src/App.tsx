@@ -13,12 +13,14 @@ import { KaiView } from './views/KaiView';
 import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
 import { OnboardingData } from './types';
+import { ResourcesModal } from './components/ResourcesModal';
 
 const App: React.FC = () => {
     const { user, userData, loading, updateUserData } = useUser();
     const [activeView, setActiveView] = useState<View>('home');
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+    const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false);
 
     // Automatically open API key modal if it's missing after login and onboarding
     useEffect(() => {
@@ -81,7 +83,7 @@ const App: React.FC = () => {
   
     return (
         <div className="bg-slate-900 min-h-screen text-slate-200 flex flex-col h-screen">
-            <Header onSettingsClick={() => setIsSettingsModalOpen(true)} />
+            <Header onSettingsClick={() => setIsSettingsModalOpen(true)} onHelpClick={() => setIsResourcesModalOpen(true)} />
             
             <main className="flex-grow overflow-y-auto max-w-screen-2xl w-full mx-auto p-4 md:p-6">
                 {userData.onboardingData?.focuses.includes('addiction') && <SOSCard />}
@@ -94,6 +96,7 @@ const App: React.FC = () => {
 
             {isApiKeyModalOpen && <ApiKeyModal onClose={handleCloseApiKeyModal} onSave={handleSaveApiKey} />}
             {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
+            {isResourcesModalOpen && <ResourcesModal onClose={() => setIsResourcesModalOpen(false)} />}
         </div>
     );
 };

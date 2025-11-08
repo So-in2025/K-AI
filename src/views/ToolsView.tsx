@@ -14,17 +14,19 @@ export const ToolsView: React.FC = () => {
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Columna Izquierda: Herramientas de Registro y Planificación */}
                 <div className="space-y-6">
                     <CravingTrackerCard />
+                    <JournalCard />
+                    <RemindersCard />
+                    <AffirmationGeneratorCard />
+                </div>
+                {/* Columna Derecha: Herramientas Cognitivas y Creativas */}
+                <div className="space-y-6">
                     <GoalsCard />
+                    <ThoughtLabCard />
                     <HabitLoopCard />
                     <SoundtrackCard />
-                </div>
-                <div className="space-y-6">
-                    <JournalCard />
-                    <ThoughtLabCard />
-                    <AffirmationGeneratorCard />
-                    <RemindersCard />
                 </div>
             </div>
         </>

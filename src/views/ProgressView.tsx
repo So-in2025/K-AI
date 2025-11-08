@@ -2,7 +2,6 @@
 import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
-import { ResourcesCard } from '../components/ResourcesCard';
 import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
@@ -29,26 +28,25 @@ export const ProgressView: React.FC = () => {
                     </div>
                 )}
                 
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Fix: Removed props as InnerGardenCard consumes context directly. */}
+                <div className="lg:col-span-3">
                     <InnerGardenCard />
-                    {/* Fix: Removed props as WellnessSummaryCard consumes context directly. */}
-                    <WellnessSummaryCard />
-                    {/* Fix: Removed props as WeeklyAnalysisCard consumes context directly. */}
-                     <WeeklyAnalysisCard />
                 </div>
 
+                {/* Columna Izquierda: Insights y Análisis */}
+                <div className="lg:col-span-2 space-y-6">
+                    <WeeklyAnalysisCard />
+                    <WellnessSummaryCard />
+                </div>
+
+                {/* Columna Derecha: Historial y Herramientas de Apoyo */}
                 <div className="space-y-6">
                     <TherapyHistoryCard 
                         sessions={therapySessions || []}
                         onDeleteHistory={deleteTherapyHistory}
                         isLocked={!isSubscribed}
                     />
-                    {/* Fix: Removed props as TrustCircleCard consumes context directly. */}
-                    <TrustCircleCard />
-                    {/* Fix: Removed props as PatternsCard consumes context directly. */}
                     {onboardingData.focuses.includes('addiction') && <PatternsCard />}
-                    <ResourcesCard />
+                    <TrustCircleCard />
                 </div>
             </div>
         </>

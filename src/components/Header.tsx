@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS, OnboardingData } from '../types';
 import { KiaIcon } from './KiaIcon';
@@ -10,8 +11,16 @@ const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const HelpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+
 interface HeaderProps {
     onSettingsClick: () => void;
+    onHelpClick: () => void;
 }
 
 const getTitle = (focuses: UserFocus[] = []): string => {
@@ -31,7 +40,7 @@ const getTitle = (focuses: UserFocus[] = []): string => {
 }
 
 
-export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onHelpClick }) => {
   const { userData } = useUser();
   const title = getTitle(userData?.onboardingData?.focuses);
   const isSubscribed = userData?.isSubscribed || false;
@@ -49,17 +58,20 @@ export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
                 <p className="text-xs text-teal-300 -mt-1">{title}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             {!isSubscribed && (
               <a 
                 href="https://pay.hotmart.com/F102777841D?off=yx1yoozm"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-yellow-300 hover:text-yellow-200 transition-colors"
+                className="text-sm font-semibold text-yellow-300 hover:text-yellow-200 transition-colors mr-2"
               >
                 Activar KIA Plus ✨
               </a>
             )}
+            <button onClick={onHelpClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Ayuda y Recursos">
+                <HelpIcon />
+            </button>
             <button onClick={onSettingsClick} className="text-slate-400 hover:text-teal-400 transition-colors p-2 rounded-full hover:bg-slate-800" aria-label="Configuración">
                 <SettingsIcon />
             </button>
