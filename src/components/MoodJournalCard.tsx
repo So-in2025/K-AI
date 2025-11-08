@@ -39,7 +39,33 @@ export const MoodJournalCard: React.FC = () => {
     const recognitionRef = useRef<SpeechRecognition | null>(null);
 
     useEffect(() => {
-        // ... Speech Recognition setup remains the same ...
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            setError("El reconocimiento de voz no es compatible con este navegador.");
+            return;
+        }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'es-ES';
+
+        recognitionRef.current.onstart = () => setStatus('recording');
+        recognitionRef.current.onend = () => setStatus('idle'); // Will be overridden by analysis if there's a result
+        recognitionRef.current.onerror = (event) => {
+            setError(event.error === 'no-speech' ? 'No se detectó voz.' : 'Error de reconocimiento.');
+            setStatus('error');
+        };
+        recognitionRef.current.onresult = (event) => {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                }
+            }
+            if (finalTranscript.trim()) {
+                handleAnalysis(finalTranscript.trim());
+            }
+        };
     }, []);
 
     const handleMicClick = () => {
@@ -56,19 +82,80 @@ export const MoodJournalCard: React.FC = () => {
         setStatus('analyzing');
         if (!geminiService) { setError("Servicio de IA no disponible."); setStatus('error'); return; }
 
-        const schema = { type: Type.OBJECT, properties: { /* ... schema ... */ } };
-        const prompt = `Actúa como Kai, un coach de bienestar. Transcripción: "${transcript}". Analiza y genera un 'Plan de Sintonía Anímica' en JSON con nutrición, vestimenta y una micro-rutina.`;
+        const schema = {
+            type: Type.OBJECT,
+            properties: {
+                detectedMood: { type: Type.STRING, description: 'Una palabra que resuma el estado de ánimo (ej: Ansioso, Contento, Frustrado, etc.)' },
+                plan: {
+                    type: Type.OBJECT,
+                    properties: {
+                        nutrition: { type: Type.OBJECT, properties: { title: {type: Type.STRING}, description: {type: Type.STRING}, color: {type: Type.STRING, enum: ['verde', 'naranja', 'azul', 'amarillo', 'rojo', 'violeta']} } },
+                        attire: { type: Type.OBJECT, properties: { title: {type: Type.STRING}, description: {type: Type.STRING} } },
+                        routine: { type: Type.OBJECT, properties: { title: {type: Type.STRING}, description: {type: Type.STRING} } },
+                    }
+                }
+            }
+        };
 
+        const prompt = `Actúa como Kai, un coach de bienestar altamente empático. Un usuario acaba de describir cómo se siente. Su transcripción es: "${transcript}". Analiza el texto y genera un "Plan de Sintonía Anímica" para apoyarle. El plan debe ser amable, práctico y breve. Responde ÚNICAMENTE con un objeto JSON que siga el esquema proporcionado. El 'detectedMood' debe ser conciso. Las descripciones del plan deben ser de 1-2 frases.`;
+
+        // Fix: Removed the `finally` block and set status within `try` and `catch` to prevent race conditions with state updates.
         try {
             const response = await geminiService.generateContent(prompt, undefined, true);
             const parsedResponse = JSON.parse(response);
             const newJournal: IMoodJournal = { date: new Date().toISOString(), transcript, detectedMood: parsedResponse.detectedMood, plan: parsedResponse.plan as IMoodPlan };
             updateMoodJournal(newJournal);
-        } catch (err) { setError("No se pudo generar el plan."); setStatus('error'); }
-        finally { if (status !== 'error') setStatus('idle'); }
+            setStatus('idle');
+        } catch (err) { 
+            console.error("Error al analizar el diario anímico:", err);
+            setError("No se pudo generar el plan."); 
+            setStatus('error'); 
+        }
     };
 
-    // ... renderPlan and other rendering logic remains the same ...
+    const renderPlan = (journal: IMoodJournal) => {
+        const { plan, detectedMood } = journal;
+        const color = colorMap[plan.nutrition.color] || colorMap.default;
+        
+        return (
+            <div className="flex-grow flex flex-col justify-between">
+                <div>
+                    <p className="text-sm text-slate-400">Kai detectó que te sientes:</p>
+                    <h3 className={`text-xl font-bold ${color.text} mb-3`}>{detectedMood}</h3>
+                    <p className="text-sm text-slate-400 mb-2">Aquí tienes un pequeño plan para sintonizar con tu estado de ánimo:</p>
+                    <div className={`border-l-4 ${color.border} p-3 space-y-2 ${color.bg}`}>
+                        <div><strong className="text-slate-100">{plan.nutrition.title}</strong><p className="text-sm text-slate-300">{plan.nutrition.description}</p></div>
+                        <div><strong className="text-slate-100">{plan.attire.title}</strong><p className="text-sm text-slate-300">{plan.attire.description}</p></div>
+                        <div><strong className="text-slate-100">{plan.routine.title}</strong><p className="text-sm text-slate-300">{plan.routine.description}</p></div>
+                    </div>
+                </div>
+                <button onClick={() => updateMoodJournal(null)} className="w-full text-center text-xs text-slate-400 hover:underline mt-4">Registrar nuevo estado de ánimo</button>
+            </div>
+        );
+    };
+    
+    const renderRecorder = () => {
+        let text: string, buttonClass: string;
+        switch (status) {
+            case 'recording': text = "Escuchando..."; buttonClass = "bg-red-500 animate-pulse"; break;
+            case 'analyzing': text = "Kai está analizando tu voz..."; buttonClass = "bg-yellow-500 animate-pulse"; break;
+            case 'error': text = error || "Hubo un error."; buttonClass = "bg-slate-600"; break;
+            default: text = "Presiona el botón y describe cómo te sientes hoy."; buttonClass = "bg-teal-600"; break;
+        }
+
+        return (
+            <div className="flex-grow flex flex-col items-center justify-center text-center">
+                {status === 'analyzing' ? (
+                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400 mb-4"></div>
+                ) : (
+                    <button onClick={handleMicClick} className={`w-24 h-24 rounded-full flex items-center justify-center text-white transition-colors mb-4 ${buttonClass}`} disabled={status === 'analyzing'}>
+                        <MicIcon className="h-10 w-10" />
+                    </button>
+                )}
+                <p className="text-slate-300">{text}</p>
+            </div>
+        );
+    };
     
     return (
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative min-h-[250px] flex flex-col">
@@ -77,7 +164,7 @@ export const MoodJournalCard: React.FC = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V8m10 8V8M3 8c0-3.314 2.686-6 6-6h6c3.314 0 6 2.686 6 6v8c0 3.314-2.686 6-6 6H9c-3.314 0-6-2.686-6-6V8z" /></svg>
                 <h2 className="text-xl font-bold text-slate-100">Diario Anímico por Voz</h2>
             </div>
-            {/* The rest of the rendering logic uses userData.moodJournal */}
+            {userData?.moodJournal ? renderPlan(userData.moodJournal) : renderRecorder()}
         </div>
     );
 };

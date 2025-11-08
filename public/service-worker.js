@@ -1,14 +1,15 @@
-const CACHE_NAME = 'kia-cache-v1';
+const CACHE_NAME = 'kia-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/index.js',
-  '/vite.svg',
+  '/favicon.svg',
+  '/manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Forzar la activación del nuevo SW
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -25,15 +26,40 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Borrando caché antiguo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Tomar control inmediato
   );
 });
 
 self.addEventListener('fetch', event => {
+  // Estrategia: Primero la red, luego el caché para la navegación principal.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Si la respuesta es válida, la cacheamos y la devolvemos
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Si la red falla, intentamos obtenerla del caché
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Estrategia: Primero el caché, luego la red para otros assets.
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -42,25 +68,28 @@ self.addEventListener('fetch', event => {
           return response;
         }
 
+        // Don't cache API calls to Netlify functions
+        if (event.request.url.includes('/.netlify/functions/')) {
+            return fetch(event.request);
+        }
+
         return fetch(event.request).then(
-          response => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
+          fetchResponse => {
+            if (!fetchResponse || fetchResponse.status !== 200 || event.request.method !== 'GET') {
+              return fetchResponse;
             }
 
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            const responseToCache = response.clone();
+            const responseToCache = fetchResponse.clone();
 
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(event.request, responseToCache);
+                // Solo cacheamos assets básicos (misma origen) y de CDNs confiables
+                if (fetchResponse.type === 'basic' || event.request.url.startsWith('https://aistudiocdn.com')) {
+                    cache.put(event.request, responseToCache);
+                }
               });
 
-            return response;
+            return fetchResponse;
           }
         );
       })

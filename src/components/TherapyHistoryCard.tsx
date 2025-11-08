@@ -27,7 +27,7 @@ export const TherapyHistoryCard: React.FC<TherapyHistoryCardProps> = ({ sessions
 
     if (isLocked) {
          return (
-            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative h-full">
+            <div className="bg-slate-800 p-6 rounded-2xl shadow-lg relative min-h-[220px]">
                 <div className="flex items-center space-x-3 mb-3">
                     <BookIcon />
                     <h2 className="text-xl font-bold text-slate-100">Historial de Sesiones</h2>
