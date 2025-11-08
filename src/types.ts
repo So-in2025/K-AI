@@ -291,7 +291,11 @@ export interface IUserProfile {
 
     usageTracker?: UsageTracker | null;
     therapyTrialUsed?: boolean;
+
+    // Guardian Mode Configuration
     guardianTriggerWords?: string[];
+    guardianAutoStopTimer?: number; // Minutes of silence to auto-stop. 0 for off.
+    guardianVibrationFeedback?: boolean;
     
     musicPreferences?: IMusicPreferences;
 }

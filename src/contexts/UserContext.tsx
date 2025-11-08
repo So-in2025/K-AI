@@ -80,7 +80,7 @@ interface UserContextType {
     updateTrustCircleConfig: (config: ITrustCircleConfig) => void;
     logDopamineHit: (hit: IDopamineHit) => void;
     addHabitLoop: (loop: IHabitLoop) => void;
-    updateGuardianConfig: (words: string[]) => void;
+    updateGuardianConfig: (config: Partial<Pick<IUserProfile, 'guardianTriggerWords' | 'guardianAutoStopTimer' | 'guardianVibrationFeedback'>>) => void;
     updateMoodJournal: (journal: IMoodJournal | null) => void;
     saveTherapySession: (session: ITherapySession) => void;
     deleteTherapyHistory: () => void;
@@ -93,6 +93,7 @@ interface UserContextType {
     guardianState: GuardianState;
     startGuardian: () => void;
     stopGuardian: () => void;
+    resetGuardian: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -113,6 +114,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const audioProcessorRef = React.useRef<ScriptProcessorNode | null>(null);
     const audioSourceRef = React.useRef<MediaStreamAudioSourceNode | null>(null);
     const triggerWordTimeoutRef = React.useRef<number | null>(null);
+    const lastTranscriptTimeRef = React.useRef<number | null>(null);
+    const autoStopCheckIntervalRef = React.useRef<number | null>(null);
 
     // Fix: Move daysSober declaration before its usage in generateGoal
     const daysSober = React.useMemo(() => {
@@ -341,9 +344,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addConversationTurn({ role: 'user', text: summary });
     }, [userData, updateUserData, addConversationTurn, updateGardenGrowth]);
 
-    const updateGuardianConfig = useCallback((words: string[]) => {
-        updateUserData({ guardianTriggerWords: words });
-        addConversationTurn({ role: 'user', text: `[MODO GUARDIÁN] He actualizado mis palabras clave de alerta.` });
+    const updateGuardianConfig = useCallback((config: Partial<Pick<IUserProfile, 'guardianTriggerWords' | 'guardianAutoStopTimer' | 'guardianVibrationFeedback'>>) => {
+        updateUserData(config);
+        addConversationTurn({ role: 'user', text: `[MODO GUARDIÁN] He actualizado mi configuración del Modo Guardián.` });
     }, [updateUserData, addConversationTurn]);
 
     const updateMoodJournal = useCallback((journal: IMoodJournal | null) => {
@@ -417,71 +420,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [userData, updateUserData]);
 
     // --- Guardian Mode Logic ---
-    const startGuardian = async () => {
-        if (!userData?.geminiApiKey) {
-            dispatchGuardian({ type: 'SET_ERROR', payload: 'La API Key no está configurada.' });
-            return;
-        }
-        dispatchGuardian({ type: 'START' });
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            streamRef.current = stream;
-
-            const ai = new GoogleGenAI({ apiKey: userData.geminiApiKey });
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-
-            const newSessionPromise = ai.live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-                config: { inputAudioTranscription: {} },
-                callbacks: {
-                    onopen: () => {
-                        dispatchGuardian({ type: 'ACTIVATE' });
-                        const source = audioContextRef.current!.createMediaStreamSource(stream);
-                        audioSourceRef.current = source;
-                        const scriptProcessor = audioContextRef.current!.createScriptProcessor(4096, 1, 1);
-                        audioProcessorRef.current = scriptProcessor;
-
-                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            const int16 = new Int16Array(inputData.length);
-                            for (let i = 0; i < inputData.length; i++) { int16[i] = inputData[i] * 32768; }
-                            const pcmBlob: Blob = { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
-                            newSessionPromise.then((session) => { session.sendRealtimeInput({ media: pcmBlob }); });
-                        };
-                        source.connect(scriptProcessor);
-                        scriptProcessor.connect(audioContextRef.current!.destination);
-                    },
-                    onmessage: (message: LiveServerMessage) => {
-                        if (message.serverContent?.inputTranscription) {
-                            const text = message.serverContent.inputTranscription.text;
-                            dispatchGuardian({ type: 'APPEND_TRANSCRIPT', payload: text });
-                            if (userData.isSubscribed && (userData.guardianTriggerWords || []).length > 0) {
-                                const lowerCaseText = text.toLowerCase();
-                                const foundTrigger = (userData.guardianTriggerWords || []).some(word => lowerCaseText.includes(word.toLowerCase()));
-                                if (foundTrigger && !triggerWordTimeoutRef.current) {
-                                    navigator.vibrate?.([100, 50, 100]);
-                                    triggerWordTimeoutRef.current = window.setTimeout(() => { triggerWordTimeoutRef.current = null; }, 10000);
-                                }
-                            }
-                        }
-                    },
-                    onerror: (e: ErrorEvent) => {
-                        dispatchGuardian({ type: 'SET_ERROR', payload: 'Error de conexión del Modo Guardián.' });
-                        stopGuardian();
-                    },
-                    onclose: () => {
-                        if (triggerWordTimeoutRef.current) { clearTimeout(triggerWordTimeoutRef.current); triggerWordTimeoutRef.current = null; }
-                    }
-                }
-            });
-            sessionPromiseRef.current = newSessionPromise;
-        } catch (err) {
-            dispatchGuardian({ type: 'SET_ERROR', payload: 'No se pudo acceder al micrófono.' });
-        }
-    };
-
-    const stopGuardian = useCallback(async () => {
+     const stopGuardian = useCallback(async () => {
         dispatchGuardian({ type: 'STOP' });
+
+        if (autoStopCheckIntervalRef.current) clearInterval(autoStopCheckIntervalRef.current);
+        autoStopCheckIntervalRef.current = null;
+        lastTranscriptTimeRef.current = null;
 
         streamRef.current?.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -529,6 +473,95 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [userData, geminiService, addConversationTurn, checkAndConsumeUsage]);
 
+    const startGuardian = async () => {
+        if (!userData?.geminiApiKey) {
+            dispatchGuardian({ type: 'SET_ERROR', payload: 'La API Key no está configurada.' });
+            return;
+        }
+        dispatchGuardian({ type: 'START' });
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream;
+
+            const ai = new GoogleGenAI({ apiKey: userData.geminiApiKey });
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+
+            const newSessionPromise = ai.live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                config: { inputAudioTranscription: {} },
+                callbacks: {
+                    onopen: () => {
+                        dispatchGuardian({ type: 'ACTIVATE' });
+                        const source = audioContextRef.current!.createMediaStreamSource(stream);
+                        audioSourceRef.current = source;
+                        const scriptProcessor = audioContextRef.current!.createScriptProcessor(4096, 1, 1);
+                        audioProcessorRef.current = scriptProcessor;
+
+                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
+                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                            const int16 = new Int16Array(inputData.length);
+                            for (let i = 0; i < inputData.length; i++) { int16[i] = inputData[i] * 32768; }
+                            const pcmBlob: Blob = { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
+                            newSessionPromise.then((session) => { session.sendRealtimeInput({ media: pcmBlob }); });
+                        };
+                        source.connect(scriptProcessor);
+                        scriptProcessor.connect(audioContextRef.current!.destination);
+                    },
+                    onmessage: (message: LiveServerMessage) => {
+                        if (message.serverContent?.inputTranscription) {
+                            const text = message.serverContent.inputTranscription.text;
+                            if (text.trim()) {
+                                lastTranscriptTimeRef.current = Date.now();
+                                dispatchGuardian({ type: 'APPEND_TRANSCRIPT', payload: text });
+                                if (userData.isSubscribed && userData.guardianVibrationFeedback && (userData.guardianTriggerWords || []).length > 0) {
+                                    const lowerCaseText = text.toLowerCase();
+                                    const foundTrigger = (userData.guardianTriggerWords || []).some(word => lowerCaseText.includes(word.toLowerCase()));
+                                    if (foundTrigger && !triggerWordTimeoutRef.current) {
+                                        navigator.vibrate?.([100, 50, 100]);
+                                        triggerWordTimeoutRef.current = window.setTimeout(() => { triggerWordTimeoutRef.current = null; }, 10000);
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    onerror: (e: ErrorEvent) => {
+                        dispatchGuardian({ type: 'SET_ERROR', payload: 'Error de conexión del Modo Guardián.' });
+                        stopGuardian();
+                    },
+                    onclose: () => {
+                        if (triggerWordTimeoutRef.current) { clearTimeout(triggerWordTimeoutRef.current); triggerWordTimeoutRef.current = null; }
+                        if (autoStopCheckIntervalRef.current) clearInterval(autoStopCheckIntervalRef.current);
+                    }
+                }
+            });
+            sessionPromiseRef.current = newSessionPromise;
+
+            // Start auto-stop timer if configured
+            if (userData.guardianAutoStopTimer && userData.guardianAutoStopTimer > 0) {
+                lastTranscriptTimeRef.current = Date.now(); // Initialize timer
+                const silenceDurationMs = userData.guardianAutoStopTimer * 60 * 1000;
+                autoStopCheckIntervalRef.current = window.setInterval(() => {
+                    if (lastTranscriptTimeRef.current && (Date.now() - lastTranscriptTimeRef.current > silenceDurationMs)) {
+                        stopGuardian();
+                    }
+                }, 5000); // Check every 5 seconds
+            }
+
+        } catch (err: any) {
+            let errorMessage = 'No se pudo acceder al micrófono.';
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Permiso de micrófono denegado. Por favor, actívalo en la configuración de tu navegador.';
+            } else if (err.name === 'NotFoundError') {
+                errorMessage = 'No se encontró un micrófono en tu dispositivo.';
+            }
+            dispatchGuardian({ type: 'SET_ERROR', payload: errorMessage });
+        }
+    };
+
+    const resetGuardian = useCallback(() => {
+        dispatchGuardian({type: 'RESET' });
+    }, []);
+
     const value = {
         user,
         userData,
@@ -560,6 +593,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         guardianState,
         startGuardian,
         stopGuardian,
+        resetGuardian,
     };
 
     return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

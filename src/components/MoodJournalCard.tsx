@@ -99,7 +99,7 @@ export const MoodJournalCard: React.FC = () => {
 
         const prompt = `Actúa como Kai, un coach de bienestar altamente empático. Un usuario acaba de describir cómo se siente. Su transcripción es: "${transcript}". Analiza el texto y genera un "Plan de Sintonía Anímica" para apoyarle. El plan debe ser amable, práctico y breve. Responde ÚNICAMENTE con un objeto JSON que siga el esquema proporcionado. El 'detectedMood' debe ser conciso. Las descripciones del plan deben ser de 1-2 frases.`;
 
-        // Fix: Removed the `finally` block and set status within `try` and `catch` to prevent race conditions with state updates.
+        // Fix: Removed the \`finally\` block and set status within \`try\` and \`catch\` to prevent race conditions with state updates.
         try {
             const response = await geminiService.generateContent(prompt, undefined, true);
             const parsedResponse = JSON.parse(response);
@@ -148,7 +148,8 @@ export const MoodJournalCard: React.FC = () => {
                 {status === 'analyzing' ? (
                      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-yellow-400 mb-4"></div>
                 ) : (
-                    <button onClick={handleMicClick} className={`w-24 h-24 rounded-full flex items-center justify-center text-white transition-colors mb-4 ${buttonClass}`} disabled={status === 'analyzing'}>
+                    // Fix: The comparison `status === 'analyzing'` is always false here due to TypeScript's control flow analysis within the ternary operator. The button is only rendered when status is not 'analyzing', so the `disabled` prop was redundant and incorrect.
+                    <button onClick={handleMicClick} className={`w-24 h-24 rounded-full flex items-center justify-center text-white transition-colors mb-4 ${buttonClass}`}>
                         <MicIcon className="h-10 w-10" />
                     </button>
                 )}
