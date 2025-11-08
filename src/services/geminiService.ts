@@ -1,4 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+
+
+import { GoogleGenAI, GenerateContentConfig, FunctionDeclaration } from "@google/genai";
 
 export class GeminiService {
     private ai: GoogleGenAI | null = null;
@@ -20,7 +22,7 @@ export class GeminiService {
         return !!this.ai;
     }
 
-    public async generateContent(prompt: string, systemInstruction?: string, isJson: boolean = false): Promise<string> {
+    public async generateContent(prompt: string, systemInstruction?: string, schema?: any): Promise<string> {
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
             return "Error: Parece que no tienes conexión a internet. Por favor, revisa tu conexión e inténtalo de nuevo.";
         }
@@ -30,13 +32,19 @@ export class GeminiService {
         }
 
         try {
+            const config: GenerateContentConfig = {};
+            if (systemInstruction) {
+                config.systemInstruction = systemInstruction;
+            }
+            if (schema) {
+                config.responseMimeType = "application/json";
+                config.responseSchema = schema;
+            }
+
             const response = await this.ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
-                config: {
-                    ...(systemInstruction && { systemInstruction: systemInstruction }),
-                    ...(isJson && { responseMimeType: "application/json" }),
-                }
+                config: config
             });
             return response.text;
         } catch (error) {

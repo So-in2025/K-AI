@@ -1,10 +1,9 @@
-const CACHE_NAME = 'kia-cache-v4';
+const CACHE_NAME = 'kia-cache-v5';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', event => {

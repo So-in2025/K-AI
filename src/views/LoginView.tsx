@@ -23,7 +23,13 @@ export const LoginView: React.FC = () => {
       await login();
     } catch (error: any) {
         console.error("Falló el inicio de sesión:", error);
-        setLoginError('No se pudo completar el inicio de sesión. Por favor, revisa tu conexión a internet e inténtalo de nuevo más tarde.');
+        let message = 'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo más tarde.';
+        if (error.code === 'auth/popup-blocked') {
+            message = 'Tu navegador bloqueó la ventana de inicio de sesión. Por favor, permite las ventanas emergentes para este sitio e inténtalo de nuevo.';
+        } else if (error.code === 'auth/popup-closed-by-user') {
+            message = 'Cancelaste el inicio de sesión. Inténtalo de nuevo si fue un error.';
+        }
+        setLoginError(message);
     }
   };
 

@@ -29,7 +29,15 @@ export const MusicPreferencesModal: React.FC<MusicPreferencesModalProps> = ({ on
             alert('Por favor, selecciona al menos un género y un artista.');
             return;
         }
-        onSave({ genres: selectedGenres, artists });
+        // Fix: Construct a full IMusicPreferences object to satisfy the type requirement.
+        // The missing properties are taken from initialPreferences or defaulted.
+        onSave({
+            mood: initialPreferences?.mood || '',
+            energy: initialPreferences?.energy || '',
+            instrumental: initialPreferences?.instrumental ?? null,
+            genres: selectedGenres,
+            artists: artists.trim(),
+        });
     };
 
     const renderButton = (label: string, isSelected: boolean, onClick: () => void) => (

@@ -36,6 +36,7 @@ export const ProgressView: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <WeeklyAnalysisCard />
                     <WellnessSummaryCard />
+                    {onboardingData.focuses.includes('addiction') && <PatternsCard />}
                 </div>
 
                 {/* Columna Derecha: Historial y Herramientas de Apoyo */}
@@ -45,7 +46,6 @@ export const ProgressView: React.FC = () => {
                         onDeleteHistory={deleteTherapyHistory}
                         isLocked={!isSubscribed}
                     />
-                    {onboardingData.focuses.includes('addiction') && <PatternsCard />}
                     <TrustCircleCard />
                 </div>
             </div>

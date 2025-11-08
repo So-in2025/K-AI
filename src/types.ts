@@ -249,6 +249,9 @@ export interface IQuote {
 }
 
 export interface IMusicPreferences {
+    mood: string;
+    energy: string;
+    instrumental: boolean | null;
     genres: string[];
     artists: string;
 }
