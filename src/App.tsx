@@ -14,6 +14,7 @@ import { ToolsView } from './views/ToolsView';
 import { ProgressView } from './views/ProgressView';
 import { OnboardingData } from './types';
 import { ResourcesModal } from './components/ResourcesModal';
+import { DeveloperOptionsModal } from './components/DeveloperOptionsModal';
 
 const App: React.FC = () => {
     const { user, userData, loading, updateUserData } = useUser();
@@ -21,6 +22,7 @@ const App: React.FC = () => {
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
     const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false);
+    const [isDeveloperOptionsOpen, setIsDeveloperOptionsOpen] = useState(false);
 
     // Automatically open API key modal if it's missing after login and onboarding
     useEffect(() => {
@@ -95,7 +97,16 @@ const App: React.FC = () => {
             <NavigationBar activeView={activeView} setActiveView={setActiveView} />
 
             {isApiKeyModalOpen && <ApiKeyModal onClose={handleCloseApiKeyModal} onSave={handleSaveApiKey} />}
-            {isSettingsModalOpen && <SettingsModal onClose={() => setIsSettingsModalOpen(false)} onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)} />}
+            {isSettingsModalOpen && 
+                <SettingsModal 
+                    onClose={() => setIsSettingsModalOpen(false)} 
+                    onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+                    onOpenDeveloperOptions={() => {
+                        setIsSettingsModalOpen(false);
+                        setIsDeveloperOptionsOpen(true);
+                    }}
+                />}
+            {isDeveloperOptionsOpen && <DeveloperOptionsModal onClose={() => setIsDeveloperOptionsOpen(false)} />}
             {isResourcesModalOpen && <ResourcesModal onClose={() => setIsResourcesModalOpen(false)} />}
         </div>
     );

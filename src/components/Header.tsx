@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { UserFocus, USER_FOCUS_OPTIONS, OnboardingData } from '../types';
 import { KiaIcon } from './KiaIcon';
 import { useUser } from '../contexts/UserContext';
@@ -45,11 +45,33 @@ export const Header: React.FC<HeaderProps> = ({ onSettingsClick, onHelpClick }) 
   const title = getTitle(userData?.onboardingData?.focuses);
   const isSubscribed = userData?.isSubscribed || false;
 
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimeoutRef = useRef<number | null>(null);
+
+  const handleLogoTap = () => {
+      if (tapTimeoutRef.current) {
+          clearTimeout(tapTimeoutRef.current);
+      }
+
+      const newTapCount = tapCount + 1;
+      setTapCount(newTapCount);
+
+      if (newTapCount >= 5) {
+          localStorage.setItem('developerMode', 'true');
+          alert('Modo desarrollador activado.');
+          setTapCount(0);
+      } else {
+          tapTimeoutRef.current = window.setTimeout(() => {
+              setTapCount(0);
+          }, 2000); // Reset after 2 seconds if taps stop
+      }
+  };
+
   return (
     <header className="bg-slate-900/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={handleLogoTap}>
             <KiaIcon className="h-8 w-8 text-teal-400"/>
              <div>
                  <h1 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-wider">

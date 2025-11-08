@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import ttsService from '../services/ttsService';
 import { ITtsSettings } from '../types';
@@ -5,6 +6,7 @@ import { ITtsSettings } from '../types';
 interface SettingsModalProps {
     onClose: () => void;
     onOpenApiKeyModal: () => void;
+    onOpenDeveloperOptions: () => void;
 }
 
 const CloseIcon = () => (
@@ -14,11 +16,17 @@ const CloseIcon = () => (
 );
 
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApiKeyModal, onOpenDeveloperOptions }) => {
     const [ttsSettings, setTtsSettings] = useState<ITtsSettings | null>(null);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
     useEffect(() => {
+        // Check for developer mode when the modal opens
+        if (localStorage.getItem('developerMode') === 'true') {
+            setIsDeveloperMode(true);
+        }
+        
         const populateVoices = () => {
             const availableVoices = ttsService.getAvailableVoices();
             if (availableVoices.length > 0) {
@@ -119,6 +127,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenApi
                                 Probar Voz
                             </button>
                         </div>
+                    </div>
+                )}
+                
+                {isDeveloperMode && (
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-yellow-300 mb-2">Opciones de Desarrollador</h3>
+                        <p className="text-sm text-slate-400 mb-3">
+                            Accede a las opciones de depuración y prueba.
+                        </p>
+                        <button 
+                            onClick={onOpenDeveloperOptions}
+                            className="w-full bg-slate-600 text-yellow-300 font-semibold py-2 px-4 rounded-lg hover:bg-slate-500"
+                        >
+                            Abrir Panel de Desarrollador
+                        </button>
                     </div>
                 )}
 
