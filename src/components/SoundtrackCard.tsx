@@ -33,7 +33,7 @@ export const SoundtrackCard: React.FC = () => {
         try {
             const response = await geminiService.generateContent(prompt, undefined, true);
             setRecommendations(JSON.parse(response));
-        } catch (e) { console.error("Failed to generate soundtrack", e); }
+        } catch (e) { console.error("Error al generar la banda sonora", e); }
         finally { setIsLoading(false); }
     };
     

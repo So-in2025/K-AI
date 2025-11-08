@@ -1,35 +1,25 @@
+
 import React from 'react';
 import { PatternsCard } from '../components/PatternsCard';
 import { WeeklyAnalysisCard } from '../components/WeeklyAnalysisCard';
 import { ResourcesCard } from '../components/ResourcesCard';
-import { ICraving, IWellnessActivity, OnboardingData, ITrustCircleConfig, IDopamineHit, ITherapySession, UsageTracker, FeatureID } from '../types';
 import { UpgradeCard } from '../components/UpgradeCard';
 import { InnerGardenCard } from '../components/InnerGardenCard';
 import { TrustCircleCard } from '../components/TrustCircleCard';
 import { WellnessSummaryCard } from '../components/WellnessSummaryCard';
 import { TherapyHistoryCard } from '../components/TherapyHistoryCard';
+import { useUser } from '../contexts/UserContext';
 
+// Fix: Removed ProgressViewProps and component props, using useUser hook instead for data.
+export const ProgressView: React.FC = () => {
+    const { userData, deleteTherapyHistory } = useUser();
 
-interface ProgressViewProps {
-    apiKey: string | null;
-    cravings: ICraving[];
-    journalEntry: string;
-    wellnessLog: IWellnessActivity[];
-    daysSober: number;
-    onboardingData: OnboardingData;
-    isSubscribed: boolean;
-    gardenGrowthPoints: number;
-    trustCircleConfig: ITrustCircleConfig | null;
-    onUpdateTrustCircleConfig: (config: ITrustCircleConfig) => void;
-    dopamineHits: IDopamineHit[];
-    therapySessions: ITherapySession[];
-    onDeleteTherapyHistory: () => void;
-    usageTracker: UsageTracker | null;
-    checkAndConsumeUsage: (featureId: FeatureID) => boolean;
-}
+    if (!userData || !userData.onboardingData) {
+        return null;
+    }
 
-export const ProgressView: React.FC<ProgressViewProps> = (props) => {
-    const { apiKey, isSubscribed, onboardingData, usageTracker, checkAndConsumeUsage } = props;
+    const { isSubscribed, onboardingData, therapySessions } = userData;
+
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -40,36 +30,24 @@ export const ProgressView: React.FC<ProgressViewProps> = (props) => {
                 )}
                 
                 <div className="lg:col-span-2 space-y-6">
-                    <InnerGardenCard growthPoints={props.gardenGrowthPoints} />
-                    <WellnessSummaryCard wellnessLog={props.wellnessLog} dopamineHits={props.dopamineHits} />
-                     <WeeklyAnalysisCard 
-                        apiKey={apiKey}
-                        cravings={props.cravings}
-                        journalEntry={props.journalEntry}
-                        wellnessLog={props.wellnessLog}
-                        daysSober={props.daysSober}
-                        userFocus={onboardingData.focuses}
-                        isSubscribed={isSubscribed}
-                        dopamineHits={props.dopamineHits}
-                        usageTracker={usageTracker}
-                        checkAndConsumeUsage={checkAndConsumeUsage as (featureId: 'weekly_analysis') => boolean}
-                    />
+                    {/* Fix: Removed props as InnerGardenCard consumes context directly. */}
+                    <InnerGardenCard />
+                    {/* Fix: Removed props as WellnessSummaryCard consumes context directly. */}
+                    <WellnessSummaryCard />
+                    {/* Fix: Removed props as WeeklyAnalysisCard consumes context directly. */}
+                     <WeeklyAnalysisCard />
                 </div>
 
                 <div className="space-y-6">
                     <TherapyHistoryCard 
-                        sessions={props.therapySessions}
-                        onDeleteHistory={props.onDeleteTherapyHistory}
+                        sessions={therapySessions || []}
+                        onDeleteHistory={deleteTherapyHistory}
                         isLocked={!isSubscribed}
                     />
-                    <TrustCircleCard
-                        config={props.trustCircleConfig}
-                        onUpdateConfig={props.onUpdateTrustCircleConfig}
-                        cravings={props.cravings}
-                        daysSober={props.daysSober}
-                        wellnessLog={props.wellnessLog}
-                    />
-                    {onboardingData.focuses.includes('addiction') && <PatternsCard cravings={props.cravings} journalEntry={props.journalEntry} isSubscribed={isSubscribed} />}
+                    {/* Fix: Removed props as TrustCircleCard consumes context directly. */}
+                    <TrustCircleCard />
+                    {/* Fix: Removed props as PatternsCard consumes context directly. */}
+                    {onboardingData.focuses.includes('addiction') && <PatternsCard />}
                     <ResourcesCard />
                 </div>
             </div>

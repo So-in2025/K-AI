@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from './contexts/UserContext';
 import { LoginView } from './views/LoginView';
@@ -69,6 +70,7 @@ const App: React.FC = () => {
 
     const renderView = () => {
         switch(activeView) {
+            // Fix: All views are now correctly rendered without props, as they will consume the UserContext directly.
             case 'home': return <HomeView />;
             case 'kai': return <KaiView />;
             case 'tools': return <ToolsView />;

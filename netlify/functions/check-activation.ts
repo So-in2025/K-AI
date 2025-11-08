@@ -4,13 +4,13 @@ import { getStore } from "@netlify/blobs";
 
 export default async (req: Request, context: Context) => {
     if (req.method !== 'POST') {
-        return new Response("Method Not Allowed", { status: 405 });
+        return new Response("Método no permitido", { status: 405 });
     }
 
     try {
         const { code } = await req.json();
         if (!code) {
-            return new Response("Activation code is required.", { status: 400 });
+            return new Response("Se requiere el código de activación.", { status: 400 });
         }
 
         const store = getStore("activation-codes");
@@ -31,7 +31,7 @@ export default async (req: Request, context: Context) => {
             });
         }
     } catch (error) {
-        console.error("Error checking activation code:", error);
-        return new Response("Internal Server Error", { status: 500 });
+        console.error("Error al verificar el código de activación:", error);
+        return new Response("Error Interno del Servidor", { status: 500 });
     }
 };

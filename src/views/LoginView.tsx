@@ -20,7 +20,7 @@ export const LoginView: React.FC = () => {
     try {
       await login();
     } catch (error: any) {
-        console.error("Login failed:", error);
+        console.error("Falló el inicio de sesión:", error);
         // User-facing errors for auth problems are now handled here
         alert('Ocurrió un error durante el inicio de sesión. Por favor, inténtalo de nuevo.');
     }

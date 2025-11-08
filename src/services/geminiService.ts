@@ -8,11 +8,11 @@ export class GeminiService {
             try {
                 this.ai = new GoogleGenAI({ apiKey });
             } catch (error) {
-                console.error("Error initializing GoogleGenAI with provided key:", error);
+                console.error("Error al inicializar GoogleGenAI con la clave proporcionada:", error);
                 this.ai = null;
             }
         } else {
-            console.warn("Attempted to initialize GeminiService without an API key.");
+            console.warn("Se intentó inicializar GeminiService sin una clave de API.");
         }
     }
 
@@ -40,7 +40,7 @@ export class GeminiService {
             });
             return response.text;
         } catch (error) {
-            console.error("Error fetching from Gemini API:", error);
+            console.error("Error al obtener datos de la API de Gemini:", error);
             
             const errorMessage = error instanceof Error ? error.message : String(error);
             

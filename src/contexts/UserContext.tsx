@@ -161,7 +161,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                 }
             } catch (error) {
-                console.error("Error checking subscription activation:", error);
+                console.error("Error al verificar la activación de la suscripción:", error);
             }
         }
     }, [user, userData?.isSubscribed, updateUserData]);
@@ -207,7 +207,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await signInWithPopup(auth, googleProvider);
         } catch (error) {
-            console.error("Error during sign-in:", error);
+            console.error("Error durante el inicio de sesión:", error);
             throw error;
         }
     };
@@ -217,7 +217,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await signOut(auth);
         } catch (error) {
-            console.error("Error during sign-out:", error);
+            console.error("Error durante el cierre de sesión:", error);
         }
     };
     
@@ -280,7 +280,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const newGoals = [...otherGoals, newGoal];
             updateUserData({ goals: newGoals });
             addConversationTurn({ role: 'user', text: `[META CREADA - ${type}] He creado una nueva meta: "${content}"` });
-        } catch(e) { console.error("Error generating goal", e); }
+        } catch(e) { console.error("Error al generar la meta", e); }
     }, [userData, geminiService, updateUserData, addConversationTurn, daysSober]);
 
     const logWellnessActivity = useCallback((activity: IWellnessActivity) => {
@@ -386,7 +386,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const newMemory = await geminiService.generateContent(prompt);
             updateUserData({ kaiMemory: newMemory });
-        } catch (e) { console.error("Failed to update Kai's memory:", e); }
+        } catch (e) { console.error("Error al actualizar la memoria de Kai:", e); }
     }, [userData, geminiService, updateUserData]);
 
     const checkAndConsumeUsage = useCallback((featureId: FeatureID, limit: number = 1): boolean => {
@@ -493,7 +493,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
                 const session = await sessionPromiseRef.current;
                 session.close();
-            } catch (e) { console.error("Error closing session", e); }
+            } catch (e) { console.error("Error al cerrar la sesión", e); }
             sessionPromiseRef.current = null;
         }
         
@@ -518,13 +518,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // ... more dynamic prompts based on onboardingData if needed ...
 
         try {
-            if (!geminiService) throw new Error("Gemini Service not available");
+            if (!geminiService) throw new Error("El servicio de Gemini no está disponible");
             const response = await geminiService.generateContent(analysisPrompt, undefined, true);
             const parsedAnalysis: IGuardianAnalysis = JSON.parse(response);
             dispatchGuardian({ type: 'SET_ANALYSIS', payload: parsedAnalysis });
             addConversationTurn({ role: 'user', text: `[MODO GUARDIÁN] Acabo de usar el Modo Guardián. Kai analizó la situación.` });
         } catch (error) {
-            console.error("Error parsing guardian analysis:", error);
+            console.error("Error al analizar el análisis del guardián:", error);
             dispatchGuardian({ type: 'SET_ERROR', payload: 'No se pudo procesar el análisis.' });
         }
     }, [userData, geminiService, addConversationTurn, checkAndConsumeUsage]);

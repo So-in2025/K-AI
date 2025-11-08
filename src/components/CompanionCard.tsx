@@ -101,7 +101,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ onStartTherapySess
         recognition.onstart = () => setIsListening(true);
         recognition.onresult = (event) => { const text = event.results[0][0].transcript; setUserInput(text); handleSend(text); };
         recognition.onend = () => setIsListening(false);
-        recognition.onerror = (event) => { console.error('Speech recognition error', event.error); setIsListening(false); };
+        recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz', event.error); setIsListening(false); };
         recognitionRef.current = recognition;
     }, []);
 

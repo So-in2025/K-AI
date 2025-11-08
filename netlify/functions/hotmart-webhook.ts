@@ -4,28 +4,28 @@ import { getStore } from "@netlify/blobs";
 
 export default async (req: Request, context: Context) => {
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Método no permitido", { status: 405 });
   }
 
   const hottok = req.headers.get("x-hotmart-hottok");
   const webhookSecret = process.env.HOTMART_WEBHOOK_SECRET;
 
   if (!hottok || !webhookSecret) {
-    console.warn("Webhook security headers missing (x-hotmart-hottok or secret).");
-    return new Response("Unauthorized: Security headers missing.", { status: 401 });
+    console.warn("Cabeceras de seguridad del webhook faltantes (x-hotmart-hottok o secret).");
+    return new Response("No autorizado: Faltan las cabeceras de seguridad.", { status: 401 });
   }
 
   if (hottok !== webhookSecret) {
-    console.warn("Invalid Hotmart token (hottok). Mismatch between received token and environment variable.");
-    return new Response("Unauthorized: Invalid token.", { status: 401 });
+    console.warn("Token de Hotmart (hottok) inválido. Discrepancia entre el token recibido y la variable de entorno.");
+    return new Response("No autorizado: Token inválido.", { status: 401 });
   }
 
   try {
     const payload = await req.json();
 
     if (payload.event !== 'PURCHASE_APPROVED') {
-      console.log(`Hotmart event '${payload.event}' received. Ignoring.`);
-      return new Response("Webhook processed, non-approved event.", { status: 200 });
+      console.log(`Evento de Hotmart '${payload.event}' recibido. Ignorando.`);
+      return new Response("Webhook procesado, evento no aprobado.", { status: 200 });
     }
 
     // LÓGICA MEJORADA Y ROBUSTA:
@@ -35,8 +35,8 @@ export default async (req: Request, context: Context) => {
 
     if (!activationCode) {
       // Log detallado para depuración en caso de que Hotmart cambie el campo en el futuro.
-      console.log("Hotmart webhook received, but activation code not found in 'checkout_src' or 'sck'. Full payload:", JSON.stringify(payload));
-      return new Response("Activation code not found in payload.", { status: 200 });
+      console.log("Webhook de Hotmart recibido, pero no se encontró el código de activación en 'checkout_src' o 'sck'. Payload completo:", JSON.stringify(payload));
+      return new Response("Código de activación no encontrado en el payload.", { status: 200 });
     }
     
     const store = getStore("activation-codes");
@@ -44,13 +44,13 @@ export default async (req: Request, context: Context) => {
     // Guardamos el código como activado
     await store.set(activationCode, "activated");
     
-    console.log(`SUCCESS: Hotmart activation code ${activationCode} has been verified and stored.`);
+    console.log(`ÉXITO: El código de activación de Hotmart ${activationCode} ha sido verificado y almacenado.`);
     
     // Respondemos a Hotmart con éxito
     return new Response("OK", { status: 200 });
 
   } catch (error) {
-    console.error("Error processing Hotmart webhook payload:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    console.error("Error al procesar el payload del webhook de Hotmart:", error);
+    return new Response("Error Interno del Servidor", { status: 500 });
   }
 };

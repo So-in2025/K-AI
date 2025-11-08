@@ -43,7 +43,7 @@ export const createUserProfileDocument = async (userAuth: User): Promise<void> =
         try {
             await setDoc(userDocRef, initialProfile);
         } catch (error) {
-            console.error("Error creating user profile", error);
+            console.error("Error al crear el perfil de usuario", error);
         }
     }
 };
@@ -56,11 +56,11 @@ export const getUserProfile = async (uid: string): Promise<IUserProfile | null> 
         if (docSnap.exists()) {
             return docSnap.data() as IUserProfile;
         } else {
-            console.warn("No such user profile!");
+            console.warn("¡No se encontró el perfil de usuario!");
             return null;
         }
     } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("Error al obtener el perfil de usuario:", error);
         return null;
     }
 };
@@ -71,6 +71,6 @@ export const updateUserProfile = async (uid: string, data: Partial<IUserProfile>
     try {
         await setDoc(userDocRef, data, { merge: true });
     } catch (error) {
-        console.error("Error updating user profile:", error);
+        console.error("Error al actualizar el perfil de usuario:", error);
     }
 };

@@ -28,7 +28,7 @@ class TtsService {
                 return { ...this.getDefaultSettings(), ...parsed };
             }
         } catch (error) {
-            console.error("Error reading TTS settings from localStorage", error);
+            console.error("Error al leer la configuración de TTS de localStorage", error);
         }
         return this.getDefaultSettings();
     }
@@ -39,7 +39,7 @@ class TtsService {
             const newSettings = { ...currentSettings, ...settings };
             localStorage.setItem(TTS_SETTINGS_KEY, JSON.stringify(newSettings));
         } catch (error) {
-            console.error("Error saving TTS settings to localStorage", error);
+            console.error("Error al guardar la configuración de TTS en localStorage", error);
         }
     }
 
@@ -53,7 +53,7 @@ class TtsService {
     speak(text: string, customSettings?: ITtsSettings): Promise<void> {
         return new Promise((resolve, reject) => {
             if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-                console.warn("Speech Synthesis not supported.");
+                console.warn("Síntesis de voz no soportada.");
                 resolve();
                 return;
             }
@@ -88,7 +88,7 @@ class TtsService {
     
             this.utterance.onstart = () => { this.isSpeaking = true; };
             this.utterance.onerror = (event) => {
-                console.error("SpeechSynthesisUtterance.onerror", event);
+                console.error("Error en la síntesis de voz:", event);
                 this.isSpeaking = false;
                 reject(event);
             };
@@ -126,7 +126,7 @@ class TtsService {
                 }, currentItem.pause);
             }
         } catch(error) {
-            console.error("Error during speech sequence", error);
+            console.error("Error durante la secuencia de voz", error);
             this.stop();
         }
     }

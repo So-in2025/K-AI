@@ -39,7 +39,7 @@ export const ProgressCard: React.FC = () => {
               }
           }
       } catch (e) {
-          console.error("Failed to process milestone celebration:", e);
+          console.error("Error al procesar la celebración del hito:", e);
       }
   }, [daysSober]);
 
